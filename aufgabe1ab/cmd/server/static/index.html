@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gipfel Skiverleih</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%231f7a8c'/%3E%3Cpath d='m4 19 5-9 3 5 2-3 6 7z' fill='white'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="logo" data-icon="mountain"></span>
+        <span class="brand-name"><strong>Gipfel</strong><small>Skiverleih</small></span>
+      </div>
+      <nav>
+        <a href="#/" data-route="/"><span data-icon="dashboard"></span><span>Übersicht</span></a>
+        <a href="#/new" data-route="/new"><span data-icon="plus"></span><span>Neuer Verleih</span></a>
+        <a href="#/rentals" data-route="/rentals"><span data-icon="list"></span><span>Verleihe</span></a>
+        <a href="#/prices" data-route="/prices"><span data-icon="tag"></span><span>Preise</span></a>
+      </nav>
+    </aside>
+    <main id="view"></main>
+  </div>
+  <dialog id="dialog"></dialog>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
