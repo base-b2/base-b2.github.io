@@ -42,7 +42,7 @@
     tol: 60, weich: 25, saum: 60,
     hg: { art: 'farbe', farbe: '#DDEBF2' },
     pos: { cx: 0.5, unten: 1, h: 0.9 },   // Foto: Mitte x, Unterkante, Höhe (Anteile der Ausgabe)
-    hgPos: { cx: 0.5, cy: 0.5, s: 1 },    // Hintergrund: Mitte und Zoom
+    hgPos: { cx: 0.5, cy: 0.5, s: 1, rot: 0 },   // Hintergrund: Mitte, Zoom, Drehung
     drehung: 0, spiegel: false, ziel: 'foto', waehlt: false,
     suche: { q: '', seite: 1, token: 0 },
   };
@@ -167,6 +167,12 @@
   }
   function begrenzeHg() {
     const p = st.hgPos;
+    if (p.rot) {   // gedreht: frei bewegen, nur nicht ganz aus dem Bild schieben
+      p.s = Math.min(4, Math.max(0.3, p.s));
+      p.cx = Math.min(1.5, Math.max(-0.5, p.cx));
+      p.cy = Math.min(1.5, Math.max(-0.5, p.cy));
+      return;
+    }
     p.s = Math.min(4, Math.max(1, p.s));
     const lo = 1 - p.s / 2, hi = p.s / 2;
     p.cx = Math.min(hi, Math.max(lo, p.cx));
@@ -176,15 +182,23 @@
     if (st.waehlt && st.foto) {
       view.width = st.foto.width; view.height = st.foto.height;
       vctx.drawImage(st.foto, 0, 0);
+      passeAn();
       return;
     }
     const [W, H] = ausgabeGroesse();
-    if (view.width !== W || view.height !== H) { view.width = W; view.height = H; }
+    if (view.width !== W || view.height !== H) { view.width = W; view.height = H; passeAn(); }
     vctx.clearRect(0, 0, W, H);
     if (st.hg.art === 'bild') {
       begrenzeHg();
       const p = st.hgPos, dw = W * p.s, dh = H * p.s;
-      vctx.drawImage(st.hg.leinwand, p.cx * W - dw / 2, p.cy * H - dh / 2, dw, dh);
+      if (p.rot) {
+        vctx.fillStyle = '#FFFFFF'; vctx.fillRect(0, 0, W, H);
+        vctx.save();
+        vctx.translate(p.cx * W, p.cy * H);
+        vctx.rotate(p.rot * Math.PI / 180);
+        vctx.drawImage(st.hg.leinwand, -dw / 2, -dh / 2, dw, dh);
+        vctx.restore();
+      } else vctx.drawImage(st.hg.leinwand, p.cx * W - dw / 2, p.cy * H - dh / 2, dw, dh);
     } else { vctx.fillStyle = st.hg.farbe; vctx.fillRect(0, 0, W, H); }
     if (st.frei) {
       const fh = st.pos.h * H, fw = fh * st.foto.width / st.foto.height;
@@ -216,6 +230,20 @@
     vctx.fillText(t, W - tw - pad, H - pad - fs / 2);
     vctx.restore();
   }
+  // Vorschau so groß wie möglich in den freien Platz einpassen (Seitenverhältnis bleibt)
+  function passeAn() {
+    const box = $('#buehne-box');
+    const bw = box.clientWidth, bh = box.clientHeight;
+    if (!bw || !bh || !view.width) return;
+    const r = view.width / view.height;
+    let w = bw, h = bw / r;
+    if (h > bh) { h = bh; w = bh * r; }
+    view.style.width = Math.floor(w) + 'px';
+    view.style.height = Math.floor(h) + 'px';
+  }
+  if (window.ResizeObserver) new ResizeObserver(passeAn).observe($('#buehne-box'));
+  else window.addEventListener('resize', passeAn);
+
   let geplant = false, neuKey = false;
   function plane(key) {
     if (key) neuKey = true;
@@ -230,18 +258,17 @@
     if (st.ziel === 'foto') { g.min = 10; g.max = 300; g.value = Math.round(st.pos.h * 100); }
     else { g.min = 100; g.max = 400; g.value = Math.round(st.hgPos.s * 100); }
     $('#groesse-wert').textContent = g.value + ' %';
-    $('#drehen').value = st.drehung;
-    $('#drehen-wert').textContent = st.drehung + ' Grad';
+    const grad = Math.round(st.ziel === 'foto' ? st.drehung : st.hgPos.rot);
+    $('#drehen').value = grad;
+    $('#drehen-wert').textContent = grad + ' Grad';
     const aus = st.ziel !== 'foto';
-    $('#drehen').disabled = aus;
-    $('#drehen-feld').classList.toggle('aus', aus);
     $('#spiegeln').disabled = aus;
     $('#spiegeln').classList.toggle('an', st.spiegel);
     $('#spiegeln').setAttribute('aria-pressed', st.spiegel ? 'true' : 'false');
   }
   function allesZuruecksetzen() {
     st.pos = { cx: 0.5, unten: 1, h: 0.9 };
-    st.hgPos = { cx: 0.5, cy: 0.5, s: 1 };
+    st.hgPos = { cx: 0.5, cy: 0.5, s: 1, rot: 0 };
     st.drehung = 0; st.spiegel = false;
   }
   $$('input[name="ziel"]').forEach((r) => r.addEventListener('change', () => { st.ziel = r.value; aktualisiereRegler(); }));
@@ -250,7 +277,12 @@
     if (st.ziel === 'foto') st.pos.h = v; else st.hgPos.s = v;
     plane();
   });
-  $('#drehen').addEventListener('input', (e) => { st.drehung = Number(e.target.value); plane(); });
+  function winkel(g) { g = ((g + 180) % 360 + 360) % 360 - 180; return Math.abs(g) < 0.5 ? 0 : g; }
+  function drehe(grad, absolut = false) {
+    if (st.ziel === 'foto') st.drehung = winkel(absolut ? grad : st.drehung + grad);
+    else { st.hgPos.rot = winkel(absolut ? grad : st.hgPos.rot + grad); begrenzeHg(); }
+  }
+  $('#drehen').addEventListener('input', (e) => { drehe(Number(e.target.value), true); plane(); });
   $('#spiegeln').addEventListener('click', () => { st.spiegel = !st.spiegel; plane(); });
   $('#zuruecksetzen').addEventListener('click', () => { allesZuruecksetzen(); plane(); });
   function bindeRegler(id, schl) {
@@ -269,7 +301,8 @@
     const cx = a.reduce((s, p) => s + p.x, 0) / a.length;
     const cy = a.reduce((s, p) => s + p.y, 0) / a.length;
     const d = a.length >= 2 ? Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y) : 0;
-    return { cx, cy, d };
+    const w = a.length >= 2 ? Math.atan2(a[1].y - a[0].y, a[1].x - a[0].x) * 180 / Math.PI : 0;
+    return { cx, cy, d, w };
   }
   function zoome(f) {
     if (st.ziel === 'foto') st.pos.h = Math.min(3, Math.max(0.1, st.pos.h * f));
@@ -279,7 +312,7 @@
     if (!st.foto) return;
     if (st.waehlt) { waehleFarbe(e); return; }
     e.preventDefault();
-    view.setPointerCapture(e.pointerId);
+    try { view.setPointerCapture(e.pointerId); } catch (err) { /* ohne Capture weiter */ }
     finger.set(e.pointerId, { x: e.clientX, y: e.clientY });
     view.classList.add('zieht');
   });
@@ -292,7 +325,12 @@
     const dx = (nachher.cx - vorher.cx) / rect.width, dy = (nachher.cy - vorher.cy) / rect.height;
     if (st.ziel === 'foto') { st.pos.cx += dx; st.pos.unten += dy; }
     else { st.hgPos.cx += dx; st.hgPos.cy += dy; begrenzeHg(); }
-    if (finger.size >= 2 && vorher.d > 0 && nachher.d > 0) zoome(nachher.d / vorher.d);
+    if (finger.size >= 2 && vorher.d > 0 && nachher.d > 0) {
+      zoome(nachher.d / vorher.d);
+      let dw = nachher.w - vorher.w;   // Drehung zwischen den beiden Fingern
+      if (dw > 180) dw -= 360; if (dw < -180) dw += 360;
+      drehe(dw);
+    }
     plane();
   });
   const fingerWeg = (e) => { finger.delete(e.pointerId); if (!finger.size) view.classList.remove('zieht'); };
@@ -301,7 +339,8 @@
   view.addEventListener('wheel', (e) => {
     if (!st.foto || st.waehlt) return;
     e.preventDefault();
-    zoome(Math.exp(-e.deltaY * 0.0015));
+    if (e.shiftKey) drehe(e.deltaY > 0 ? 3 : -3);   // Maus: Umschalt + Mausrad dreht
+    else zoome(Math.exp(-e.deltaY * 0.0015));
     plane();
   }, { passive: false });
 
@@ -434,7 +473,7 @@
   }
   function setzeHg(hg) {
     st.hg = hg;
-    st.hgPos = { cx: 0.5, cy: 0.5, s: 1 };
+    st.hgPos = { cx: 0.5, cy: 0.5, s: 1, rot: 0 };
     const q = $('#quelle');
     q.textContent = '';
     if (hg.art === 'bild' && hg.quelle) {

@@ -1,8 +1,10 @@
 /* Base B | Fotobox (Tablet, Kinder 10-12) */
-body { font-size: 18px; }
+html, body { height: 100%; }
+body { font-size: 18px; display: flex; flex-direction: column; height: 100vh; height: 100dvh; min-height: 0; overflow: hidden; }
+#inhalt { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .fb-kopf {
   display: flex; align-items: center; gap: 12px 24px; flex-wrap: wrap;
-  padding: 12px 24px; border-bottom: 1px solid var(--bb-linie);
+  padding: 8px 20px; border-bottom: 1px solid var(--bb-linie); flex: none;
 }
 .fb-zurueck {
   min-height: 48px; display: inline-flex; align-items: center; gap: 6px; padding: 0 14px;
@@ -14,19 +16,29 @@ body { font-size: 18px; }
 .fb-marke-dunkel { display: none; }
 :root[data-theme="dunkel"] .fb-marke-hell { display: none; }
 :root[data-theme="dunkel"] .fb-marke-dunkel { display: block; }
-.fb-hinweis { margin: 0 0 0 auto; display: flex; align-items: center; gap: 10px; font-size: 15px; color: var(--bb-nebentext); max-width: 620px; }
+.fb-hinweis { margin: 0 0 0 auto; display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--bb-nebentext); max-width: 620px; }
 .fb-hinweis b { color: var(--bb-text); }
 .fb-hinweis svg { flex: none; width: 22px; height: 22px; color: var(--bb-text); }
 
-/* Aufbau: Vorschau links, Bedienfeld rechts */
-.fb-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 440px); gap: 24px; padding: 24px; align-items: start; max-width: 1500px; margin: 0 auto; }
-.fb-vorschau { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 10px; }
-.fb-panel { display: flex; flex-direction: column; gap: 16px; }
-.fb-karte {
-  margin: 0; min-width: 0; border: 1px solid var(--bb-linie); border-radius: var(--bb-radius-m); background: var(--bb-flaeche);
-  padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 14px;
+/* Aufbau: Ergebnis fest oben, Funktionsleiste unten (waagrecht wischbar) */
+.fb-layout { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.fb-vorschau { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; padding: 12px 20px 8px; }
+.fb-buehne-box { flex: 1; min-height: 0; position: relative; }
+.fb-buehne-box > .fb-buehne { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+.fb-vorschau > p { flex: none; text-align: center; }
+.fb-panel {
+  flex: none; height: clamp(250px, 37dvh, 400px); display: flex; gap: 12px; padding: 12px 20px 14px;
+  overflow-x: auto; overflow-y: hidden; scroll-snap-type: x proximity; overscroll-behavior: contain;
+  border-top: 1px solid var(--bb-linie); background: var(--bb-grund);
 }
-.fb-karte h2, .fb-karte legend { font-size: 21px; font-weight: 700; display: flex; align-items: center; gap: 12px; margin: 0; padding: 0; }
+.fb-karte {
+  flex: 0 0 340px; height: 100%; overflow-y: auto; scroll-snap-align: start; overscroll-behavior: contain;
+  margin: 0; min-width: 0; border: 1px solid var(--bb-linie); border-radius: var(--bb-radius-m); background: var(--bb-flaeche);
+  padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 12px;
+}
+.fb-karte > * { flex: none; }
+.fb-karte-breit { flex-basis: 480px; }
+.fb-karte h2, .fb-karte legend { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 12px; margin: 0; padding: 0; }
 .fb-karte legend { float: left; width: 100%; margin-bottom: 0; }
 .fb-karte legend + * { clear: both; }
 .fb-nr {
@@ -37,9 +49,9 @@ body { font-size: 18px; }
 .fb-karte:disabled * { cursor: not-allowed; }
 
 .fb-buehne {
-  position: relative; border-radius: var(--bb-radius-m); overflow: hidden; border: 1px solid var(--bb-linie); background: var(--bb-eisblau);
+  position: relative; border-radius: var(--bb-radius-m); overflow: hidden; border: 1px solid var(--bb-linie); background: var(--bb-eisblau); flex: none;
 }
-#view { display: block; width: 100%; height: auto; touch-action: none; cursor: grab; }
+#view { display: block; touch-action: none; cursor: grab; }
 body:not(.hat-foto) #view { cursor: default; touch-action: auto; }
 #view.zieht { cursor: grabbing; }
 .waehlt #view { cursor: crosshair; }
@@ -142,9 +154,9 @@ body:not(.hat-foto) #view { cursor: default; touch-action: auto; }
 .fb-toast.zeigen { transform: translateX(-50%) translateY(0); opacity: 1; }
 
 
-@media (max-width: 900px) {
-  .fb-layout { grid-template-columns: 1fr; padding: 16px; }
-  .fb-vorschau { position: static; }
-  .fb-hinweis { margin-left: 0; }
-  .fb-bilder { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+@media (max-width: 700px) {
+  .fb-hinweis { display: none; }
+  .fb-vorschau { padding: 8px 12px 6px; }
+  .fb-panel { padding: 10px 12px 12px; }
+  .fb-karte { flex-basis: 85vw; }
 }

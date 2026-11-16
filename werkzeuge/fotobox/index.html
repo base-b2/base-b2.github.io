@@ -29,9 +29,10 @@
   <p class="fb-hinweis"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg><span><b>Dein Foto bleibt auf diesem Gerät.</b> Es wird nicht hochgeladen und nicht gespeichert. Nur dein Suchwort geht an Openverse.</span></p>
 </header>
 
-<main class="fb-layout">
+<div class="fb-layout">
   <!-- Vorschau -->
   <section class="fb-vorschau" aria-label="Vorschau">
+    <div class="fb-buehne-box" id="buehne-box">
     <div class="fb-buehne" id="buehne">
       <canvas id="view" aria-label="Vorschau deines Bildes"></canvas>
       <div class="fb-leer" id="leer">
@@ -44,12 +45,13 @@
       </div>
       <p class="fb-farbe-hinweis" id="farbe-hinweis" hidden>Tippe auf das Grün im Bild.</p>
     </div>
-    <p class="fb-klein">Zieh mit dem Finger, um dich zu verschieben. Mit zwei Fingern wird es größer oder kleiner.</p>
+    </div>
+    <p class="fb-klein">Ein Finger: verschieben. Zwei Finger: größer, kleiner und drehen.</p>
     <p class="fb-quelle" id="quelle" hidden></p>
   </section>
 
   <!-- Bedienfeld -->
-  <div class="fb-panel">
+  <div class="fb-panel" id="panel" aria-label="Funktionen">
 
     <section class="fb-karte">
       <h2><span class="fb-nr">1</span>Foto</h2>
@@ -60,7 +62,7 @@
       <p class="fb-klein">Tipp: Hinter dir sollte nur das grüne Tuch zu sehen sein. Gutes Licht hilft.</p>
     </section>
 
-    <section class="fb-karte">
+    <section class="fb-karte fb-karte-breit">
       <h2><span class="fb-nr">2</span>Hintergrund</h2>
       <div class="fb-chips" id="chips" role="group" aria-label="Kategorien"></div>
       <form class="fb-suche" id="suche" role="search">
@@ -88,7 +90,7 @@
         <input type="range" id="groesse" min="10" max="300" value="100">
       </label>
       <label class="fb-regler" id="drehen-feld">Drehen <span id="drehen-wert" class="mono">0</span>
-        <input type="range" id="drehen" min="-30" max="30" value="0">
+        <input type="range" id="drehen" min="-180" max="180" value="0">
       </label>
       <div class="fb-zwei">
         <button class="fb-knopf" type="button" id="spiegeln"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="3" x2="12" y2="21"/><polyline points="8,7 3,12 8,17"/><polyline points="16,7 21,12 16,17"/></svg>Spiegeln</button>
@@ -116,7 +118,7 @@
     </fieldset>
 
   </div>
-</main>
+</div>
 
 <!-- Kamera -->
 <div class="fb-kamera" id="kamera" hidden>

@@ -8,9 +8,10 @@
   <p class="fb-hinweis">{ICON:schloss}<span><b>Dein Foto bleibt auf diesem Gerät.</b> Es wird nicht hochgeladen und nicht gespeichert. Nur dein Suchwort geht an Openverse.</span></p>
 </header>
 
-<main class="fb-layout">
+<div class="fb-layout">
   <!-- Vorschau -->
   <section class="fb-vorschau" aria-label="Vorschau">
+    <div class="fb-buehne-box" id="buehne-box">
     <div class="fb-buehne" id="buehne">
       <canvas id="view" aria-label="Vorschau deines Bildes"></canvas>
       <div class="fb-leer" id="leer">
@@ -23,12 +24,13 @@
       </div>
       <p class="fb-farbe-hinweis" id="farbe-hinweis" hidden>Tippe auf das Grün im Bild.</p>
     </div>
-    <p class="fb-klein">Zieh mit dem Finger, um dich zu verschieben. Mit zwei Fingern wird es größer oder kleiner.</p>
+    </div>
+    <p class="fb-klein">Ein Finger: verschieben. Zwei Finger: größer, kleiner und drehen.</p>
     <p class="fb-quelle" id="quelle" hidden></p>
   </section>
 
   <!-- Bedienfeld -->
-  <div class="fb-panel">
+  <div class="fb-panel" id="panel" aria-label="Funktionen">
 
     <section class="fb-karte">
       <h2><span class="fb-nr">1</span>Foto</h2>
@@ -39,7 +41,7 @@
       <p class="fb-klein">Tipp: Hinter dir sollte nur das grüne Tuch zu sehen sein. Gutes Licht hilft.</p>
     </section>
 
-    <section class="fb-karte">
+    <section class="fb-karte fb-karte-breit">
       <h2><span class="fb-nr">2</span>Hintergrund</h2>
       <div class="fb-chips" id="chips" role="group" aria-label="Kategorien"></div>
       <form class="fb-suche" id="suche" role="search">
@@ -67,7 +69,7 @@
         <input type="range" id="groesse" min="10" max="300" value="100">
       </label>
       <label class="fb-regler" id="drehen-feld">Drehen <span id="drehen-wert" class="mono">0</span>
-        <input type="range" id="drehen" min="-30" max="30" value="0">
+        <input type="range" id="drehen" min="-180" max="180" value="0">
       </label>
       <div class="fb-zwei">
         <button class="fb-knopf" type="button" id="spiegeln">{ICON:spiegeln}Spiegeln</button>
@@ -95,7 +97,7 @@
     </fieldset>
 
   </div>
-</main>
+</div>
 
 <!-- Kamera -->
 <div class="fb-kamera" id="kamera" hidden>
