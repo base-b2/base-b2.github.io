@@ -1,0 +1,37 @@
+/* Base B | Startseite */
+.start { display: flex; flex-direction: column; gap: 56px; padding-top: 72px; }
+.start-oben { max-width: 760px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 32px; text-align: center; }
+.start-unter { display: block; margin-top: 10px; font-size: clamp(20px, 2.6vw, 28px); font-weight: 400; letter-spacing: 0; color: var(--bb-nebentext); }
+.sprung { display: flex; flex-direction: column; gap: 10px; text-align: left; }
+.sprung-feld {
+  display: flex; align-items: center; gap: 12px; height: 72px; padding: 0 20px;
+  border: 2px solid var(--bb-text); border-radius: var(--bb-radius-m); background: var(--bb-flaeche);
+}
+.sprung-feld:focus-within { outline: 2px solid var(--bb-fokus); outline-offset: 2px; }
+.sprung-zeichen { font-family: var(--bb-font-mono); font-size: 22px; font-weight: 700; color: var(--bb-akzent); }
+.sprung-feld input {
+  flex: 1; min-width: 0; border: none; outline: none; background: transparent;
+  font-family: var(--bb-font-mono); font-size: 22px; color: var(--bb-text);
+  caret-color: var(--bb-akzent);
+}
+.sprung-feld input::placeholder { color: var(--bb-nebentext); opacity: 1; }
+.sprung-taste { font-family: var(--bb-font-mono); font-size: 13px; color: var(--bb-nebentext); border: 1px solid var(--bb-linie); border-radius: 6px; padding: 4px 8px; flex: none; }
+.sprung-tipp { font-size: 14px; color: var(--bb-nebentext); text-align: center; }
+.sprung-antwort {
+  border: 1px solid var(--bb-linie); border-radius: var(--bb-radius-m); padding: 16px 20px;
+  font-family: var(--bb-font-mono); font-size: 15px; background: var(--bb-eisblau);
+}
+.sprung-antwort[hidden] { display: none; }
+.sprung-antwort ul { margin: 8px 0 0; padding-left: 20px; }
+/* Blinkender Block-Cursor, solange das Feld leer und nicht angetippt ist */
+.sprung-cursor { display: none; width: 13px; height: 26px; margin-right: -6px; background: var(--bb-akzent); flex: none; animation: bb-blinken 1.1s steps(1) infinite; }
+.sprung-feld.leer .sprung-cursor { display: block; }
+.sprung-feld.leer:focus-within .sprung-cursor { display: none; }
+@keyframes bb-blinken { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+section h2.etikett { font-weight: 400; margin-bottom: 20px; }
+@media (max-width: 600px) {
+  .start { padding-top: 32px; gap: 40px; }
+  .sprung-feld { height: 60px; padding: 0 14px; }
+  .sprung-feld input, .sprung-zeichen { font-size: 17px; }
+  .sprung-taste { display: none; }
+}

@@ -1,0 +1,77 @@
+/* Base B | Design-Token
+   Einzige Quelle für Farben, Schriften, Abstände und Ecken der Webseite.
+   Werte laut CD-Manual "Base B - Corporate Design Manual". */
+
+@font-face {
+  font-family: "Lexend";
+  src: url("/assets/fonts/lexend.woff") format("woff");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("/assets/fonts/jetbrains-mono.woff") format("woff");
+  font-weight: 100 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Farben hell (Standard) */
+  --bb-bordeaux: #6A1B2B;
+  --bb-tinte: #1C2E4A;
+  --bb-grund: #FFFFFF;
+  --bb-flaeche: #FFFFFF;
+  --bb-text: #1C2E4A;
+  --bb-nebentext: #5A6070;
+  --bb-akzent: #6A1B2B;
+  --bb-akzent-text: #FFFFFF;
+  --bb-lavendel: #E7E2F3;
+  --bb-aprikose: #F7E4D4;
+  --bb-eisblau: #DDEBF2;
+  --bb-erfolg: #2A9D5C;
+  --bb-fehler: #C62D3A;
+  --bb-fehler-grund: #FDECEC;
+  --bb-linie: #D8DBE2;
+  --bb-feld-rand: #A9AEBB;
+  --bb-fokus: #1C2E4A;
+
+  /* Schriften */
+  --bb-font-text: "Lexend", "Segoe UI", Arial, sans-serif;
+  --bb-font-mono: "JetBrains Mono", Consolas, monospace;
+
+  /* Abstände und Ecken */
+  --bb-space-1: 8px;
+  --bb-space-2: 16px;
+  --bb-space-3: 24px;
+  --bb-space-4: 32px;
+  --bb-space-6: 48px;
+  --bb-space-8: 64px;
+  --bb-radius-s: 8px;
+  --bb-radius-m: 12px;
+  --bb-breite: 1200px;
+
+  color-scheme: light;
+}
+
+/* Dunkelmodus: nur per Schalter, setzt data-theme="dunkel" auf <html> */
+:root[data-theme="dunkel"] {
+  --bb-grund: #24272E;
+  --bb-flaeche: #2E323A;
+  --bb-text: #ECEAF0;
+  --bb-nebentext: #A9AEBB;
+  --bb-akzent: #E9A3AE;
+  --bb-akzent-text: #24272E;
+  --bb-lavendel: #3A3550;
+  --bb-aprikose: #3B3631;
+  --bb-eisblau: #2C3A44;
+  --bb-erfolg: #5FCB8A;
+  --bb-fehler: #FF8E8E;
+  --bb-fehler-grund: #3B2A2E;
+  --bb-linie: #3E434D;
+  --bb-feld-rand: #8A909C;
+  --bb-fokus: #E9A3AE;
+
+  color-scheme: dark;
+}

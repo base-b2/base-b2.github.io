@@ -1,0 +1,113 @@
+<div class="huelle">
+{SEITENKOPF}
+<div class="zg">
+
+<section class="karte zg-einstellungen" aria-label="Einstellungen">
+  <div class="feld">
+    <label for="kategorie">Kategorie</label>
+    <select class="eingabe" id="kategorie">
+      <option value="zahlen">Zahlen</option>
+      <option value="buchstaben">Buchstaben (z. B. Stadt-Land-Fluss)</option>
+      <option value="wuerfel">Würfel</option>
+      <option value="muenze">Münze</option>
+      <option value="import">Eigene Liste (aus Datei)</option>
+    </select>
+  </div>
+
+  <!-- Zahlen -->
+  <fieldset class="zg-panel" data-panel="zahlen">
+    <legend class="feld-titel">Bereich</legend>
+    <div class="zg-pillen" role="radiogroup" aria-label="Bereich">
+      <label class="zg-pille"><input type="radio" name="bereich" value="1-10">1-10</label>
+      <label class="zg-pille"><input type="radio" name="bereich" value="1-100" checked>1-100</label>
+      <label class="zg-pille"><input type="radio" name="bereich" value="1-1000">1-1.000</label>
+      <label class="zg-pille"><input type="radio" name="bereich" value="eigen">Eigener Bereich</label>
+    </div>
+    <div class="zg-zwei" id="eigener-bereich" hidden>
+      <div class="feld"><label for="von">Von</label><input class="eingabe" id="von" type="number" inputmode="numeric" value="1"></div>
+      <div class="feld"><label for="bis">Bis</label><input class="eingabe" id="bis" type="number" inputmode="numeric" value="50"></div>
+    </div>
+  </fieldset>
+
+  <!-- Buchstaben -->
+  <fieldset class="zg-panel" data-panel="buchstaben" hidden>
+    <legend class="feld-titel">Buchstaben <span class="zg-zaehler mono" id="buchstaben-zahl"></span></legend>
+    <p class="zg-klein">Antippen zum An- und Abwählen.</p>
+    <div class="zg-buchstaben" id="buchstaben"></div>
+    <div class="zg-reihe">
+      <button class="knopf knopf-zwei knopf-klein" type="button" data-buchstaben="alle">Alle</button>
+      <button class="knopf knopf-zwei knopf-klein" type="button" data-buchstaben="ohne">Ohne Q, X, Y</button>
+      <button class="knopf knopf-zwei knopf-klein" type="button" data-buchstaben="keine">Keine</button>
+    </div>
+  </fieldset>
+
+  <!-- Würfel / Münze haben keine eigenen Optionen außer der Anzahl -->
+  <div class="zg-panel" data-panel="wuerfel" hidden><p class="zg-klein">Jeder Würfel zeigt 1 bis 6. Bei mehreren Würfeln steht die Summe darunter.</p></div>
+  <div class="zg-panel" data-panel="muenze" hidden><p class="zg-klein">Kopf oder Zahl.</p></div>
+
+  <!-- Eigene Liste -->
+  <div class="zg-panel" data-panel="import" hidden>
+    <p class="zg-klein">Eine Tabelle mit <b>einer Spalte</b>: In der ersten Zeile steht die Überschrift, darunter die Einträge. Die Überschrift wird zur neuen Kategorie.</p>
+    <label class="zg-ablage" id="ablage">
+      {ICON:liste}
+      <span class="zg-ablage-titel">Datei auswählen oder hier ablegen</span>
+      <span class="zg-klein">Excel (.xlsx), CSV oder Text</span>
+      <input type="file" id="datei" accept=".xlsx,.csv,.txt,text/csv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="unsichtbar">
+    </label>
+    <details class="zg-einfuegen">
+      <summary>Oder Liste direkt einfügen</summary>
+      <div class="feld" style="margin-top: 12px">
+        <label for="liste-text">Erste Zeile Überschrift, dann ein Eintrag pro Zeile</label>
+        <textarea class="eingabe" id="liste-text" rows="6" placeholder="Klasse 4a&#10;Anna&#10;Ben&#10;Can"></textarea>
+      </div>
+      <button class="knopf knopf-zwei knopf-klein" type="button" id="liste-uebernehmen" style="margin-top: 10px">Liste übernehmen</button>
+    </details>
+    <p class="zg-klein zg-schloss">{ICON:schloss} Die Datei bleibt auf diesem Gerät und wird nicht hochgeladen.</p>
+  </div>
+
+  <p class="fehlermeldung" id="fehler" role="alert" hidden></p>
+
+  <div class="zg-zwei">
+    <div class="feld">
+      <label for="anzahl">Wie viele auf einmal?</label>
+      <input class="eingabe" id="anzahl" type="number" inputmode="numeric" min="1" max="50" value="1">
+    </div>
+    <fieldset class="feld zg-pool" id="pool-feld">
+      <legend class="feld-titel">Bereits gezogene Werte</legend>
+      <label class="zg-check"><input type="radio" name="pool" value="entfernen" checked> aus dem Pool entfernen</label>
+      <label class="zg-check"><input type="radio" name="pool" value="wieder"> dürfen wieder kommen</label>
+    </fieldset>
+  </div>
+  <label class="zg-check"><input type="checkbox" id="animation" checked> Kurze Zieh-Animation</label>
+
+  <button class="knopf zg-ziehen" type="button" id="ziehen">{ICON:wuerfel}<span id="ziehen-text">Ziehen</span></button>
+</section>
+
+<section class="karte zg-ergebnis" aria-label="Ergebnis">
+  <div class="zg-ergebnis-kopf">
+    <span class="etikett" id="ergebnis-titel">Ergebnis</span>
+    <span class="zg-klein mono" id="pool-info"></span>
+  </div>
+  <div class="zg-anzeige" id="anzeige" aria-live="polite">
+    <div class="zg-werte" id="werte"><span class="zg-wert zg-leer">?</span></div>
+    <p class="zg-zusatz" id="zusatz">Bereit, wenn Sie es sind.</p>
+  </div>
+  <div class="zg-reihe">
+    <button class="knopf knopf-zwei" type="button" id="beamer">{ICON:beamer}Großanzeige</button>
+    <button class="knopf knopf-zwei" type="button" id="neu">Neu beginnen</button>
+  </div>
+  <div class="feld">
+    <span class="feld-titel">Bisher gezogen</span>
+    <div class="zg-verlauf" id="verlauf"><span class="zg-klein">Noch nichts.</span></div>
+  </div>
+</section>
+</div>
+</div>
+
+<div class="zg-gross" id="gross" hidden>
+  <button class="kopf-knopf zg-gross-zu" type="button" id="gross-zu" aria-label="Großanzeige schließen">✗</button>
+  <span class="etikett" id="gross-titel">Ergebnis</span>
+  <div class="zg-werte zg-gross-werte" id="gross-werte"></div>
+  <p class="zg-zusatz" id="gross-zusatz"></p>
+  <p class="zg-klein zg-gross-tipp"><span class="kap">Leertaste</span> oder Tippen: neu ziehen | <span class="kap">Esc</span>: schließen</p>
+</div>

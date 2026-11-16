@@ -1,0 +1,22 @@
+Base B | Hinweise zum Hochladen (diese Datei nicht mit hochladen)
+
+1. Alle Dateien und Ordner aus diesem Paket ins Repository base-b2.github.io laden
+   (bestehende Dateien mit gleichem Namen ersetzen, z. B. index.html und README.md).
+
+2. Danach im Repository diese ALTEN Dateien löschen, sie werden nicht mehr gebraucht:
+   - fotobox/app.js
+   - fotobox/style.css
+   (fotobox/index.html bleibt, sie leitet jetzt auf die neue Fotobox weiter.)
+
+3. Nicht anfassen: CNAME, aufgabe1ab/, aufgabe1c/.
+
+4. Der Ordner _werkstatt wird von GitHub Pages automatisch nicht veröffentlicht.
+   Er enthält den Seitengenerator (python3 _werkstatt/seiten.py).
+
+5. Prüfen nach dem Hochladen (ca. 1-2 Minuten warten):
+   - https://base-b.de
+   - https://base-b.de/werkzeuge/zufallsgenerator/
+   - https://base-b.de/werkzeuge/fotobox/
+   - https://base-b.de/irgendwas  (sollte die neue Fehlerseite zeigen)
+
+6. Die Adresse kontakt@base-b.de muss beim Domain-Anbieter eingerichtet sein.

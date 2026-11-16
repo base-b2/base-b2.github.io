@@ -1,201 +1,84 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Random Number Generator</title>
-
-<style>
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Arial,Helvetica,sans-serif;
-}
-
-body{
-    min-height:100vh;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    background:linear-gradient(135deg,#4facfe,#00f2fe,#43e97b);
-    background-size:400% 400%;
-    animation:bg 15s ease infinite;
-}
-
-@keyframes bg{
-    0%{background-position:0% 50%;}
-    50%{background-position:100% 50%;}
-    100%{background-position:0% 50%;}
-}
-
-.container{
-    width:420px;
-    max-width:95%;
-    background:rgba(255,255,255,0.9);
-    backdrop-filter:blur(10px);
-    border-radius:20px;
-    padding:30px;
-    box-shadow:0 10px 30px rgba(0,0,0,.2);
-}
-
-h1{
-    text-align:center;
-    margin-bottom:20px;
-}
-
-label{
-    display:block;
-    margin-top:12px;
-    font-weight:bold;
-}
-
-input,select{
-    width:100%;
-    padding:10px;
-    margin-top:5px;
-    border-radius:8px;
-    border:1px solid #ccc;
-}
-
-.checkbox{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    margin-top:15px;
-}
-
-.checkbox input{
-    width:auto;
-}
-
-button{
-    width:100%;
-    margin-top:20px;
-    padding:14px;
-    border:none;
-    border-radius:10px;
-    background:#2196f3;
-    color:white;
-    font-size:18px;
-    cursor:pointer;
-    transition:.3s;
-}
-
-button:hover{
-    background:#1976d2;
-}
-
-.result{
-    margin-top:25px;
-    text-align:center;
-    font-size:42px;
-    font-weight:bold;
-    color:#1565c0;
-}
-
-.history{
-    margin-top:20px;
-    max-height:150px;
-    overflow:auto;
-    background:#f4f4f4;
-    padding:10px;
-    border-radius:10px;
-}
-
-.history h3{
-    margin-bottom:10px;
-}
-</style>
-
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Base B</title>
+<meta name="description" content="Kleine Werkzeuge, die einfach funktionieren.">
+<meta name="theme-color" content="#1C2E4A">
+<script>try{if(localStorage.getItem('bb-thema')==='dunkel')document.documentElement.setAttribute('data-theme','dunkel')}catch(e){}</script>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preload" href="/assets/fonts/lexend.woff" as="font" type="font/woff" crossorigin>
+<link rel="stylesheet" href="/assets/css/tokens.css">
+<link rel="stylesheet" href="/assets/css/base.css">
+<link rel="stylesheet" href="/assets/css/start.css">
 </head>
 <body>
-
-<div class="container">
-
-<h1>🎲 Random Number Generator</h1>
-
-<label>Minimum</label>
-<input type="number" id="min" value="1">
-
-<label>Maximum</label>
-<input type="number" id="max" value="100">
-
-<label>Typ</label>
-<select id="type">
-<option value="int">Ganze Zahl</option>
-<option value="float">Dezimalzahl</option>
-</select>
-
-<label>Nachkommastellen</label>
-<input type="number" id="decimals" value="2" min="0" max="10">
-
-<div class="checkbox">
-<input type="checkbox" id="unique">
-<label for="unique">Keine Wiederholungen (nur Ganzzahlen)</label>
+<a class="unsichtbar" href="#inhalt">Zum Inhalt springen</a>
+<header class="kopf">
+<div class="huelle">
+<a class="logo" href="/" aria-label="Base B, zur Startseite"><img class="logo-hell" src="/assets/img/web_logo_hell.svg" alt="Base B" width="157" height="34"><img class="logo-dunkel" src="/assets/img/web_logo_dunkel.svg" alt="Base B" width="157" height="34"></a>
+<nav class="navi" aria-label="Hauptmenü"><ul class="navi-liste"><li class="navi-punkt"><button class="navi-knopf" type="button" aria-expanded="false" aria-controls="menue-werkzeuge">Werkzeuge<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6,9 12,15 18,9"/></svg></button><ul class="untermenue" id="menue-werkzeuge" hidden><li><a href="/werkzeuge/"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="9" y1="7" x2="20" y2="7"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="17" x2="20" y2="17"/><circle cx="5" cy="7" r="1" fill="currentColor"/><circle cx="5" cy="12" r="1" fill="currentColor"/><circle cx="5" cy="17" r="1" fill="currentColor"/></svg>Alle Werkzeuge</a></li><li><a href="/werkzeuge/zufallsgenerator/"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor"/></svg>Zufallsgenerator</a></li><li><a href="/werkzeuge/fotobox/"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5a2 2 0 0 1 2-2h2l1.5-2h5L16 6.5h2a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.5"/></svg>Fotobox</a></li></ul></li><li class="navi-punkt"><button class="navi-knopf" type="button" aria-expanded="false" aria-controls="menue-leitfaeden">Leitfäden<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6,9 12,15 18,9"/></svg></button><ul class="untermenue" id="menue-leitfaeden" hidden><li><a href="/leitfaeden/"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/></svg>Alle Leitfäden</a></li></ul></li><li class="navi-punkt"><button class="navi-knopf" type="button" aria-expanded="false" aria-controls="menue-spiele">Spiele<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6,9 12,15 18,9"/></svg></button><ul class="untermenue" id="menue-spiele" hidden><li><a href="/spiele/"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="7" width="19" height="11" rx="4"/><line x1="7.5" y1="10.5" x2="7.5" y2="14.5"/><line x1="5.5" y1="12.5" x2="9.5" y2="12.5"/><circle cx="15.5" cy="11" r="1" fill="currentColor"/><circle cx="17.5" cy="14" r="1" fill="currentColor"/></svg>Alle Spiele</a></li></ul></li><li class="navi-punkt"><button class="navi-knopf" type="button" aria-expanded="false" aria-controls="menue-ueber">Über<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6,9 12,15 18,9"/></svg></button><ul class="untermenue" id="menue-ueber" hidden><li><a href="/ueber/"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="8" r="0.8" fill="currentColor"/></svg>Über Base B</a></li><li><a href="/kontakt/"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13" rx="2"/><polyline points="4,7 12,13 20,7"/></svg>Kontakt</a></li><li><a href="/impressum/"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="6" x2="19" y2="6"/><line x1="5" y1="10" x2="19" y2="10"/><line x1="5" y1="14" x2="19" y2="14"/><line x1="5" y1="18" x2="13" y2="18"/></svg>Impressum</a></li><li><a href="/datenschutz/"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>Datenschutz</a></li></ul></li></ul><button class="kopf-knopf thema-knopf" type="button" aria-label="Dunkelmodus einschalten"><svg class="mond" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 14.5A7.5 7.5 0 1 1 9.5 4.5a6 6 0 0 0 10 10z"/></svg><svg class="sonne" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2.5" x2="12" y2="4.5"/><line x1="12" y1="19.5" x2="12" y2="21.5"/><line x1="2.5" y1="12" x2="4.5" y2="12"/><line x1="19.5" y1="12" x2="21.5" y2="12"/><line x1="5.3" y1="5.3" x2="6.7" y2="6.7"/><line x1="17.3" y1="17.3" x2="18.7" y2="18.7"/><line x1="5.3" y1="18.7" x2="6.7" y2="17.3"/><line x1="17.3" y1="6.7" x2="18.7" y2="5.3"/></svg></button></nav>
+<div class="kopf-rechts"><button class="kopf-knopf thema-knopf" type="button" aria-label="Dunkelmodus einschalten"><svg class="mond" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 14.5A7.5 7.5 0 1 1 9.5 4.5a6 6 0 0 0 10 10z"/></svg><svg class="sonne" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2.5" x2="12" y2="4.5"/><line x1="12" y1="19.5" x2="12" y2="21.5"/><line x1="2.5" y1="12" x2="4.5" y2="12"/><line x1="19.5" y1="12" x2="21.5" y2="12"/><line x1="5.3" y1="5.3" x2="6.7" y2="6.7"/><line x1="17.3" y1="17.3" x2="18.7" y2="18.7"/><line x1="5.3" y1="18.7" x2="6.7" y2="17.3"/><line x1="17.3" y1="6.7" x2="18.7" y2="5.3"/></svg></button><button class="kopf-knopf menue-knopf" type="button" aria-expanded="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg><span class="menue-text">Menü</span></button></div>
 </div>
-
-<button onclick="generate()">Zahl erzeugen</button>
-
-<div class="result" id="result">-</div>
-
-<div class="history">
-<h3>Verlauf</h3>
-<div id="history"></div>
+</header>
+<main id="inhalt">
+<div class="huelle start">
+<div class="start-oben">
+<h1>Willkommen auf <span style="white-space: nowrap">Base B.</span><span class="start-unter">Kleine Werkzeuge, die einfach funktionieren.</span></h1>
+<form class="sprung" id="sprung" role="search" autocomplete="off">
+<label class="etikett" for="sprung-eingabe">Wohin soll es gehen?</label>
+<div class="sprung-feld">
+<span class="sprung-zeichen" aria-hidden="true">&gt;</span>
+<span class="sprung-cursor" aria-hidden="true"></span>
+<input id="sprung-eingabe" type="text" spellcheck="false" placeholder="zufall, fotobox, hilfe" aria-describedby="sprung-tipp">
+<span class="sprung-taste" aria-hidden="true">Enter</span>
 </div>
-
+<p class="sprung-tipp" id="sprung-tipp">Tippen filtert die Kacheln, <span class="kap">Enter</span> öffnet den ersten Treffer.</p>
+<div class="sprung-antwort" id="sprung-antwort" role="status" aria-live="polite" hidden></div>
+</form>
 </div>
-
-<script>
-
-let used=[];
-
-function generate(){
-
-    let min=Number(document.getElementById("min").value);
-    let max=Number(document.getElementById("max").value);
-    let type=document.getElementById("type").value;
-    let decimals=Number(document.getElementById("decimals").value);
-    let unique=document.getElementById("unique").checked;
-
-    if(max<=min){
-        alert("Maximum muss größer als Minimum sein.");
-        return;
-    }
-
-    let number;
-
-    if(type==="int"){
-
-        if(unique){
-
-            if(used.length>=max-min+1){
-                alert("Alle Zahlen wurden bereits erzeugt.");
-                return;
-            }
-
-            do{
-                number=Math.floor(Math.random()*(max-min+1))+min;
-            }while(used.includes(number));
-
-            used.push(number);
-
-        }else{
-            number=Math.floor(Math.random()*(max-min+1))+min;
-        }
-
-    }else{
-        number=(Math.random()*(max-min)+min).toFixed(decimals);
-    }
-
-    document.getElementById("result").textContent=number;
-
-    let history=document.getElementById("history");
-    history.innerHTML="<div>"+number+"</div>"+history.innerHTML;
-
-}
-
-</script>
-
+<section aria-labelledby="alles">
+<h2 class="etikett" id="alles">Alles auf Base B</h2>
+<div class="kacheln" id="kacheln">
+<a class="kachel " href="/werkzeuge/zufallsgenerator/" data-suche="zufall zufallsgenerator zahl zahlen buchstaben würfel wuerfel münze muenze los losen auslosen namen liste stadt land fluss">
+<div class="kachel-kopf"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor"/></svg><span class="kachel-etikett">WERKZEUG</span></div>
+<div class="kachel-titel">Zufallsgenerator</div>
+<div class="kachel-text">Zahlen, Buchstaben, Würfel, Münze oder Namen aus Ihrer Liste.</div>
+<div class="kachel-mehr">Öffnen <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="13,6 19,12 13,18"/></svg></div>
+</a>
+<a class="kachel " href="/werkzeuge/fotobox/" data-suche="fotobox foto kamera greenscreen hintergrund bild">
+<div class="kachel-kopf"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5a2 2 0 0 1 2-2h2l1.5-2h5L16 6.5h2a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.5"/></svg><span class="kachel-etikett">WERKZEUG</span></div>
+<div class="kachel-titel">Fotobox</div>
+<div class="kachel-text">Greenscreen weg, neuer Hintergrund. Gemacht für Kinder ab 10.</div>
+<div class="kachel-mehr">Öffnen <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="13,6 19,12 13,18"/></svg></div>
+</a>
+<a class="kachel kachel-lav" href="/leitfaeden/" data-suche="leitfaden leitfäden anleitung word excel powerpoint office">
+<div class="kachel-kopf"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/></svg><span class="kachel-etikett">LEITFÄDEN</span></div>
+<div class="kachel-titel">Leitfäden</div>
+<div class="kachel-text">Word, Excel und Co. Schritt für Schritt. Die ersten folgen bald.</div>
+<div class="kachel-mehr">Öffnen <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="13,6 19,12 13,18"/></svg></div>
+</a>
+<a class="kachel kachel-apr" href="/spiele/" data-suche="spiel spiele plattformer game">
+<div class="kachel-kopf"><svg width="29" height="40" viewBox="0 0 8 11" shape-rendering="crispEdges" aria-hidden="true"><rect x="0" y="0" width="1" height="1" fill="currentColor"/><rect x="0" y="1" width="1" height="1" fill="currentColor"/><rect x="0" y="2" width="1" height="1" fill="currentColor"/><rect x="3" y="2" width="1" height="1" fill="#6A1B2B"/><rect x="4" y="2" width="1" height="1" fill="#6A1B2B"/><rect x="5" y="2" width="1" height="1" fill="#6A1B2B"/><rect x="0" y="3" width="1" height="1" fill="currentColor"/><rect x="0" y="4" width="1" height="1" fill="currentColor"/><rect x="1" y="4" width="1" height="1" fill="currentColor"/><rect x="2" y="4" width="1" height="1" fill="currentColor"/><rect x="3" y="4" width="1" height="1" fill="currentColor"/><rect x="4" y="4" width="1" height="1" fill="currentColor"/><rect x="5" y="4" width="1" height="1" fill="currentColor"/><rect x="6" y="4" width="1" height="1" fill="currentColor"/><rect x="0" y="5" width="1" height="1" fill="currentColor"/><rect x="2" y="5" width="1" height="1" fill="currentColor"/><rect x="5" y="5" width="1" height="1" fill="currentColor"/><rect x="0" y="6" width="1" height="1" fill="currentColor"/><rect x="1" y="6" width="1" height="1" fill="currentColor"/><rect x="2" y="6" width="1" height="1" fill="currentColor"/><rect x="3" y="6" width="1" height="1" fill="currentColor"/><rect x="4" y="6" width="1" height="1" fill="currentColor"/><rect x="5" y="6" width="1" height="1" fill="currentColor"/><rect x="6" y="6" width="1" height="1" fill="currentColor"/><rect x="0" y="7" width="1" height="1" fill="currentColor"/><rect x="6" y="7" width="1" height="1" fill="currentColor"/><rect x="0" y="8" width="1" height="1" fill="currentColor"/><rect x="1" y="8" width="1" height="1" fill="currentColor"/><rect x="2" y="8" width="1" height="1" fill="currentColor"/><rect x="3" y="8" width="1" height="1" fill="currentColor"/><rect x="4" y="8" width="1" height="1" fill="currentColor"/><rect x="5" y="8" width="1" height="1" fill="currentColor"/><rect x="6" y="8" width="1" height="1" fill="currentColor"/><rect x="2" y="9" width="1" height="1" fill="currentColor"/><rect x="5" y="9" width="1" height="1" fill="currentColor"/><rect x="2" y="10" width="1" height="1" fill="currentColor"/><rect x="5" y="10" width="1" height="1" fill="currentColor"/></svg><span class="kachel-etikett">SPIELE</span></div>
+<div class="kachel-titel">Plattformer</div>
+<div class="kachel-text">Hüpfen mit Bits. In Arbeit, bitte nicht drängeln.</div>
+<div class="kachel-mehr">Öffnen <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="13,6 19,12 13,18"/></svg></div>
+</a>
+</div>
+<p class="kachel-text" id="keine-treffer" hidden>Dazu gibt es noch nichts. Tippen Sie <span class="mono">hilfe</span> für alle Befehle.</p>
+</section>
+</div>
+</main>
+<footer class="fuss">
+<div class="huelle">
+<nav aria-label="Fußzeile"><a href="/ueber/">Über Base B</a><a href="/kontakt/">Kontakt</a><a href="/impressum/">Impressum</a><a href="/datenschutz/">Datenschutz</a></nav>
+<span class="mono">base-b.de | kein Tracking, keine Werbung, nur Bits</span>
+</div>
+</footer>
+<script src="/assets/js/site.js" defer></script>
+<script src="/assets/js/start.js" defer></script>
 </body>
 </html>
