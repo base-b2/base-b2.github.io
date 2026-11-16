@@ -86,6 +86,8 @@
   /* ---------- Foto vorhanden: Bedienfeld freischalten ---------- */
   function fotoGeladen() {
     document.body.classList.add('hat-foto');
+    document.body.classList.remove('leer-offen');
+    $('#bildleiste').hidden = false;
     $$('.braucht-foto').forEach((f) => { f.disabled = false; });
   }
 
@@ -254,16 +256,9 @@
 
   /* ---------- Regler ---------- */
   function aktualisiereRegler() {
-    const g = $('#groesse');
-    if (st.ziel === 'foto') { g.min = 10; g.max = 300; g.value = Math.round(st.pos.h * 100); }
-    else { g.min = 100; g.max = 400; g.value = Math.round(st.hgPos.s * 100); }
-    $('#groesse-wert').textContent = g.value + ' %';
-    const grad = Math.round(st.ziel === 'foto' ? st.drehung : st.hgPos.rot);
-    $('#drehen').value = grad;
-    $('#drehen-wert').textContent = grad + ' Grad';
     const aus = st.ziel !== 'foto';
     $('#spiegeln').disabled = aus;
-    $('#spiegeln').classList.toggle('an', st.spiegel);
+    $('#spiegeln').classList.toggle('an', st.spiegel && !aus);
     $('#spiegeln').setAttribute('aria-pressed', st.spiegel ? 'true' : 'false');
   }
   function allesZuruecksetzen() {
@@ -272,19 +267,15 @@
     st.drehung = 0; st.spiegel = false;
   }
   $$('input[name="ziel"]').forEach((r) => r.addEventListener('change', () => { st.ziel = r.value; aktualisiereRegler(); }));
-  $('#groesse').addEventListener('input', (e) => {
-    const v = Number(e.target.value) / 100;
-    if (st.ziel === 'foto') st.pos.h = v; else st.hgPos.s = v;
-    plane();
-  });
   function winkel(g) { g = ((g + 180) % 360 + 360) % 360 - 180; return Math.abs(g) < 0.5 ? 0 : g; }
   function drehe(grad, absolut = false) {
     if (st.ziel === 'foto') st.drehung = winkel(absolut ? grad : st.drehung + grad);
     else { st.hgPos.rot = winkel(absolut ? grad : st.hgPos.rot + grad); begrenzeHg(); }
   }
-  $('#drehen').addEventListener('input', (e) => { drehe(Number(e.target.value), true); plane(); });
   $('#spiegeln').addEventListener('click', () => { st.spiegel = !st.spiegel; plane(); });
   $('#zuruecksetzen').addEventListener('click', () => { allesZuruecksetzen(); plane(); });
+  $('#neues-foto').addEventListener('click', () => { setzeWaehlen(false); document.body.classList.add('leer-offen'); });
+  $('#leer-zu').addEventListener('click', () => document.body.classList.remove('leer-offen'));
   function bindeRegler(id, schl) {
     const el = $('#' + id), aus = $('#' + id + '-wert');
     const upd = () => { st[schl] = Number(el.value); aus.textContent = el.value; };

@@ -1,101 +1,86 @@
 <header class="fb-kopf">
-  <a class="fb-zurueck" href="/">{ICON:zurueck}<span>Base B</span></a>
+  <a class="fb-zurueck" href="/" aria-label="Zurück zu Base B">{ICON:zurueck}<span>Base B</span></a>
   <div class="fb-marke">
-    <img src="/assets/img/BaseB_Bildmarke_farbig.svg" alt="" width="30" height="30" class="fb-marke-hell">
-    <img src="/assets/img/BaseB_Bildmarke_negativ.svg" alt="" width="30" height="30" class="fb-marke-dunkel">
+    <img src="/assets/img/BaseB_Bildmarke_farbig.svg" alt="" width="26" height="26" class="fb-marke-hell">
+    <img src="/assets/img/BaseB_Bildmarke_negativ.svg" alt="" width="26" height="26" class="fb-marke-dunkel">
     <h1>Fotobox</h1>
   </div>
-  <p class="fb-hinweis">{ICON:schloss}<span><b>Dein Foto bleibt auf diesem Gerät.</b> Es wird nicht hochgeladen und nicht gespeichert. Nur dein Suchwort geht an Openverse.</span></p>
 </header>
 
 <div class="fb-layout">
-  <!-- Vorschau -->
+  <!-- Obere Hälfte: Ergebnis -->
   <section class="fb-vorschau" aria-label="Vorschau">
     <div class="fb-buehne-box" id="buehne-box">
-    <div class="fb-buehne" id="buehne">
-      <canvas id="view" aria-label="Vorschau deines Bildes"></canvas>
+      <div class="fb-buehne" id="buehne">
+        <canvas id="view" aria-label="Vorschau deines Bildes"></canvas>
+        <p class="fb-farbe-hinweis" id="farbe-hinweis" hidden>Tippe auf das Grün im Bild.</p>
+      </div>
       <div class="fb-leer" id="leer">
         <p class="fb-leer-titel">Mach ein Foto vor dem grünen Tuch!</p>
-        <p class="fb-leer-text">Das Grün wird automatisch entfernt.</p>
+        <p class="fb-leer-text">Das Grün wird automatisch entfernt. Dein Foto bleibt auf diesem Gerät.</p>
         <div class="fb-zwei">
           <button class="fb-knopf fb-primaer" type="button" data-aktion="kamera">{ICON:kamera}Foto machen</button>
-          <button class="fb-knopf" type="button" data-aktion="datei">{ICON:bild}Bild aussuchen</button>
+          <button class="fb-knopf" type="button" data-aktion="datei">{ICON:bild}Aus der Galerie</button>
         </div>
+        <button class="fb-link" type="button" id="leer-zu">Abbrechen</button>
       </div>
-      <p class="fb-farbe-hinweis" id="farbe-hinweis" hidden>Tippe auf das Grün im Bild.</p>
     </div>
+
+    <div class="fb-bildleiste" id="bildleiste" hidden>
+      <div class="fb-umschalter" role="radiogroup" aria-label="Was bewegen deine Finger?">
+        <label><input type="radio" name="ziel" value="foto" checked>Foto</label>
+        <label><input type="radio" name="ziel" value="hg">Hintergrund</label>
+      </div>
+      <button class="fb-werkzeug" type="button" id="spiegeln">{ICON:spiegeln}<span>Spiegeln</span></button>
+      <button class="fb-werkzeug" type="button" id="zuruecksetzen">{ICON:zuruecksetzen}<span>Zurück</span></button>
+      <button class="fb-werkzeug" type="button" id="neues-foto">{ICON:kamera}<span>Neues Foto</span></button>
     </div>
-    <p class="fb-klein">Ein Finger: verschieben. Zwei Finger: größer, kleiner und drehen.</p>
-    <p class="fb-quelle" id="quelle" hidden></p>
+    <p class="fb-klein fb-gesten" id="gesten">Ein Finger: verschieben. Zwei Finger: größer, kleiner und drehen.</p>
   </section>
 
-  <!-- Bedienfeld -->
-  <div class="fb-panel" id="panel" aria-label="Funktionen">
+  <!-- Untere Hälfte: Funktionen -->
+  <div class="fb-panel" id="panel">
+    <div class="fb-panel-inhalt">
+      <p class="fb-hinweis">{ICON:schloss}<span><b>Dein Foto bleibt auf diesem Gerät.</b> Es wird nicht hochgeladen und nicht gespeichert. Nur dein Suchwort geht an Openverse.</span></p>
 
-    <section class="fb-karte">
-      <h2><span class="fb-nr">1</span>Foto</h2>
-      <div class="fb-zwei">
-        <button class="fb-knopf fb-primaer" type="button" data-aktion="kamera">{ICON:kamera}Foto machen</button>
-        <button class="fb-knopf" type="button" data-aktion="datei">{ICON:bild}Bild aussuchen</button>
-      </div>
-      <p class="fb-klein">Tipp: Hinter dir sollte nur das grüne Tuch zu sehen sein. Gutes Licht hilft.</p>
-    </section>
+      <section class="fb-abschnitt" aria-labelledby="t-hg">
+        <h2 id="t-hg"><span class="fb-nr">1</span>Hintergrund</h2>
+        <div class="fb-chips" id="chips" role="group" aria-label="Kategorien"></div>
+        <form class="fb-suche" id="suche" role="search">
+          <label for="suchfeld" class="unsichtbar">Hintergrund suchen</label>
+          <input id="suchfeld" type="search" placeholder="Eigene Suche, z. B. Dschungel" autocomplete="off" enterkeyhint="search">
+          <button class="fb-suchen" type="submit">Suchen</button>
+        </form>
+        <p class="fb-status" id="status" role="status" aria-live="polite"></p>
+        <div class="fb-bilder" id="bilder"></div>
+        <button class="fb-knopf fb-breit" type="button" id="mehr" hidden>Mehr Bilder laden</button>
+        <div class="fb-zwei">
+          <button class="fb-knopf" type="button" data-aktion="hg-datei">{ICON:upload}Eigenes Bild</button>
+          <label class="fb-knopf fb-farbe">{ICON:farbe}Einfarbig<input type="color" id="hg-farbe" value="#DDEBF2"></label>
+        </div>
+        <p class="fb-quelle" id="quelle" hidden></p>
+        <p class="fb-klein">Freie Bilder von <a href="https://openverse.org" target="_blank" rel="noopener">Openverse</a>.</p>
+      </section>
 
-    <section class="fb-karte fb-karte-breit">
-      <h2><span class="fb-nr">2</span>Hintergrund</h2>
-      <div class="fb-chips" id="chips" role="group" aria-label="Kategorien"></div>
-      <form class="fb-suche" id="suche" role="search">
-        <label for="suchfeld" class="unsichtbar">Hintergrund suchen</label>
-        <input id="suchfeld" type="search" placeholder="Eigene Suche, z. B. Dschungel" autocomplete="off" enterkeyhint="search">
-        <button class="fb-suchen" type="submit">Suchen</button>
-      </form>
-      <p class="fb-status" id="status" role="status" aria-live="polite"></p>
-      <div class="fb-bilder" id="bilder"></div>
-      <button class="fb-knopf fb-breit" type="button" id="mehr" hidden>Mehr Bilder laden</button>
-      <div class="fb-zwei">
-        <button class="fb-knopf" type="button" data-aktion="hg-datei">{ICON:upload}Eigenes Bild</button>
-        <label class="fb-knopf fb-farbe">{ICON:farbe}Einfarbig<input type="color" id="hg-farbe" value="#DDEBF2"></label>
-      </div>
-      <p class="fb-klein">Freie Bilder von <a href="https://openverse.org" target="_blank" rel="noopener">Openverse</a>.</p>
-    </section>
+      <fieldset class="fb-abschnitt braucht-foto" disabled>
+        <legend><span class="fb-nr">2</span>Grün entfernen</legend>
+        <label class="fb-regler">Stärke <span id="tol-wert" class="mono">60</span>
+          <input type="range" id="tol" min="0" max="100" value="60">
+        </label>
+        <label class="fb-regler">Kanten weich <span id="soft-wert" class="mono">25</span>
+          <input type="range" id="soft" min="0" max="100" value="25">
+        </label>
+        <button class="fb-knopf" type="button" id="farbe-waehlen">{ICON:pipette}Grün im Bild antippen</button>
+        <p class="fb-klein">Noch Grün zu sehen: Stärke höher. Fehlt etwas von dir: Stärke niedriger.</p>
+      </fieldset>
+    </div>
 
-    <fieldset class="fb-karte braucht-foto" disabled>
-      <legend><span class="fb-nr">3</span>Anpassen</legend>
-      <div class="fb-umschalter" role="radiogroup" aria-label="Was willst du bewegen?">
-        <label><input type="radio" name="ziel" value="foto" checked>Foto bewegen</label>
-        <label><input type="radio" name="ziel" value="hg">Hintergrund bewegen</label>
-      </div>
-      <label class="fb-regler">Größe <span id="groesse-wert" class="mono">100</span>
-        <input type="range" id="groesse" min="10" max="300" value="100">
-      </label>
-      <label class="fb-regler" id="drehen-feld">Drehen <span id="drehen-wert" class="mono">0</span>
-        <input type="range" id="drehen" min="-180" max="180" value="0">
-      </label>
-      <div class="fb-zwei">
-        <button class="fb-knopf" type="button" id="spiegeln">{ICON:spiegeln}Spiegeln</button>
-        <button class="fb-knopf" type="button" id="zuruecksetzen">{ICON:zuruecksetzen}Zurücksetzen</button>
-      </div>
+    <fieldset class="fb-speicherleiste braucht-foto" disabled>
+      <legend class="unsichtbar">Speichern</legend>
+      <label class="fb-check"><input type="checkbox" id="quelle-ins-bild" checked> Quelle ins Bild</label>
+      <button class="fb-speichern" type="button" id="speichern">{ICON:speichern}Bild speichern <span class="fb-png">PNG</span></button>
+      <button class="fb-werkzeug" type="button" id="teilen" hidden>{ICON:teilen}<span>Teilen</span></button>
     </fieldset>
-
-    <fieldset class="fb-karte braucht-foto" disabled>
-      <legend><span class="fb-nr">4</span>Grün entfernen</legend>
-      <label class="fb-regler">Stärke <span id="tol-wert" class="mono">60</span>
-        <input type="range" id="tol" min="0" max="100" value="60">
-      </label>
-      <label class="fb-regler">Kanten weich <span id="soft-wert" class="mono">25</span>
-        <input type="range" id="soft" min="0" max="100" value="25">
-      </label>
-      <button class="fb-knopf" type="button" id="farbe-waehlen">{ICON:pipette}Grün im Bild antippen</button>
-      <p class="fb-klein">Noch Grün zu sehen: Stärke höher. Fehlt etwas von dir: Stärke niedriger.</p>
-    </fieldset>
-
-    <fieldset class="fb-karte braucht-foto" disabled>
-      <legend><span class="fb-nr">5</span>Speichern</legend>
-      <label class="fb-check"><input type="checkbox" id="quelle-ins-bild" checked> Bildquelle klein ins Bild schreiben</label>
-      <button class="fb-speichern" type="button" id="speichern">{ICON:speichern}Bild speichern</button>
-      <button class="fb-knopf" type="button" id="teilen" hidden>{ICON:teilen}Teilen</button>
-    </fieldset>
-
   </div>
 </div>
 
