@@ -33,6 +33,15 @@
     eisenbahn: 'railway', zug: 'train', flugzeug: 'airplane', rakete: 'rocket', auto: 'car', boot: 'boat',
   };
 
+  // Sichtbare Höhe selbst messen: Manche Handy-Browser zählen ihre eigene Leiste mit,
+  // dann rutscht die Speichern-Leiste unter den Bildschirmrand.
+  function passeHoeheAn() {
+    document.body.style.height = window.innerHeight + 'px';
+  }
+  passeHoeheAn();
+  window.addEventListener('resize', passeHoeheAn);
+  window.addEventListener('orientationchange', () => setTimeout(passeHoeheAn, 300));
+
   const view = $('#view');
   const vctx = view.getContext('2d');
 
