@@ -232,7 +232,7 @@ def fehlerseite():
 <rect x="18" y="36" width="6" height="6"/><rect x="36" y="36" width="6" height="6"/></g>
 <rect x="24" y="12" width="24" height="6" class="sz-cursor"/>
 </g>
-<g class="sz-aufprall"><path d="M219 128 h-8"/><path d="M219 144 h-10"/><path d="M219 160 h-8"/></g>
+<g class="sz-aufprall"><path d="M148 130 h-10"/><path d="M148 146 h-14"/><path d="M148 162 h-10"/></g>
 <g class="sz-sterne">
 <path d="M138 96 h12 M144 90 v12"/><path d="M172 82 h12 M178 76 v12"/><path d="M202 98 h10 M207 93 v10"/>
 </g>

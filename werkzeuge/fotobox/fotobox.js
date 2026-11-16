@@ -11,7 +11,7 @@
   const MAX_FOTO = 1400;
   const MAX_AUSGABE = 1920;
   const OPENVERSE = 'https://api.openverse.org/v1/images/';
-  const PRO_SEITE = 24;
+  const PRO_SEITE = 20;   // Openverse erlaubt ohne Anmeldung höchstens 20 pro Seite
 
   // Kategorien: Anzeige -> englischer Suchbegriff (Openverse findet englisch deutlich mehr)
   const KATEGORIEN = [
@@ -44,7 +44,7 @@
     pos: { cx: 0.5, unten: 1, h: 0.9 },   // Foto: Mitte x, Unterkante, Höhe (Anteile der Ausgabe)
     hgPos: { cx: 0.5, cy: 0.5, s: 1 },    // Hintergrund: Mitte und Zoom
     drehung: 0, spiegel: false, ziel: 'foto', waehlt: false,
-    suche: { q: '', seite: 1, token: 0, gestartet: false },
+    suche: { q: '', seite: 1, token: 0 },
   };
 
   /* ---------- Hilfen ---------- */
@@ -83,16 +83,10 @@
     finally { URL.revokeObjectURL(url); }
   }
 
-  /* ---------- Schritte ---------- */
-  function zeigeSchritt(n) {
-    $('#schritt1').hidden = n !== 1;
-    $('#schritt2').hidden = n !== 2;
-    $('#s1').className = n === 1 ? 'aktiv' : 'fertig';
-    $('#s2').className = n === 2 ? 'aktiv' : '';
-    $('#s1').toggleAttribute('aria-current', n === 1);
-    $('#s2').toggleAttribute('aria-current', n === 2);
-    if (n === 2 && !st.suche.gestartet) { st.suche.gestartet = true; suche(KATEGORIEN[0][1]); }
-    window.scrollTo({ top: 0 });
+  /* ---------- Foto vorhanden: Bedienfeld freischalten ---------- */
+  function fotoGeladen() {
+    document.body.classList.add('hat-foto');
+    $$('.braucht-foto').forEach((f) => { f.disabled = false; });
   }
 
   /* ---------- Foto ---------- */
@@ -112,7 +106,7 @@
     st.farbe = findeGruen(st.fotoDaten);
     allesZuruecksetzen();
     entferneGruen();
-    zeigeSchritt(2);
+    fotoGeladen();
     zeichne();
   }
 
@@ -535,7 +529,6 @@
   });
   $('#datei').addEventListener('change', (e) => { fotoAusDatei(e.target.files[0]); e.target.value = ''; });
   $('#kamera-datei').addEventListener('change', (e) => { fotoAusDatei(e.target.files[0]); e.target.value = ''; });
-  $('#neues-foto').addEventListener('click', () => { setzeWaehlen(false); zeigeSchritt(1); });
   document.addEventListener('dragover', (e) => e.preventDefault());
   document.addEventListener('drop', (e) => {
     e.preventDefault();
@@ -581,5 +574,6 @@
     } catch (err) { if (err && err.name !== 'AbortError') toast('Teilen geht hier nicht. Nimm "Bild speichern".'); }
   });
 
-  zeigeSchritt(1);
+  zeichne();
+  suche(KATEGORIEN[0][1], false, KATEGORIEN[0][0]);
 })();

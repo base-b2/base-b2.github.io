@@ -22,100 +22,101 @@
 <header class="fb-kopf">
   <a class="fb-zurueck" href="/"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15,6 9,12 15,18"/></svg><span>Base B</span></a>
   <div class="fb-marke">
-    <img src="/assets/img/BaseB_Bildmarke_farbig.svg" alt="" width="34" height="34" class="fb-marke-hell">
-    <img src="/assets/img/BaseB_Bildmarke_negativ.svg" alt="" width="34" height="34" class="fb-marke-dunkel">
-    <span>Fotobox</span>
+    <img src="/assets/img/BaseB_Bildmarke_farbig.svg" alt="" width="30" height="30" class="fb-marke-hell">
+    <img src="/assets/img/BaseB_Bildmarke_negativ.svg" alt="" width="30" height="30" class="fb-marke-dunkel">
+    <h1>Fotobox</h1>
   </div>
-  <ol class="fb-schritte" aria-label="Schritte">
-    <li id="s1" class="aktiv" aria-current="step"><span class="fb-nr">1</span>Foto</li>
-    <li id="s2"><span class="fb-nr">2</span>Hintergrund</li>
-  </ol>
+  <p class="fb-hinweis"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg><span><b>Dein Foto bleibt auf diesem Gerät.</b> Es wird nicht hochgeladen und nicht gespeichert. Nur dein Suchwort geht an Openverse.</span></p>
 </header>
 
-<div class="fb-hinweis" role="note">
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>
-  <span><b>Dein Foto bleibt auf diesem Gerät.</b> Es wird nicht hochgeladen und nicht gespeichert. Nur dein Suchwort geht an Openverse, damit wir freie Bilder finden.</span>
-</div>
-
-<!-- Schritt 1: Foto -->
-<section class="fb-schritt1" id="schritt1" aria-labelledby="t1">
-  <h1 id="t1">Mach ein Foto vor dem grünen Tuch!</h1>
-  <div class="fb-gross-knoepfe">
-    <button class="fb-gross-knopf fb-primaer" type="button" data-aktion="kamera"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5a2 2 0 0 1 2-2h2l1.5-2h5L16 6.5h2a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.5"/></svg>Foto machen</button>
-    <button class="fb-gross-knopf" type="button" data-aktion="datei"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="9.5" r="1.7"/><polyline points="4,18 10,13 14,16 17,13.5 20.5,16.5"/></svg>Bild aussuchen</button>
-  </div>
-  <p class="fb-tipp">Tipp: Stell dich so, dass hinter dir nur das grüne Tuch zu sehen ist. Gutes Licht hilft.</p>
-</section>
-
-<!-- Schritt 2: Hintergrund und Anpassen -->
-<section class="fb-schritt2" id="schritt2" hidden>
-  <div class="fb-links">
+<main class="fb-layout">
+  <!-- Vorschau -->
+  <section class="fb-vorschau" aria-label="Vorschau">
     <div class="fb-buehne" id="buehne">
       <canvas id="view" aria-label="Vorschau deines Bildes"></canvas>
+      <div class="fb-leer" id="leer">
+        <p class="fb-leer-titel">Mach ein Foto vor dem grünen Tuch!</p>
+        <p class="fb-leer-text">Das Grün wird automatisch entfernt.</p>
+        <div class="fb-zwei">
+          <button class="fb-knopf fb-primaer" type="button" data-aktion="kamera"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5a2 2 0 0 1 2-2h2l1.5-2h5L16 6.5h2a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.5"/></svg>Foto machen</button>
+          <button class="fb-knopf" type="button" data-aktion="datei"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="9.5" r="1.7"/><polyline points="4,18 10,13 14,16 17,13.5 20.5,16.5"/></svg>Bild aussuchen</button>
+        </div>
+      </div>
       <p class="fb-farbe-hinweis" id="farbe-hinweis" hidden>Tippe auf das Grün im Bild.</p>
     </div>
-    <p class="fb-klein">Zieh mit dem Finger. Mit zwei Fingern wird es größer oder kleiner.</p>
+    <p class="fb-klein">Zieh mit dem Finger, um dich zu verschieben. Mit zwei Fingern wird es größer oder kleiner.</p>
+    <p class="fb-quelle" id="quelle" hidden></p>
+  </section>
 
-    <fieldset class="fb-ziel">
-      <legend>Was willst du bewegen?</legend>
-      <div class="fb-umschalter">
-        <label><input type="radio" name="ziel" value="foto" checked>Foto</label>
-        <label><input type="radio" name="ziel" value="hg">Hintergrund</label>
+  <!-- Bedienfeld -->
+  <div class="fb-panel">
+
+    <section class="fb-karte">
+      <h2><span class="fb-nr">1</span>Foto</h2>
+      <div class="fb-zwei">
+        <button class="fb-knopf fb-primaer" type="button" data-aktion="kamera"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5a2 2 0 0 1 2-2h2l1.5-2h5L16 6.5h2a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.5"/></svg>Foto machen</button>
+        <button class="fb-knopf" type="button" data-aktion="datei"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="9.5" r="1.7"/><polyline points="4,18 10,13 14,16 17,13.5 20.5,16.5"/></svg>Bild aussuchen</button>
+      </div>
+      <p class="fb-klein">Tipp: Hinter dir sollte nur das grüne Tuch zu sehen sein. Gutes Licht hilft.</p>
+    </section>
+
+    <section class="fb-karte">
+      <h2><span class="fb-nr">2</span>Hintergrund</h2>
+      <div class="fb-chips" id="chips" role="group" aria-label="Kategorien"></div>
+      <form class="fb-suche" id="suche" role="search">
+        <label for="suchfeld" class="unsichtbar">Hintergrund suchen</label>
+        <input id="suchfeld" type="search" placeholder="Eigene Suche, z. B. Dschungel" autocomplete="off" enterkeyhint="search">
+        <button class="fb-suchen" type="submit">Suchen</button>
+      </form>
+      <p class="fb-status" id="status" role="status" aria-live="polite"></p>
+      <div class="fb-bilder" id="bilder"></div>
+      <button class="fb-knopf fb-breit" type="button" id="mehr" hidden>Mehr Bilder laden</button>
+      <div class="fb-zwei">
+        <button class="fb-knopf" type="button" data-aktion="hg-datei"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="15" x2="12" y2="4"/><polyline points="7.5,8.5 12,4 16.5,8.5"/><line x1="4.5" y1="19.5" x2="19.5" y2="19.5"/></svg>Eigenes Bild</button>
+        <label class="fb-knopf fb-farbe"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg>Einfarbig<input type="color" id="hg-farbe" value="#DDEBF2"></label>
+      </div>
+      <p class="fb-klein">Freie Bilder von <a href="https://openverse.org" target="_blank" rel="noopener">Openverse</a>.</p>
+    </section>
+
+    <fieldset class="fb-karte braucht-foto" disabled>
+      <legend><span class="fb-nr">3</span>Anpassen</legend>
+      <div class="fb-umschalter" role="radiogroup" aria-label="Was willst du bewegen?">
+        <label><input type="radio" name="ziel" value="foto" checked>Foto bewegen</label>
+        <label><input type="radio" name="ziel" value="hg">Hintergrund bewegen</label>
+      </div>
+      <label class="fb-regler">Größe <span id="groesse-wert" class="mono">100</span>
+        <input type="range" id="groesse" min="10" max="300" value="100">
+      </label>
+      <label class="fb-regler" id="drehen-feld">Drehen <span id="drehen-wert" class="mono">0</span>
+        <input type="range" id="drehen" min="-30" max="30" value="0">
+      </label>
+      <div class="fb-zwei">
+        <button class="fb-knopf" type="button" id="spiegeln"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="3" x2="12" y2="21"/><polyline points="8,7 3,12 8,17"/><polyline points="16,7 21,12 16,17"/></svg>Spiegeln</button>
+        <button class="fb-knopf" type="button" id="zuruecksetzen"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.5-5.8"/><polyline points="4,3 4,8 9,8"/></svg>Zurücksetzen</button>
       </div>
     </fieldset>
 
-    <label class="fb-regler">Größe <span id="groesse-wert" class="mono">100</span>
-      <input type="range" id="groesse" min="10" max="300" value="100">
-    </label>
-    <label class="fb-regler" id="drehen-feld">Drehen <span id="drehen-wert" class="mono">0</span>
-      <input type="range" id="drehen" min="-30" max="30" value="0">
-    </label>
-    <div class="fb-zwei">
-      <button class="fb-knopf" type="button" id="spiegeln"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="3" x2="12" y2="21"/><polyline points="8,7 3,12 8,17"/><polyline points="16,7 21,12 16,17"/></svg>Spiegeln</button>
-      <button class="fb-knopf" type="button" id="zuruecksetzen"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.5-5.8"/><polyline points="4,3 4,8 9,8"/></svg>Zurücksetzen</button>
-    </div>
-
-    <details class="fb-fein">
-      <summary>Grün wird nicht richtig entfernt?</summary>
-      <label class="fb-regler">Grün entfernen <span id="tol-wert" class="mono">60</span>
+    <fieldset class="fb-karte braucht-foto" disabled>
+      <legend><span class="fb-nr">4</span>Grün entfernen</legend>
+      <label class="fb-regler">Stärke <span id="tol-wert" class="mono">60</span>
         <input type="range" id="tol" min="0" max="100" value="60">
       </label>
       <label class="fb-regler">Kanten weich <span id="soft-wert" class="mono">25</span>
         <input type="range" id="soft" min="0" max="100" value="25">
       </label>
       <button class="fb-knopf" type="button" id="farbe-waehlen"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4.5l5 5"/><path d="M17 7l-9.5 9.5L5 19l-1-1 2.5-2.5L16 6"/></svg>Grün im Bild antippen</button>
-    </details>
+      <p class="fb-klein">Noch Grün zu sehen: Stärke höher. Fehlt etwas von dir: Stärke niedriger.</p>
+    </fieldset>
 
-    <button class="fb-speichern" type="button" id="speichern"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="4" x2="12" y2="15"/><polyline points="7.5,10.5 12,15 16.5,10.5"/><line x1="4.5" y1="19.5" x2="19.5" y2="19.5"/></svg>Bild speichern</button>
-    <div class="fb-zwei">
+    <fieldset class="fb-karte braucht-foto" disabled>
+      <legend><span class="fb-nr">5</span>Speichern</legend>
+      <label class="fb-check"><input type="checkbox" id="quelle-ins-bild" checked> Bildquelle klein ins Bild schreiben</label>
+      <button class="fb-speichern" type="button" id="speichern"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="4" x2="12" y2="15"/><polyline points="7.5,10.5 12,15 16.5,10.5"/><line x1="4.5" y1="19.5" x2="19.5" y2="19.5"/></svg>Bild speichern</button>
       <button class="fb-knopf" type="button" id="teilen" hidden><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><line x1="8.2" y1="10.8" x2="15.8" y2="6.7"/><line x1="8.2" y1="13.2" x2="15.8" y2="17.3"/></svg>Teilen</button>
-      <button class="fb-knopf" type="button" id="neues-foto"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5a2 2 0 0 1 2-2h2l1.5-2h5L16 6.5h2a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.5"/></svg>Neues Foto</button>
-    </div>
-  </div>
+    </fieldset>
 
-  <div class="fb-rechts">
-    <h2>Such dir einen Hintergrund aus</h2>
-    <form class="fb-suche" id="suche" role="search">
-      <label for="suchfeld" class="unsichtbar">Hintergrund suchen</label>
-      <div class="fb-suchfeld"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="9.5" r="1.7"/><polyline points="4,18 10,13 14,16 17,13.5 20.5,16.5"/></svg><input id="suchfeld" type="search" placeholder="z. B. Dschungel" autocomplete="off"></div>
-      <button class="fb-suchen" type="submit">Suchen</button>
-    </form>
-    <div class="fb-chips" id="chips" role="group" aria-label="Kategorien"></div>
-    <div class="fb-ergebnis-kopf">
-      <span id="status" role="status" aria-live="polite"></span>
-    </div>
-    <div class="fb-bilder" id="bilder"></div>
-    <div class="fb-zwei fb-mehr">
-      <button class="fb-knopf" type="button" id="mehr" hidden>Mehr Bilder laden</button>
-    </div>
-    <p class="fb-quelle" id="quelle" hidden></p>
-    <label class="fb-check"><input type="checkbox" id="quelle-ins-bild" checked> Bildquelle klein ins Bild schreiben</label>
-    <div class="fb-zwei">
-      <button class="fb-knopf" type="button" data-aktion="hg-datei"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="15" x2="12" y2="4"/><polyline points="7.5,8.5 12,4 16.5,8.5"/><line x1="4.5" y1="19.5" x2="19.5" y2="19.5"/></svg>Eigenes Bild als Hintergrund</button>
-      <label class="fb-knopf fb-farbe"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg>Einfarbig<input type="color" id="hg-farbe" value="#DDEBF2"></label>
-    </div>
   </div>
-</section>
+</main>
 
 <!-- Kamera -->
 <div class="fb-kamera" id="kamera" hidden>
