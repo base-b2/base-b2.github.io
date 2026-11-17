@@ -35,12 +35,18 @@
 
   // Sichtbare Höhe selbst messen: Manche Handy-Browser zählen ihre eigene Leiste mit,
   // dann rutscht die Speichern-Leiste unter den Bildschirmrand.
+  // Zusätzlich die "sichtbare" Fläche beachten: Manche Browser (z. B. Safari) legen ihre Leisten über die Seite.
   function passeHoeheAn() {
-    document.body.style.height = window.innerHeight + 'px';
+    let h = window.innerHeight;
+    const vv = window.visualViewport;
+    if (vv && Math.abs(vv.scale - 1) < 0.01 && vv.height > 200) h = Math.min(h, vv.height);
+    document.body.style.height = Math.round(h) + 'px';
+    window.scrollTo(0, 0);
   }
   passeHoeheAn();
   window.addEventListener('resize', passeHoeheAn);
-  window.addEventListener('orientationchange', () => setTimeout(passeHoeheAn, 300));
+  window.addEventListener('orientationchange', () => { setTimeout(passeHoeheAn, 300); setTimeout(passeHoeheAn, 800); });
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', passeHoeheAn);
 
   const view = $('#view');
   const vctx = view.getContext('2d');

@@ -193,3 +193,33 @@ body:not(.hat-foto) #view { cursor: default; touch-action: auto; }
   .fb-umschalter label { padding: 0 8px; font-size: 14px; }
   .fb-tab { font-size: 12px; }
 }
+
+/* Sicherheitsabstände: Notch, Kameraloch, Gestenleiste und Browserleisten dürfen nichts verdecken.
+   Zusätzlich bleibt an den Bildschirmrändern Platz, damit Wisch-Gesten (Zurück) nicht ausgelöst werden. */
+:root {
+  --sa-o: env(safe-area-inset-top, 0px); --sa-r: env(safe-area-inset-right, 0px);
+  --sa-u: env(safe-area-inset-bottom, 0px); --sa-l: env(safe-area-inset-left, 0px);
+}
+body { padding-top: var(--sa-o); }
+.fb-kopf { padding-left: max(var(--sa-l), 12px); padding-right: max(var(--sa-r), 12px); }
+.fb-vorschau { padding-left: max(var(--sa-l), 14px); padding-right: max(var(--sa-r), 14px); }
+.fb-fenster-kopf { padding-left: max(var(--sa-l), 16px); padding-right: max(var(--sa-r), 10px); }
+.fb-fenster-inhalt { padding-left: max(var(--sa-l), 16px); padding-right: max(var(--sa-r), 16px); }
+.fb-reiter { padding: 0 max(var(--sa-r), 10px) max(var(--sa-u), 12px) max(var(--sa-l), 10px); }
+.fb-toast { top: calc(var(--sa-o) + 12px); }
+@media (orientation: landscape) {
+  .fb-vorschau { padding-left: max(var(--sa-l), 18px); padding-right: 10px; padding-bottom: max(var(--sa-u), 10px); }
+  .fb-fenster-kopf { padding-left: 14px; padding-right: 8px; }
+  .fb-fenster-inhalt { padding-left: 14px; padding-right: 14px; padding-bottom: max(var(--sa-u), 16px); }
+  .fb-reiter { width: auto; min-width: 92px; padding: 4px max(var(--sa-r), 14px) max(var(--sa-u), 10px) 0; }
+  .fb-tab, .fb-reiter-zurueck { width: 84px; }
+}
+@media (orientation: landscape) and (max-height: 560px) {
+  .fb-vorschau { padding-left: max(var(--sa-l), 16px); padding-top: max(var(--sa-o), 6px); }
+  .fb-reiter { padding-top: max(var(--sa-o), 4px); }
+  .fb-fenster-kopf { padding-top: max(var(--sa-o), 6px); }
+}
+@media (orientation: landscape) and (max-height: 560px) {
+  .fb-umschalter label { padding: 0 7px; font-size: 13px; }
+  .fb-werkzeug { min-width: 50px; font-size: 11px; }
+}
