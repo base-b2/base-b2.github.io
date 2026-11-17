@@ -47,6 +47,16 @@
   window.addEventListener('orientationchange', () => { setTimeout(passeHoeheAn, 300); setTimeout(passeHoeheAn, 800); });
   if (window.visualViewport) window.visualViewport.addEventListener('resize', passeHoeheAn);
 
+  // Reiterleiste beim Scrollen festhalten, damit das Menü nie aus dem Bild rutscht
+  const reiterLeiste = document.querySelector('.fb-reiter');
+  let klebtGeplant = false;
+  function klebe() {
+    klebtGeplant = false;
+    const y = Math.max(0, Math.round(window.scrollY || 0));
+    reiterLeiste.style.transform = y ? `translateY(${y}px)` : '';
+  }
+  window.addEventListener('scroll', () => { if (!klebtGeplant) { klebtGeplant = true; requestAnimationFrame(klebe); } }, { passive: true });
+
   const view = $('#view');
   const vctx = view.getContext('2d');
 
