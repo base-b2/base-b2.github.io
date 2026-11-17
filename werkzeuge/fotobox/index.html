@@ -28,14 +28,14 @@
   </div>
 </header>
 
-<div class="fb-layout">
-  <!-- Obere Hälfte: Ergebnis -->
+<div class="fb-app">
+  <!-- Ergebnis -->
   <section class="fb-vorschau" aria-label="Vorschau">
     <div class="fb-buehne-box" id="buehne-box">
       <div class="fb-buehne" id="buehne">
         <canvas id="view" aria-label="Vorschau deines Bildes"></canvas>
-        <p class="fb-farbe-hinweis" id="farbe-hinweis" hidden>Tippe auf das Grün im Bild.</p>
       </div>
+      <canvas class="fb-lupe" id="lupe" width="112" height="112" hidden></canvas>
       <div class="fb-leer" id="leer">
         <p class="fb-leer-titel">Mach ein Foto vor dem grünen Tuch!</p>
         <p class="fb-leer-text">Das Grün wird automatisch entfernt. Dein Foto bleibt auf diesem Gerät.</p>
@@ -43,7 +43,6 @@
           <button class="fb-knopf fb-primaer" type="button" data-aktion="kamera"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5a2 2 0 0 1 2-2h2l1.5-2h5L16 6.5h2a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.5"/></svg>Foto machen</button>
           <button class="fb-knopf" type="button" data-aktion="datei"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="9.5" r="1.7"/><polyline points="4,18 10,13 14,16 17,13.5 20.5,16.5"/></svg>Aus der Galerie</button>
         </div>
-        <button class="fb-link" type="button" id="leer-zu">Abbrechen</button>
       </div>
     </div>
 
@@ -54,18 +53,32 @@
       </div>
       <button class="fb-werkzeug" type="button" id="spiegeln"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="3" x2="12" y2="21"/><polyline points="8,7 3,12 8,17"/><polyline points="16,7 21,12 16,17"/></svg><span>Spiegeln</span></button>
       <button class="fb-werkzeug" type="button" id="zuruecksetzen"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.5-5.8"/><polyline points="4,3 4,8 9,8"/></svg><span>Zurück</span></button>
-      <button class="fb-werkzeug" type="button" id="neues-foto"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5a2 2 0 0 1 2-2h2l1.5-2h5L16 6.5h2a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.5"/></svg><span>Neues Foto</span></button>
     </div>
-    <p class="fb-klein fb-gesten" id="gesten">Ein Finger: verschieben. Zwei Finger: größer, kleiner und drehen.</p>
+    <div class="fb-pickleiste" id="pickleiste" hidden>
+      <span><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4.5l5 5"/><path d="M17 7l-9.5 9.5L5 19l-1-1 2.5-2.5L16 6"/></svg>Tippe aufs Grün.</span>
+      <button class="fb-knopf" type="button" id="pick-abbrechen">Abbrechen</button>
+    </div>
   </section>
 
-  <!-- Untere Hälfte: Funktionen -->
-  <div class="fb-panel" id="panel">
-    <div class="fb-panel-inhalt">
-      <p class="fb-hinweis"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg><span><b>Dein Foto bleibt auf diesem Gerät.</b> Es wird nicht hochgeladen und nicht gespeichert. Nur dein Suchwort geht an Openverse.</span></p>
+  <!-- Ausklappfenster -->
+  <section class="fb-fenster" id="fenster" hidden aria-labelledby="fenster-titel">
+    <div class="fb-fenster-kopf" id="fenster-griff">
+      <span class="fb-griff" aria-hidden="true"></span>
+      <h2 id="fenster-titel">Hintergrund</h2>
+      <button class="fb-zu" type="button" id="fenster-zu" aria-label="Fenster schließen"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button>
+    </div>
+    <div class="fb-fenster-inhalt">
 
-      <section class="fb-abschnitt" aria-labelledby="t-hg">
-        <h2 id="t-hg"><span class="fb-nr">1</span>Hintergrund</h2>
+      <div class="fb-teil" data-teil="foto" hidden>
+        <div class="fb-zwei">
+          <button class="fb-knopf fb-primaer" type="button" data-aktion="kamera"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5a2 2 0 0 1 2-2h2l1.5-2h5L16 6.5h2a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.5"/></svg>Foto machen</button>
+          <button class="fb-knopf" type="button" data-aktion="datei"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="9.5" r="1.7"/><polyline points="4,18 10,13 14,16 17,13.5 20.5,16.5"/></svg>Aus der Galerie</button>
+        </div>
+        <p class="fb-klein">Tipp: Hinter dir sollte nur das grüne Tuch zu sehen sein. Gutes Licht hilft.</p>
+        <p class="fb-hinweis"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg><span><b>Dein Foto bleibt auf diesem Gerät.</b> Es wird nicht hochgeladen und nicht gespeichert.</span></p>
+      </div>
+
+      <div class="fb-teil" data-teil="hintergrund" hidden>
         <div class="fb-chips" id="chips" role="group" aria-label="Kategorien"></div>
         <form class="fb-suche" id="suche" role="search">
           <label for="suchfeld" class="unsichtbar">Hintergrund suchen</label>
@@ -80,11 +93,10 @@
           <label class="fb-knopf fb-farbe"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg>Einfarbig<input type="color" id="hg-farbe" value="#DDEBF2"></label>
         </div>
         <p class="fb-quelle" id="quelle" hidden></p>
-        <p class="fb-klein">Freie Bilder von <a href="https://openverse.org" target="_blank" rel="noopener">Openverse</a>.</p>
-      </section>
+        <p class="fb-klein">Freie Bilder von <a href="https://openverse.org" target="_blank" rel="noopener">Openverse</a>. Nur dein Suchwort wird dorthin geschickt.</p>
+      </div>
 
-      <fieldset class="fb-abschnitt braucht-foto" disabled>
-        <legend><span class="fb-nr">2</span>Grün entfernen</legend>
+      <div class="fb-teil" data-teil="gruen" hidden>
         <label class="fb-regler">Stärke <span id="tol-wert" class="mono">60</span>
           <input type="range" id="tol" min="0" max="100" value="60">
         </label>
@@ -93,16 +105,26 @@
         </label>
         <button class="fb-knopf" type="button" id="farbe-waehlen"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4.5l5 5"/><path d="M17 7l-9.5 9.5L5 19l-1-1 2.5-2.5L16 6"/></svg>Grün im Bild antippen</button>
         <p class="fb-klein">Noch Grün zu sehen: Stärke höher. Fehlt etwas von dir: Stärke niedriger.</p>
-      </fieldset>
-    </div>
+      </div>
 
-    <fieldset class="fb-speicherleiste braucht-foto" disabled>
-      <legend class="unsichtbar">Speichern</legend>
-      <label class="fb-check"><input type="checkbox" id="quelle-ins-bild" checked> Quelle ins Bild</label>
-      <button class="fb-speichern" type="button" id="speichern"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="4" x2="12" y2="15"/><polyline points="7.5,10.5 12,15 16.5,10.5"/><line x1="4.5" y1="19.5" x2="19.5" y2="19.5"/></svg>Bild speichern <span class="fb-png">PNG</span></button>
-      <button class="fb-werkzeug" type="button" id="teilen" hidden><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><line x1="8.2" y1="10.8" x2="15.8" y2="6.7"/><line x1="8.2" y1="13.2" x2="15.8" y2="17.3"/></svg><span>Teilen</span></button>
-    </fieldset>
-  </div>
+      <div class="fb-teil" data-teil="speichern" hidden>
+        <button class="fb-speichern" type="button" id="speichern"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="4" x2="12" y2="15"/><polyline points="7.5,10.5 12,15 16.5,10.5"/><line x1="4.5" y1="19.5" x2="19.5" y2="19.5"/></svg>Bild speichern <span class="fb-png">PNG</span></button>
+        <button class="fb-knopf" type="button" id="teilen" hidden><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><line x1="8.2" y1="10.8" x2="15.8" y2="6.7"/><line x1="8.2" y1="13.2" x2="15.8" y2="17.3"/></svg>Teilen oder in Fotos sichern</button>
+        <label class="fb-check"><input type="checkbox" id="quelle-ins-bild" checked> Bildquelle klein ins Bild schreiben</label>
+        <p class="fb-klein">Das Bild landet im Ordner "Downloads" (Android: App "Dateien", iPad: App "Dateien").</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Reiter -->
+  <nav class="fb-reiter" aria-label="Funktionen">
+    <a class="fb-reiter-zurueck" href="/" aria-label="Zurück zu Base B"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15,6 9,12 15,18"/></svg><span>Base B</span></a>
+    <button type="button" class="fb-tab" data-tab="foto" aria-pressed="false"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5a2 2 0 0 1 2-2h2l1.5-2h5L16 6.5h2a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.5"/></svg><span>Foto</span></button>
+    <button type="button" class="fb-tab" data-tab="hintergrund" aria-pressed="false"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="9.5" r="1.7"/><polyline points="4,18 10,13 14,16 17,13.5 20.5,16.5"/></svg><span>Hintergrund</span></button>
+    <button type="button" class="fb-tab braucht-foto" data-tab="gruen" aria-pressed="false" disabled><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4.5l5 5"/><path d="M17 7l-9.5 9.5L5 19l-1-1 2.5-2.5L16 6"/></svg><span>Grün</span></button>
+    <button type="button" class="fb-tab braucht-foto" data-tab="speichern" aria-pressed="false" disabled><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="4" x2="12" y2="15"/><polyline points="7.5,10.5 12,15 16.5,10.5"/><line x1="4.5" y1="19.5" x2="19.5" y2="19.5"/></svg><span>Speichern</span></button>
+  </nav>
 </div>
 
 <!-- Kamera -->

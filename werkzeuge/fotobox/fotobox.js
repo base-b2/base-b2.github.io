@@ -100,6 +100,27 @@
     $$('.braucht-foto').forEach((f) => { f.disabled = false; });
   }
 
+  /* ---------- Reiter und Ausklappfenster ---------- */
+  const TITEL = { foto: 'Foto', hintergrund: 'Hintergrund', gruen: 'Grün entfernen', speichern: 'Speichern' };
+  let offen = null;
+  function oeffne(name) {
+    if (st.waehlt && name) setzeWaehlen(false);
+    offen = name;
+    $('#fenster').hidden = !name;
+    if (name) $('#fenster-titel').textContent = TITEL[name];
+    $$('.fb-teil').forEach((t) => { t.hidden = t.dataset.teil !== name; });
+    $$('.fb-tab').forEach((t) => t.setAttribute('aria-pressed', t.dataset.tab === name ? 'true' : 'false'));
+    if (name) $('.fb-fenster-inhalt').scrollTop = 0;
+  }
+  function schliesse() { oeffne(null); }
+  $$('.fb-tab').forEach((t) => t.addEventListener('click', () => oeffne(offen === t.dataset.tab ? null : t.dataset.tab)));
+  $('#fenster-zu').addEventListener('click', schliesse);
+  // Fenster nach unten wischen schließt es (hochkant)
+  let wischStart = null;
+  $('#fenster-griff').addEventListener('pointerdown', (e) => { if (e.target.closest('button')) return; wischStart = e.clientY; });
+  $('#fenster-griff').addEventListener('pointerup', (e) => { if (wischStart !== null && e.clientY - wischStart > 50) schliesse(); wischStart = null; });
+  $('#fenster-griff').addEventListener('pointercancel', () => { wischStart = null; });
+
   /* ---------- Foto ---------- */
   async function fotoAusDatei(datei) {
     if (!datei) return;
@@ -119,6 +140,8 @@
     entferneGruen();
     fotoGeladen();
     zeichne();
+    oeffne('hintergrund');
+    toast('Ein Finger: verschieben. Zwei Finger: größer, kleiner und drehen.', 5000);
   }
 
   /* ---------- Greenscreen-Farbe automatisch erkennen ---------- */
@@ -283,8 +306,6 @@
   }
   $('#spiegeln').addEventListener('click', () => { st.spiegel = !st.spiegel; plane(); });
   $('#zuruecksetzen').addEventListener('click', () => { allesZuruecksetzen(); plane(); });
-  $('#neues-foto').addEventListener('click', () => { setzeWaehlen(false); document.body.classList.add('leer-offen'); });
-  $('#leer-zu').addEventListener('click', () => document.body.classList.remove('leer-offen'));
   function bindeRegler(id, schl) {
     const el = $('#' + id), aus = $('#' + id + '-wert');
     const upd = () => { st[schl] = Number(el.value); aus.textContent = el.value; };
@@ -310,13 +331,19 @@
   }
   view.addEventListener('pointerdown', (e) => {
     if (!st.foto) return;
-    if (st.waehlt) { waehleFarbe(e); return; }
+    if (st.waehlt) {   // Grün antippen: Lupe zeigen, beim Loslassen übernehmen
+      e.preventDefault();
+      try { view.setPointerCapture(e.pointerId); } catch (err) { /* egal */ }
+      lupeAn = true; zeigeLupe(e);
+      return;
+    }
     e.preventDefault();
     try { view.setPointerCapture(e.pointerId); } catch (err) { /* ohne Capture weiter */ }
     finger.set(e.pointerId, { x: e.clientX, y: e.clientY });
     view.classList.add('zieht');
   });
   view.addEventListener('pointermove', (e) => {
+    if (lupeAn) { zeigeLupe(e); return; }
     if (!finger.has(e.pointerId)) return;
     const vorher = gestenInfo();
     finger.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -333,7 +360,10 @@
     }
     plane();
   });
-  const fingerWeg = (e) => { finger.delete(e.pointerId); if (!finger.size) view.classList.remove('zieht'); };
+  const fingerWeg = (e) => {
+    if (lupeAn) { lupeAn = false; $('#lupe').hidden = true; if (e.type === 'pointerup') waehleFarbe(e); return; }
+    finger.delete(e.pointerId); if (!finger.size) view.classList.remove('zieht');
+  };
   view.addEventListener('pointerup', fingerWeg);
   view.addEventListener('pointercancel', fingerWeg);
   view.addEventListener('wheel', (e) => {
@@ -345,14 +375,33 @@
   }, { passive: false });
 
   /* ---------- Grün selbst antippen ---------- */
+  let lupeAn = false;
   function setzeWaehlen(an) {
     st.waehlt = an;
     document.body.classList.toggle('waehlt', an);
-    $('#farbe-hinweis').hidden = !an;
-    $('#farbe-waehlen').classList.toggle('an', an);
+    $('#pickleiste').hidden = !an;
+    $('#bildleiste').hidden = an || !st.foto;
+    if (an) schliesse();   // Fenster zu, damit das ganze Foto zu sehen ist
     zeichne();
   }
-  $('#farbe-waehlen').addEventListener('click', () => setzeWaehlen(!st.waehlt));
+  $('#farbe-waehlen').addEventListener('click', () => setzeWaehlen(true));
+  $('#pick-abbrechen').addEventListener('click', () => { setzeWaehlen(false); oeffne('gruen'); });
+  function zeigeLupe(e) {
+    const lupe = $('#lupe'), box = $('#buehne-box').getBoundingClientRect(), rect = view.getBoundingClientRect();
+    const { width: w, height: h } = st.foto;
+    const x = (e.clientX - rect.left) / rect.width * w, y = (e.clientY - rect.top) / rect.height * h;
+    const ctx = lupe.getContext('2d'), n = 14;   // 14 x 14 Pixel des Fotos, 8-fach vergrößert
+    ctx.imageSmoothingEnabled = false;
+    ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, 112, 112);
+    ctx.drawImage(st.foto, x - n / 2, y - n / 2, n, n, 0, 0, 112, 112);
+    ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = 3; ctx.strokeRect(48, 48, 16, 16);
+    ctx.strokeStyle = '#1C2E4A'; ctx.lineWidth = 1; ctx.strokeRect(46.5, 46.5, 19, 19);
+    let lx = e.clientX - box.left - 56, ly = e.clientY - box.top - 140;   // über dem Finger
+    if (ly < 0) ly = e.clientY - box.top + 40;
+    lx = Math.max(0, Math.min(box.width - 112, lx));
+    lupe.style.left = lx + 'px'; lupe.style.top = ly + 'px';
+    lupe.hidden = false;
+  }
   function waehleFarbe(e) {
     const rect = view.getBoundingClientRect();
     const { width: w, height: h, data } = st.fotoDaten;
@@ -367,6 +416,7 @@
     st.farbe = { r: Math.round(r / n), g: Math.round(g / n), b: Math.round(b / n) };
     setzeWaehlen(false);
     plane(true);
+    oeffne('gruen');
     toast('Farbe übernommen ✓');
   }
 
@@ -555,7 +605,7 @@
   $('#kamera-zu').addEventListener('click', schliesseKamera);
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    if (!$('#kamera').hidden) schliesseKamera(); else if (st.waehlt) setzeWaehlen(false);
+    if (!$('#kamera').hidden) schliesseKamera(); else if (st.waehlt) setzeWaehlen(false); else schliesse();
   });
 
   /* ---------- Knöpfe ---------- */

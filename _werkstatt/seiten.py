@@ -58,6 +58,7 @@ ICONS = {
     "teilen": '<circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><line x1="8.2" y1="10.8" x2="15.8" y2="6.7"/><line x1="8.2" y1="13.2" x2="15.8" y2="17.3"/>',
     "farbe": '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/>',
     "wechseln": '<path d="M4 9a8 8 0 0 1 14-3l2 2"/><polyline points="20,4 20,8 16,8"/><path d="M20 15a8 8 0 0 1-14 3l-2-2"/><polyline points="4,20 4,16 8,16"/>',
+    "schliessen": '<line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>',
     "senden": '<path d="M4 12l16-8-6 16-2.5-6.5z"/><line x1="11.5" y1="13.5" x2="20" y2="4"/>',
 }
 

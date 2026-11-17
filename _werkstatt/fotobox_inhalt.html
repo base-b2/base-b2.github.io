@@ -7,14 +7,14 @@
   </div>
 </header>
 
-<div class="fb-layout">
-  <!-- Obere Hälfte: Ergebnis -->
+<div class="fb-app">
+  <!-- Ergebnis -->
   <section class="fb-vorschau" aria-label="Vorschau">
     <div class="fb-buehne-box" id="buehne-box">
       <div class="fb-buehne" id="buehne">
         <canvas id="view" aria-label="Vorschau deines Bildes"></canvas>
-        <p class="fb-farbe-hinweis" id="farbe-hinweis" hidden>Tippe auf das Grün im Bild.</p>
       </div>
+      <canvas class="fb-lupe" id="lupe" width="112" height="112" hidden></canvas>
       <div class="fb-leer" id="leer">
         <p class="fb-leer-titel">Mach ein Foto vor dem grünen Tuch!</p>
         <p class="fb-leer-text">Das Grün wird automatisch entfernt. Dein Foto bleibt auf diesem Gerät.</p>
@@ -22,7 +22,6 @@
           <button class="fb-knopf fb-primaer" type="button" data-aktion="kamera">{ICON:kamera}Foto machen</button>
           <button class="fb-knopf" type="button" data-aktion="datei">{ICON:bild}Aus der Galerie</button>
         </div>
-        <button class="fb-link" type="button" id="leer-zu">Abbrechen</button>
       </div>
     </div>
 
@@ -33,18 +32,32 @@
       </div>
       <button class="fb-werkzeug" type="button" id="spiegeln">{ICON:spiegeln}<span>Spiegeln</span></button>
       <button class="fb-werkzeug" type="button" id="zuruecksetzen">{ICON:zuruecksetzen}<span>Zurück</span></button>
-      <button class="fb-werkzeug" type="button" id="neues-foto">{ICON:kamera}<span>Neues Foto</span></button>
     </div>
-    <p class="fb-klein fb-gesten" id="gesten">Ein Finger: verschieben. Zwei Finger: größer, kleiner und drehen.</p>
+    <div class="fb-pickleiste" id="pickleiste" hidden>
+      <span>{ICON:pipette}Tippe aufs Grün.</span>
+      <button class="fb-knopf" type="button" id="pick-abbrechen">Abbrechen</button>
+    </div>
   </section>
 
-  <!-- Untere Hälfte: Funktionen -->
-  <div class="fb-panel" id="panel">
-    <div class="fb-panel-inhalt">
-      <p class="fb-hinweis">{ICON:schloss}<span><b>Dein Foto bleibt auf diesem Gerät.</b> Es wird nicht hochgeladen und nicht gespeichert. Nur dein Suchwort geht an Openverse.</span></p>
+  <!-- Ausklappfenster -->
+  <section class="fb-fenster" id="fenster" hidden aria-labelledby="fenster-titel">
+    <div class="fb-fenster-kopf" id="fenster-griff">
+      <span class="fb-griff" aria-hidden="true"></span>
+      <h2 id="fenster-titel">Hintergrund</h2>
+      <button class="fb-zu" type="button" id="fenster-zu" aria-label="Fenster schließen">{ICON:schliessen}</button>
+    </div>
+    <div class="fb-fenster-inhalt">
 
-      <section class="fb-abschnitt" aria-labelledby="t-hg">
-        <h2 id="t-hg"><span class="fb-nr">1</span>Hintergrund</h2>
+      <div class="fb-teil" data-teil="foto" hidden>
+        <div class="fb-zwei">
+          <button class="fb-knopf fb-primaer" type="button" data-aktion="kamera">{ICON:kamera}Foto machen</button>
+          <button class="fb-knopf" type="button" data-aktion="datei">{ICON:bild}Aus der Galerie</button>
+        </div>
+        <p class="fb-klein">Tipp: Hinter dir sollte nur das grüne Tuch zu sehen sein. Gutes Licht hilft.</p>
+        <p class="fb-hinweis">{ICON:schloss}<span><b>Dein Foto bleibt auf diesem Gerät.</b> Es wird nicht hochgeladen und nicht gespeichert.</span></p>
+      </div>
+
+      <div class="fb-teil" data-teil="hintergrund" hidden>
         <div class="fb-chips" id="chips" role="group" aria-label="Kategorien"></div>
         <form class="fb-suche" id="suche" role="search">
           <label for="suchfeld" class="unsichtbar">Hintergrund suchen</label>
@@ -59,11 +72,10 @@
           <label class="fb-knopf fb-farbe">{ICON:farbe}Einfarbig<input type="color" id="hg-farbe" value="#DDEBF2"></label>
         </div>
         <p class="fb-quelle" id="quelle" hidden></p>
-        <p class="fb-klein">Freie Bilder von <a href="https://openverse.org" target="_blank" rel="noopener">Openverse</a>.</p>
-      </section>
+        <p class="fb-klein">Freie Bilder von <a href="https://openverse.org" target="_blank" rel="noopener">Openverse</a>. Nur dein Suchwort wird dorthin geschickt.</p>
+      </div>
 
-      <fieldset class="fb-abschnitt braucht-foto" disabled>
-        <legend><span class="fb-nr">2</span>Grün entfernen</legend>
+      <div class="fb-teil" data-teil="gruen" hidden>
         <label class="fb-regler">Stärke <span id="tol-wert" class="mono">60</span>
           <input type="range" id="tol" min="0" max="100" value="60">
         </label>
@@ -72,16 +84,26 @@
         </label>
         <button class="fb-knopf" type="button" id="farbe-waehlen">{ICON:pipette}Grün im Bild antippen</button>
         <p class="fb-klein">Noch Grün zu sehen: Stärke höher. Fehlt etwas von dir: Stärke niedriger.</p>
-      </fieldset>
-    </div>
+      </div>
 
-    <fieldset class="fb-speicherleiste braucht-foto" disabled>
-      <legend class="unsichtbar">Speichern</legend>
-      <label class="fb-check"><input type="checkbox" id="quelle-ins-bild" checked> Quelle ins Bild</label>
-      <button class="fb-speichern" type="button" id="speichern">{ICON:speichern}Bild speichern <span class="fb-png">PNG</span></button>
-      <button class="fb-werkzeug" type="button" id="teilen" hidden>{ICON:teilen}<span>Teilen</span></button>
-    </fieldset>
-  </div>
+      <div class="fb-teil" data-teil="speichern" hidden>
+        <button class="fb-speichern" type="button" id="speichern">{ICON:speichern}Bild speichern <span class="fb-png">PNG</span></button>
+        <button class="fb-knopf" type="button" id="teilen" hidden>{ICON:teilen}Teilen oder in Fotos sichern</button>
+        <label class="fb-check"><input type="checkbox" id="quelle-ins-bild" checked> Bildquelle klein ins Bild schreiben</label>
+        <p class="fb-klein">Das Bild landet im Ordner "Downloads" (Android: App "Dateien", iPad: App "Dateien").</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Reiter -->
+  <nav class="fb-reiter" aria-label="Funktionen">
+    <a class="fb-reiter-zurueck" href="/" aria-label="Zurück zu Base B">{ICON:zurueck}<span>Base B</span></a>
+    <button type="button" class="fb-tab" data-tab="foto" aria-pressed="false">{ICON:kamera}<span>Foto</span></button>
+    <button type="button" class="fb-tab" data-tab="hintergrund" aria-pressed="false">{ICON:bild}<span>Hintergrund</span></button>
+    <button type="button" class="fb-tab braucht-foto" data-tab="gruen" aria-pressed="false" disabled>{ICON:pipette}<span>Grün</span></button>
+    <button type="button" class="fb-tab braucht-foto" data-tab="speichern" aria-pressed="false" disabled>{ICON:speichern}<span>Speichern</span></button>
+  </nav>
 </div>
 
 <!-- Kamera -->
