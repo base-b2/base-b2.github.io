@@ -223,3 +223,31 @@ body { padding-top: var(--sa-o); }
   .fb-umschalter label { padding: 0 7px; font-size: 13px; }
   .fb-werkzeug { min-width: 50px; font-size: 11px; }
 }
+
+/* Sicherheit gegen Browserleisten, die über der Seite liegen (z. B. Brave unten):
+   1) Die Seite darf ein Stück scrollen - dann schieben die meisten Browser ihre Leisten weg.
+   2) Hochkant liegen alle Bedienelemente oben, wo kein Browser etwas überdeckt. */
+html { overflow-y: auto; height: auto; }
+body { overflow: visible; }
+#inhalt { position: relative; }
+.fb-auslauf { position: absolute; left: 0; right: 0; top: 100%; margin: 0; height: 96px; display: flex; align-items: center; justify-content: center; font-family: var(--bb-font-mono); font-size: 12px; color: var(--bb-nebentext); }
+@media (orientation: portrait) {
+  .fb-kopf { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; padding: 0; border: 0; }
+  .fb-reiter { order: 0; border-top: none; border-bottom: 1px solid var(--bb-linie); padding: 0 max(var(--sa-r), 8px) 0 max(var(--sa-l), 8px); }
+  .fb-fenster { order: 1; border-top: none; border-bottom: 1px solid var(--bb-linie); }
+  .fb-vorschau { order: 2; }
+  .fb-reiter > .fb-reiter-zurueck { display: flex; flex: 0 0 64px; color: var(--bb-text); border-right: 1px solid var(--bb-linie); }
+  .fb-tab, .fb-reiter-zurueck { border-top: none; border-bottom: 3px solid transparent; min-height: 60px; }
+  .fb-tab[aria-pressed="true"] { border-bottom-color: var(--bb-akzent); }
+  .fb-griff { display: none; }
+  .fb-fenster-kopf { padding-top: 8px; }
+  .fb-bildleiste, .fb-pickleiste { order: -1; }
+  .fb-buehne-box > .fb-buehne { top: 0; transform: translateX(-50%); }
+}
+@media (orientation: landscape) and (max-height: 560px) {
+  .fb-tab, .fb-reiter-zurueck { flex: 0 0 auto; min-height: 54px; }
+}
+.fb-bildleiste, .fb-pickleiste { order: -1; }
+@media (orientation: portrait) {
+  .fb-toast { top: calc(var(--sa-o) + 76px); }
+}

@@ -41,7 +41,6 @@
     const vv = window.visualViewport;
     if (vv && Math.abs(vv.scale - 1) < 0.01 && vv.height > 200) h = Math.min(h, vv.height);
     document.body.style.height = Math.round(h) + 'px';
-    window.scrollTo(0, 0);
   }
   passeHoeheAn();
   window.addEventListener('resize', passeHoeheAn);
@@ -124,7 +123,7 @@
   // Fenster nach unten wischen schließt es (hochkant)
   let wischStart = null;
   $('#fenster-griff').addEventListener('pointerdown', (e) => { if (e.target.closest('button')) return; wischStart = e.clientY; });
-  $('#fenster-griff').addEventListener('pointerup', (e) => { if (wischStart !== null && e.clientY - wischStart > 50) schliesse(); wischStart = null; });
+  $('#fenster-griff').addEventListener('pointerup', (e) => { if (wischStart !== null && Math.abs(e.clientY - wischStart) > 50) schliesse(); wischStart = null; });
   $('#fenster-griff').addEventListener('pointercancel', () => { wischStart = null; });
 
   /* ---------- Foto ---------- */
