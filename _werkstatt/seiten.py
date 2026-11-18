@@ -157,7 +157,7 @@ def seite(pfad, titel, inhalt, beschreibung="Werkzeuge, Leitfäden und Spiele f�
 '''
     ziel = WURZEL / pfad
     ziel.parent.mkdir(parents=True, exist_ok=True)
-    ziel.write_text(html, encoding="utf-8")
+    ziel.write_text(html, encoding="utf-8", newline="\n")   # immer Unix-Zeilenenden, auch unter Windows
 
 
 def seitenkopf(titel, einleitung="", krumen=None):
@@ -338,7 +338,7 @@ def ueber():
 <div class="text">
 <p>Base B ist eine kleine Sammlung von Werkzeugen, die direkt im Browser laufen. Ohne Anmeldung, ohne Werbung und ohne Tracking. Dazu kommen bald Leitfäden für Office-Programme, die sich auch im Unterricht einsetzen lassen.</p>
 <h2>Der Name</h2>
-<p>Base B steht für eine Basis, für den Plan B und für das Binärsystem: Im Hexadezimalsystem mit den Ziffern 0-9 und A-F steht B für den Wert 11, im Binärsystem geschrieben 1011. Genau diese vier Bits bilden das Logo. Und ein bisschen steckt auch der Name des Machers darin: <b>Ba</b>uer <b>Se</b>bastian.</p>
+<p>Base B steht für eine Basis und für das Binärsystem: Im Hexadezimalsystem steht B für die Zahl 11, binär 1011. Diese vier Bits bilden das Logo. Außerdem steckt der Name des Machers darin: <b>Ba</b>uer <b>Seb</b>astian.</p>
 <h2>Kontakt</h2>
 <p>Fragen, Ideen oder einen Fehler gefunden? Schreiben Sie über das <a href="/kontakt/">Kontaktformular</a>.</p>
 </div>
@@ -434,7 +434,7 @@ def alte_fotobox():
 <p>Die Fotobox ist umgezogen: <a href="/werkzeuge/fotobox/">zur Fotobox</a>.</p>
 </body>
 </html>
-''', encoding="utf-8")
+''', encoding="utf-8", newline="\n")
 
 
 def zufallsgenerator():
@@ -444,7 +444,7 @@ def zufallsgenerator():
     for name in ICONS:
         inhalt = inhalt.replace("{ICON:" + name + "}", icon(name, 20))
     seite("werkzeuge/zufallsgenerator/index.html", "Zufallsgenerator", inhalt,
-          "Zufallszahlen, Buchstaben für Stadt-Land-Fluss, Würfel, Münze und Namen aus eigenen Listen.",
+          "Zufallszahlen, Buchstaben, Würfel mit 1 bis 100 Seiten, Münze und Namen aus eigenen Listen.",
           aktiv="/werkzeuge/zufallsgenerator/",
           extra_kopf='<link rel="stylesheet" href="zufall.css">',
           extra_skripte='<script src="zufall.js" defer></script>')

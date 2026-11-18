@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Zufallsgenerator | Base B</title>
-<meta name="description" content="Zufallszahlen, Buchstaben für Stadt-Land-Fluss, Würfel, Münze und Namen aus eigenen Listen.">
+<meta name="description" content="Zufallszahlen, Buchstaben, Würfel mit 1 bis 100 Seiten, Münze und Namen aus eigenen Listen.">
 <meta name="theme-color" content="#1C2E4A">
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -33,7 +33,7 @@
     <label for="kategorie">Kategorie</label>
     <select class="eingabe" id="kategorie">
       <option value="zahlen">Zahlen</option>
-      <option value="buchstaben">Buchstaben (z. B. Stadt-Land-Fluss)</option>
+      <option value="buchstaben">Buchstaben</option>
       <option value="wuerfel">Würfel</option>
       <option value="muenze">Münze</option>
       <option value="import">Eigene Liste (aus Datei)</option>
@@ -67,8 +67,21 @@
     </div>
   </fieldset>
 
-  <!-- Würfel / Münze haben keine eigenen Optionen außer der Anzahl -->
-  <div class="zg-panel" data-panel="wuerfel" hidden><p class="zg-klein">Jeder Würfel zeigt 1 bis 6. Bei mehreren Würfeln steht die Summe darunter.</p></div>
+  <!-- Würfel: Seitenzahl frei wählbar (1 bis 100) -->
+  <fieldset class="zg-panel" data-panel="wuerfel" hidden>
+    <legend class="feld-titel">Würfel mit</legend>
+    <div class="zg-pillen" role="radiogroup" aria-label="Seiten pro Würfel">
+      <label class="zg-pille"><input type="radio" name="seiten" value="4">4 Seiten</label>
+      <label class="zg-pille"><input type="radio" name="seiten" value="6" checked>6 Seiten</label>
+      <label class="zg-pille"><input type="radio" name="seiten" value="10">10 Seiten</label>
+      <label class="zg-pille"><input type="radio" name="seiten" value="12">12 Seiten</label>
+      <label class="zg-pille"><input type="radio" name="seiten" value="20">20 Seiten</label>
+      <label class="zg-pille"><input type="radio" name="seiten" value="eigen">Eigene Zahl</label>
+    </div>
+    <div class="feld" id="eigene-seiten" hidden><label for="seiten-zahl">Zahl der Seiten (1 bis 100)</label><input class="eingabe" id="seiten-zahl" type="number" inputmode="numeric" min="1" max="100" value="100"></div>
+    <p class="zg-klein">Jeder Würfel zeigt eine Zahl von 1 bis zur gewählten Seitenzahl. Bei mehreren Würfeln steht die Summe darunter.</p>
+  </fieldset>
+  <!-- Münze hat keine eigenen Optionen außer der Anzahl -->
   <div class="zg-panel" data-panel="muenze" hidden><p class="zg-klein">Kopf oder Zahl.</p></div>
 
   <!-- Eigene Liste -->

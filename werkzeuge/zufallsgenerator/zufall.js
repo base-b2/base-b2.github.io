@@ -68,7 +68,13 @@
       return { kat, typ: 'zahl', titel: `Zahlen ${zahlText(min)}-${zahlText(max)}`, min, max };
     }
     if (kat === 'buchstaben') return { kat, typ: 'werte', titel: 'Buchstaben', werte: ALPHABET.filter((b) => st.aktiv.has(b)) };
-    if (kat === 'wuerfel') return { kat, typ: 'wuerfel', titel: 'Würfel' };
+    if (kat === 'wuerfel') {
+      const w = $('input[name="seiten"]:checked').value;
+      let seiten = w === 'eigen' ? Math.round(Number($('#seiten-zahl').value)) : Number(w);
+      if (!Number.isFinite(seiten)) seiten = 6;
+      seiten = Math.min(100, Math.max(1, seiten));
+      return { kat, typ: 'wuerfel', titel: `Würfel (1-${seiten})`, seiten };
+    }
     if (kat === 'muenze') return { kat, typ: 'muenze', titel: 'Münze' };
     if (kat === 'import') return { kat, typ: 'import', titel: 'Eigene Liste' };
     const liste = st.listen.find((l) => 'liste:' + l.id === kat);
@@ -97,6 +103,7 @@
     const panel = kat.startsWith('liste:') ? 'liste' : kat;
     $$('.zg-panel').forEach((p) => { p.hidden = p.dataset.panel !== panel; });
     $('#eigener-bereich').hidden = $('input[name="bereich"]:checked').value !== 'eigen';
+    $('#eigene-seiten').hidden = $('input[name="seiten"]:checked').value !== 'eigen';
   }
 
   function fehler(text) {
@@ -138,7 +145,7 @@
   /* ---------- Ziehen ---------- */
   function ziehe(k, n) {
     if (k.typ === 'wuerfel') {
-      const w = Array.from({ length: n }, () => zufallInt(1, 6));
+      const w = Array.from({ length: n }, () => zufallInt(1, k.seiten));
       return { werte: w.map(String), zusatz: n > 1 ? `Summe: ${w.reduce((a, b) => a + b, 0)}` : '' };
     }
     if (k.typ === 'muenze') {
@@ -197,7 +204,7 @@
 
   function vorschauWert(k) {
     if (k.typ === 'zahl') return zahlText(zufallInt(k.min, k.max));
-    if (k.typ === 'wuerfel') return String(zufallInt(1, 6));
+    if (k.typ === 'wuerfel') return String(zufallInt(1, k.seiten));
     if (k.typ === 'muenze') return zufallInt(0, 1) ? 'Kopf' : 'Zahl';
     return k.werte[zufallInt(0, k.werte.length - 1)];
   }
@@ -415,8 +422,8 @@
 
   /* ---------- Ereignisse ---------- */
   $('#kategorie').addEventListener('change', aktualisiere);
-  $$('input[name="bereich"], input[name="pool"]').forEach((r) => r.addEventListener('change', aktualisiere));
-  ['#von', '#bis'].forEach((s) => $(s).addEventListener('input', aktualisiere));
+  $$('input[name="bereich"], input[name="pool"], input[name="seiten"]').forEach((r) => r.addEventListener('change', aktualisiere));
+  ['#von', '#bis', '#seiten-zahl'].forEach((s) => $(s).addEventListener('input', aktualisiere));
   $('#ziehen').addEventListener('click', los);
   $('#neu').addEventListener('click', neu);
   if (RUHIG) $('#animation').checked = false;
