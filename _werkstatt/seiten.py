@@ -97,7 +97,7 @@ def kopf(aktiv=""):
             f'aria-controls="menue-{kennung}">{titel}{icon("runter", 16)}</button>'
             f'<ul class="untermenue" id="menue-{kennung}" hidden>{links}</ul></li>')
     thema = (f'<button class="kopf-knopf thema-knopf" type="button" aria-label="Dunkelmodus einschalten">'
-             f'{icon("mond", 22, "mond")}{icon("sonne", 22, "sonne")}</button>')
+             f'{icon("mond", 22, "mond")}{icon("sonne", 22, "sonne")}</button>') if THEMA_SCHALTER else ""
     return f'''<header class="kopf">
 <div class="huelle">
 <a class="logo" href="/" aria-label="Base B, zur Startseite"><img class="logo-hell" src="/assets/img/web_logo_hell.svg" alt="Base B" width="157" height="34"><img class="logo-dunkel" src="/assets/img/web_logo_dunkel.svg" alt="Base B" width="157" height="34"></a>
@@ -115,7 +115,14 @@ FUSS = '''<footer class="fuss">
 </footer>'''
 
 
-def seite(pfad, titel, inhalt, beschreibung="Kleine Werkzeuge, die einfach funktionieren.",
+# Dunkelmodus: vorerst ganz aus, die Seite ist immer hell. Der Code bleibt für später erhalten.
+THEMA_SCHALTER = False   # True = Mond/Sonne-Schalter in der Kopfzeile anzeigen
+# Dunkelmodus-Wahl speichern? Vorerst aus (kein Local Storage). Zum Einschalten hier und in assets/js/site.js (SPEICHERN) auf True/true setzen.
+THEMA_SPEICHERN = False
+THEMA_SKRIPT = "<script>try{if(localStorage.getItem('bb-thema')==='dunkel')document.documentElement.setAttribute('data-theme','dunkel')}catch(e){}</script>\n"
+
+
+def seite(pfad, titel, inhalt, beschreibung="Werkzeuge, Leitfäden und Spiele für den Unterricht. Läuft im Browser, bleibt auf dem Gerät.",
           aktiv="", extra_kopf="", extra_skripte="", ohne_rahmen=False):
     voller_titel = "Base B" if titel == "Base B" else f"{titel} | Base B"
     rahmen_oben = "" if ohne_rahmen else kopf(aktiv)
@@ -128,8 +135,7 @@ def seite(pfad, titel, inhalt, beschreibung="Kleine Werkzeuge, die einfach funkt
 <title>{voller_titel}</title>
 <meta name="description" content="{beschreibung}">
 <meta name="theme-color" content="#1C2E4A">
-<script>try{{if(localStorage.getItem('bb-thema')==='dunkel')document.documentElement.setAttribute('data-theme','dunkel')}}catch(e){{}}</script>
-<link rel="icon" href="/favicon.ico" sizes="any">
+{THEMA_SKRIPT if THEMA_SPEICHERN else ""}<link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preload" href="/assets/fonts/lexend.woff" as="font" type="font/woff" crossorigin>
@@ -164,7 +170,8 @@ def seitenkopf(titel, einleitung="", krumen=None):
 
 
 def kachel(url, etikett, titel, text, bild, klasse="", suche=""):
-    return f'''<a class="kachel {klasse}" href="{url}" data-suche="{suche}">
+    art = etikett.lower().replace("ä", "ae")
+    return f'''<a class="kachel {klasse}" href="{url}" data-suche="{suche}" data-art="{art}">
 <div class="kachel-kopf">{bild}<span class="kachel-etikett">{etikett}</span></div>
 <div class="kachel-titel">{titel}</div>
 <div class="kachel-text">{text}</div>
@@ -178,13 +185,13 @@ KACHEL_ZUFALL = kachel("/werkzeuge/zufallsgenerator/", "WERKZEUG", "Zufallsgener
 KACHEL_FOTOBOX = kachel("/werkzeuge/fotobox/", "WERKZEUG", "Fotobox",
                         "Greenscreen weg, neuer Hintergrund. Gemacht für Kinder ab 10.", icon("kamera", 32),
                         suche="fotobox foto kamera greenscreen hintergrund bild")
-KACHEL_LEITFAEDEN = kachel("/leitfaeden/", "LEITFÄDEN", "Leitfäden",
+KACHEL_LEITFAEDEN = kachel("/leitfaeden/", "LEITFADEN", "Leitfäden",
                            "Word, Excel und Co. Schritt für Schritt. Die ersten folgen bald.", icon("buch", 32),
                            "kachel-lav", "leitfaden leitfäden anleitung word excel powerpoint office")
 KACHEL_BASEBOARD = kachel("/spiele/baseboard/", "SPIEL", "BaseBoard",
-                          "Fragen im Raster, Punkte für Teams. Gespeichert wird nur auf Ihrem Gerät.", icon("raster", 32),
+                          "Fragen im Raster, Punkte für Teams. Das Quiz speichern Sie als Datei, ohne Konto.", icon("raster", 32),
                           "kachel-apr", "baseboard board quiz quizwand jeopardy fragen raster punkte teams klasse unterricht spiel")
-KACHEL_SPIELE = kachel("/spiele/", "SPIELE", "Plattformer",
+KACHEL_SPIELE = kachel("/spiele/", "SPIEL", "Plattformer",
                        "Hüpfen mit Bits. In Arbeit, bitte nicht drängeln.", pixel(FIGUR, 40),
                        "kachel-apr", "spiel spiele plattformer game")
 
@@ -193,21 +200,28 @@ KACHEL_SPIELE = kachel("/spiele/", "SPIELE", "Plattformer",
 def startseite():
     inhalt = f'''<div class="huelle start">
 <div class="start-oben">
-<h1>Willkommen auf <span style="white-space: nowrap">Base B.</span><span class="start-unter">Kleine Werkzeuge, die einfach funktionieren.</span></h1>
+<h1>Willkommen auf <span style="white-space: nowrap">Base B.</span><span class="start-unter">Läuft im Browser. Bleibt auf dem Gerät.</span></h1>
 <form class="sprung" id="sprung" role="search" autocomplete="off">
 <label class="etikett" for="sprung-eingabe">Wohin soll es gehen?</label>
 <div class="sprung-feld">
 <span class="sprung-zeichen" aria-hidden="true">&gt;</span>
 <span class="sprung-cursor" aria-hidden="true"></span>
-<input id="sprung-eingabe" type="text" spellcheck="false" placeholder="zufall, fotobox, hilfe" aria-describedby="sprung-tipp">
+<input id="sprung-eingabe" type="text" spellcheck="false" placeholder="zufall, fotobox, hilfe" aria-label="Suchwort eingeben">
 <span class="sprung-taste" aria-hidden="true">Enter</span>
 </div>
-<p class="sprung-tipp" id="sprung-tipp">Tippen filtert die Kacheln, <span class="kap">Enter</span> öffnet den ersten Treffer.</p>
 <div class="sprung-antwort" id="sprung-antwort" role="status" aria-live="polite" hidden></div>
 </form>
 </div>
 <section aria-labelledby="alles">
+<div class="alles-kopf">
 <h2 class="etikett" id="alles">Alles auf Base B</h2>
+<div class="filter" role="group" aria-label="Nach Art filtern">
+<button type="button" class="filter-knopf" data-art="" aria-pressed="true">Alle</button>
+<button type="button" class="filter-knopf" data-art="werkzeug" aria-pressed="false">Werkzeug</button>
+<button type="button" class="filter-knopf" data-art="leitfaden" aria-pressed="false">Leitfaden</button>
+<button type="button" class="filter-knopf" data-art="spiel" aria-pressed="false">Spiel</button>
+</div>
+</div>
 <div class="kacheln" id="kacheln">
 {KACHEL_ZUFALL}
 {KACHEL_FOTOBOX}
@@ -215,7 +229,7 @@ def startseite():
 {KACHEL_BASEBOARD}
 {KACHEL_SPIELE}
 </div>
-<p class="kachel-text" id="keine-treffer" hidden>Dazu gibt es noch nichts. Tippen Sie <span class="mono">hilfe</span> für alle Befehle.</p>
+<p class="kachel-text" id="keine-treffer" hidden>Dazu gibt es noch nichts. Geben Sie <span class="mono">hilfe</span> ein, um alle Befehle zu sehen.</p>
 </section>
 </div>'''
     seite("index.html", "Base B", inhalt,
@@ -388,18 +402,19 @@ def datenschutz():
 <p>Diese Webseite wird über GitHub Pages bereitgestellt (GitHub Inc.). Beim Aufruf verarbeitet GitHub technisch notwendige Daten wie die IP-Adresse, um die Seite auszuliefern und vor Missbrauch zu schützen. Details stehen in der <a href="https://docs.github.com/de/site-policy/privacy-policies/github-general-privacy-statement" rel="noopener">Datenschutzerklärung von GitHub</a>.</p>
 <h2>Kein Tracking, keine Cookies</h2>
 <p>Es gibt keine Analyse-Werkzeuge, keine Werbung und keine Cookies. Schriften und Grafiken liegen auf dieser Webseite selbst und werden nicht von fremden Servern geladen.</p>
-<h2>Gespeicherte Einstellungen</h2>
-<p>Wenn Sie den Dunkelmodus einschalten, merkt sich Ihr Browser diese Wahl lokal (Local Storage). Diese Information verlässt Ihr Gerät nicht und lässt sich jederzeit über die Browser-Einstellungen löschen.</p>
+<h2>Nichts auf Ihrem Gerät gespeichert</h2>
+<p>Base B legt von sich aus nichts auf Ihrem Gerät ab, auch keine Einstellungen. Der Dunkelmodus gilt deshalb nur für die gerade geöffnete Seite. Einzige Ausnahme ist das BaseBoard, und nur, wenn Sie dort ausdrücklich "Auf diesem Gerät merken" einschalten (siehe unten).</p>
 <h2>Werkzeuge</h2>
 <ul>
 <li><b>Zufallsgenerator:</b> Alle Eingaben und hochgeladenen Listen bleiben in Ihrem Browser. Nichts wird übertragen oder gespeichert.</li>
-<li><b>BaseBoard:</b> Quizze werden nicht online gespeichert. Sie laden sie als Datei auf Ihr Gerät herunter und öffnen sie bei Bedarf wieder. Damit nichts verloren geht, merkt sich Ihr Browser den aktuellen Entwurf und einen laufenden Spielstand lokal (Local Storage). Diese Daten verlassen Ihr Gerät nicht.</li>
+<li><b>BaseBoard:</b> Quizze werden nicht online gespeichert. Sie laden sie als Datei auf Ihr Gerät herunter und öffnen sie bei Bedarf wieder. Nur wenn Sie "Auf diesem Gerät merken" einschalten, legt Ihr Browser den aktuellen Entwurf und einen laufenden Spielstand im Speicher des Browsers ab (Local Storage, rechtlich wie ein Cookie). Diese Daten verlassen Ihr Gerät nicht. Schalten Sie das Häkchen wieder aus, werden sie sofort gelöscht.</li>
 <li><b>Fotobox:</b> Fotos werden nur auf Ihrem Gerät bearbeitet und nie hochgeladen. Für die Suche nach Hintergrundbildern wird nur der eingegebene Suchbegriff an Openverse (WordPress.org) geschickt; die Vorschaubilder werden von den jeweiligen Bildquellen geladen. Dabei wird, wie bei jedem Abruf im Internet, Ihre IP-Adresse an diese Server übermittelt.</li>
 </ul>
 <h2>Kontakt</h2>
 <p>Das Kontaktformular öffnet nur Ihr eigenes E-Mail-Programm. Über diese Webseite wird nichts verschickt. Ihre E-Mail wird nur zur Beantwortung verwendet.</p>
 <h2>Ihre Rechte</h2>
-<p>Sie haben das Recht auf Auskunft, Berichtigung, Löschung und Einschränkung der Verarbeitung Ihrer Daten sowie ein Beschwerderecht bei einer Datenschutzaufsichtsbehörde. Wenden Sie sich dazu an <a href="mailto:kontakt@base-b.de">kontakt@base-b.de</a>.</p>
+<p>Base B selbst erhebt und speichert keine personenbezogenen Daten über Sie: Es gibt keine Konten, keine Formulare, die Daten verschicken, und keine Auswertung Ihres Besuchs. Personenbezogene Daten fallen nur an, wenn Sie mir eine E-Mail schreiben, sowie bei GitHub (Hosting) und Openverse (Bildersuche in der Fotobox), siehe oben.</p>
+<p>Für diese Fälle haben Sie das Recht auf Auskunft, Berichtigung, Löschung und Einschränkung der Verarbeitung Ihrer Daten sowie ein Beschwerderecht bei einer Datenschutzaufsichtsbehörde. Wenden Sie sich dazu an <a href="mailto:kontakt@base-b.de">kontakt@base-b.de</a>.</p>
 </div>
 </div>'''
     seite("datenschutz/index.html", "Datenschutz", inhalt, aktiv="/datenschutz/")

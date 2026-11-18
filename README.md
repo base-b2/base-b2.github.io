@@ -1,12 +1,12 @@
 # Base B | base-b.de
 
-Kleine Werkzeuge, die einfach funktionieren. Statische Webseite für GitHub Pages, ohne Tracking, ohne Werbung, ohne externe Schriften.
+Läuft im Browser. Bleibt auf dem Gerät. Statische Webseite für GitHub Pages, ohne Tracking, ohne Werbung, ohne externe Schriften.
 
 ## Aufbau
 
 | Pfad | Inhalt |
 |---|---|
-| `index.html` | Startseite mit Eingabezeile (Suche und Befehle: `hilfe`, `42`, `plan b`, `dunkel`, `hell`) |
+| `index.html` | Startseite mit Eingabezeile (Suche, Filter nach Art und Befehle: `hilfe`, `42`, `plan b`) |
 | `404.html` | Fehlerseite |
 | `werkzeuge/` | Übersicht, `zufallsgenerator/`, `fotobox/` |
 | `spiele/baseboard/` | BaseBoard: Quiz im Raster erstellen, als .html/.csv speichern, mit Teams spielen (Logik in `baseboard.js`, Stil in `baseboard.css`) |
@@ -16,7 +16,7 @@ Kleine Werkzeuge, die einfach funktionieren. Statische Webseite für GitHub Page
 | `fotobox/` | Weiterleitung von der alten Adresse auf `/werkzeuge/fotobox/` |
 | `assets/css/tokens.css` | Farben, Schriften, Abstände (einzige Quelle) |
 | `assets/css/base.css` | Grundstil, Kopf- und Fußzeile, Bausteine |
-| `assets/js/site.js` | Dunkelmodus-Schalter und Menü |
+| `assets/js/site.js` | Menü; Dunkelmodus-Schalter vorerst aus (`THEMA_SCHALTER` in `_werkstatt/seiten.py`, `SPEICHERN` in `site.js`) |
 | `assets/fonts/` | Lexend und JetBrains Mono (selbst gehostet, OFL) |
 | `assets/img/` | Logo und Bildmarke |
 | `_werkstatt/seiten.py` | Generator für alle Seiten (wird nicht veröffentlicht) |

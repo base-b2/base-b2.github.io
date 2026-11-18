@@ -35,3 +35,15 @@ section h2.etikett { font-weight: 400; margin-bottom: 20px; }
   .sprung-feld input, .sprung-zeichen { font-size: 17px; }
   .sprung-taste { display: none; }
 }
+
+/* Filter nach Art */
+.alles-kopf { display: flex; align-items: center; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; margin-bottom: 20px; }
+.alles-kopf h2.etikett { margin-bottom: 0; }
+.filter { display: flex; flex-wrap: wrap; gap: 8px; }
+.filter-knopf {
+  min-height: 44px; padding: 0 18px; border-radius: 22px; border: 2px solid var(--bb-linie); background: var(--bb-flaeche);
+  color: var(--bb-text); font: inherit; font-size: 15px; cursor: pointer;
+}
+.filter-knopf:hover { border-color: var(--bb-text); }
+.filter-knopf[aria-pressed="true"] { background: var(--bb-tinte); border-color: var(--bb-tinte); color: #FFFFFF; font-weight: 600; }
+.filter-knopf:focus-visible { outline: 2px solid var(--bb-fokus); outline-offset: 2px; }

@@ -2,12 +2,15 @@
 'use strict';
 (() => {
   const SCHLUESSEL = 'bb-thema';
+  // Dunkelmodus-Wahl speichern? Vorerst aus: Der Schalter gilt nur für die geöffnete Seite, nichts landet auf dem Gerät.
+  // Zum Einschalten auf true setzen und in _werkstatt/seiten.py THEMA_SPEICHERN = True.
+  const SPEICHERN = false;
 
   /* ---------- Dunkelmodus (nur per Schalter, Standard hell) ---------- */
   function setzeThema(thema) {
     if (thema === 'dunkel') document.documentElement.setAttribute('data-theme', 'dunkel');
     else document.documentElement.removeAttribute('data-theme');
-    try { localStorage.setItem(SCHLUESSEL, thema); } catch (e) { /* Speichern nicht möglich */ }
+    if (SPEICHERN) { try { localStorage.setItem(SCHLUESSEL, thema); } catch (e) { /* Speichern nicht möglich */ } }
     document.querySelectorAll('.thema-knopf').forEach((k) => {
       k.setAttribute('aria-label', thema === 'dunkel' ? 'Hellen Modus einschalten' : 'Dunkelmodus einschalten');
       k.setAttribute('aria-pressed', thema === 'dunkel' ? 'true' : 'false');

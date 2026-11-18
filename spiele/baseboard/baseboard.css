@@ -372,3 +372,19 @@ html.qw-gesperrt { overflow: hidden; }
   html.qw-druckt body > *:not(.qw-druck) { display: none !important; }
   html.qw-druckt .qw-druck { position: static; left: auto; width: auto; }
 }
+
+/* Schalter "Auf diesem Gerät merken" mit dezentem Hinweis */
+.qw-merken { display: flex; align-items: center; gap: 10px; justify-content: flex-end; flex-wrap: wrap; margin: 0 0 12px; font-size: 15px; color: var(--bb-nebentext); }
+.qw-merken label { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; cursor: pointer; }
+.qw-merken-box { width: 20px; height: 20px; accent-color: var(--bb-akzent); }
+.qw-info-halter { position: relative; display: inline-flex; }
+.qw-info {
+  width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--bb-nebentext); background: none; color: var(--bb-nebentext);
+  font: 700 14px var(--bb-font-mono); cursor: help; display: inline-flex; align-items: center; justify-content: center; padding: 0;
+}
+.qw-tipp {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 20; width: min(300px, 80vw); padding: 10px 12px;
+  background: var(--bb-tinte); color: #FFFFFF; border-radius: var(--bb-radius-s); font-size: 14px; line-height: 1.45;
+  opacity: 0; visibility: hidden; transition: opacity 0.15s;
+}
+.qw-info-halter:hover .qw-tipp, .qw-info:focus-visible + .qw-tipp, .qw-info-halter.offen .qw-tipp { opacity: 1; visibility: visible; }

@@ -7,6 +7,8 @@
   const antwort = document.getElementById('sprung-antwort');
   const kacheln = [...document.querySelectorAll('#kacheln .kachel')];
   const keine = document.getElementById('keine-treffer');
+  const filterKnoepfe = [...document.querySelectorAll('.filter-knopf')];
+  let art = '';   // '' = alle, sonst werkzeug | leitfaden | spiel
 
   const SEITEN = ['/werkzeuge/zufallsgenerator/', '/werkzeuge/fotobox/', '/leitfaeden/', '/spiele/', '/spiele/baseboard/', '/ueber/'];
   const norm = (s) => s.toLowerCase().trim()
@@ -20,14 +22,17 @@
   const BEFEHLE = {
     hilfe: () => zeige(`Bekannte Befehle:<ul>
       <li>Name eines Werkzeugs, z. B. zufall oder fotobox</li>
-      <li>dunkel | hell: Darstellung umschalten</li>
+${window.bbThema && document.querySelector('.thema-knopf') ? '<li>dunkel | hell: Darstellung umschalten</li>' : ''}
       <li>plan b: irgendwohin</li>
       <li>42</li></ul>`),
     '42': () => zeige('101010₂. Gern geschehen.'),
     'plan b': () => { window.location.href = SEITEN[Math.floor(Math.random() * SEITEN.length)]; },
-    dunkel: () => { window.bbThema && window.bbThema.setze('dunkel'); zeige('Dunkelmodus an.'); },
-    hell: () => { window.bbThema && window.bbThema.setze('hell'); zeige('Heller Modus an.'); },
   };
+  // Dunkelmodus-Befehle nur, wenn der Schalter eingeschaltet ist (siehe THEMA_SCHALTER in _werkstatt/seiten.py)
+  if (document.querySelector('.thema-knopf')) {
+    BEFEHLE.dunkel = () => { window.bbThema && window.bbThema.setze('dunkel'); zeige('Dunkelmodus an.'); };
+    BEFEHLE.hell = () => { window.bbThema && window.bbThema.setze('hell'); zeige('Heller Modus an.'); };
+  }
   BEFEHLE.help = BEFEHLE.hilfe;
   BEFEHLE['?'] = BEFEHLE.hilfe;
   BEFEHLE.planb = BEFEHLE['plan b'];
@@ -38,7 +43,8 @@
     let sichtbar = 0;
     kacheln.forEach((k) => {
       const text = norm(k.dataset.suche + ' ' + k.textContent);
-      const treffer = !q || BEFEHLE[q] || q.split(/\s+/).every((w) => text.includes(w));
+      const passtArt = !art || k.dataset.art === art;
+      const treffer = passtArt && (!q || BEFEHLE[q] || q.split(/\s+/).every((w) => text.includes(w)));
       k.hidden = !treffer;
       if (treffer) sichtbar++;
     });
@@ -47,6 +53,11 @@
   }
 
   eingabe.addEventListener('input', filtere);
+  filterKnoepfe.forEach((b) => b.addEventListener('click', () => {
+    art = b.dataset.art;
+    filterKnoepfe.forEach((x) => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
+    filtere();
+  }));
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const q = norm(eingabe.value);

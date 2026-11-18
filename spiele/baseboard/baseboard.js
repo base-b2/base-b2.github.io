@@ -16,6 +16,7 @@
   const MAX_TEAMS = 12;
   const SPEICHER_ENTWURF = 'bb-baseboard-entwurf';
   const SPEICHER_SPIEL = 'bb-baseboard-spiel';
+  const SPEICHER_ERLAUBT = 'bb-baseboard-merken';   // gesetzt nur, wenn "Auf diesem Gerät merken" eingeschaltet ist
   const SKRIPT_ENDE = '<' + '/script>';
 
   /* ---------- Kleine Helfer ---------- */
@@ -220,13 +221,32 @@
   }
 
   /* ---------- Zwischenspeicher (nur dieser Browser) ---------- */
-  const lies = (k) => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } };
+  const lies = (k) => { if (!merkenAn()) return null; try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } };
+  /* Gespeichert wird nur mit ausdrücklicher Zustimmung (Häkchen). Standard: nichts auf dem Gerät ablegen. */
+  let merkenAktiv = (() => { try { return localStorage.getItem(SPEICHER_ERLAUBT) === '1'; } catch (e) { return false; } })();
+  function merkenAn() { return merkenAktiv; }
+  function setzeMerken(an) {
+    merkenAktiv = an;
+    if (an) {
+      try { localStorage.setItem(SPEICHER_ERLAUBT, '1'); } catch (e) { merkenAktiv = false; toast('Ihr Browser erlaubt das Speichern nicht.', 'fehler'); return false; }
+      if (!OFFLINE && (quiz.titel || quiz.felder.flat().some(hatInhalt))) {
+        try { localStorage.setItem(SPEICHER_ENTWURF, JSON.stringify({ zeit: Date.now(), quiz })); } catch (e) { /* zu groß */ }
+      }
+      speichereSpiel();
+      toast('Wird ab jetzt auf diesem Gerät gemerkt.');
+    } else {
+      [SPEICHER_ERLAUBT, SPEICHER_ENTWURF, SPEICHER_SPIEL].forEach((k) => { try { localStorage.removeItem(k); } catch (e) { /* egal */ } });
+      toast('Gelöscht. Auf diesem Gerät ist nichts mehr gespeichert.');
+      if (ansicht === 'start') zeigeStart();
+    }
+    return true;
+  }
   const loesche = (k) => { try { localStorage.removeItem(k); } catch (e) { /* egal */ } };
   let entwurfTimer = null;
   let speicherWarnung = false;
   function geaendert() {
     ungespeichert = true;
-    if (OFFLINE) return;
+    if (OFFLINE || !merkenAn()) return;
     clearTimeout(entwurfTimer);
     entwurfTimer = setTimeout(() => {
       try { localStorage.setItem(SPEICHER_ENTWURF, JSON.stringify({ zeit: Date.now(), quiz })); } catch (e) {
@@ -235,7 +255,7 @@
     }, 400);
   }
   function speichereSpiel() {
-    if (!spiel) return;
+    if (!spiel || !merkenAn()) return;
     const daten = { zeit: Date.now(), hash: spiel.hash, spiel: { ...spiel, verlauf: spiel.verlauf.slice(-20) } };
     if (!OFFLINE) daten.quiz = quiz;
     try { localStorage.setItem(SPEICHER_SPIEL, JSON.stringify(daten)); } catch (e) {
@@ -579,7 +599,9 @@
   function baueHtml(p) {
     const daten = JSON.stringify(quiz).replace(/</g, '\\u003c');
     const titel = esc(quiz.titel || 'Quiz');
-    const thema = `<button class="kopf-knopf thema-knopf" type="button" aria-label="Dunkelmodus einschalten">${iconHtml('mond', 22, 'mond')}${iconHtml('sonne', 22, 'sonne')}</button>`;
+    // Dunkelmodus vorerst aus (wie auf base-b.de): kein Schalter in gespeicherten Dateien. Für später: THEMA_SCHALTER = true.
+    const THEMA_SCHALTER = false;
+    const thema = THEMA_SCHALTER ? `<button class="kopf-knopf thema-knopf" type="button" aria-label="Dunkelmodus einschalten">${iconHtml('mond', 22, 'mond')}${iconHtml('sonne', 22, 'sonne')}</button>` : '';
     return `<!DOCTYPE html>
 <html lang="de">
 <head>
@@ -589,7 +611,7 @@
 <meta name="generator" content="${NAME} | base-b.de">
 <meta name="theme-color" content="#1C2E4A">
 <link rel="icon" href="data:image/svg+xml,${encodeURIComponent(BILDMARKE)}">
-<script>try{if(localStorage.getItem('bb-thema')==='dunkel')document.documentElement.setAttribute('data-theme','dunkel')}catch(e){}${SKRIPT_ENDE}
+${THEMA_SCHALTER ? `<script>try{if(localStorage.getItem('bb-thema')==='dunkel')document.documentElement.setAttribute('data-theme','dunkel')}catch(e){}${SKRIPT_ENDE}` : ''}
 <style id="qw-stil">
 ${p.stil.replace(/<\/style/gi, '<\\/style')}
 </style>
@@ -1762,7 +1784,7 @@ ${SKRIPT_ENDE}
   });
 
   /* ---------- Dunkelmodus in gespeicherten Dateien (ohne site.js) ---------- */
-  if (OFFLINE && !window.bbThema) {
+  if (OFFLINE && !window.bbThema && document.querySelector('.thema-knopf')) {
     const setze = (t) => {
       if (t === 'dunkel') document.documentElement.setAttribute('data-theme', 'dunkel'); else document.documentElement.removeAttribute('data-theme');
       try { localStorage.setItem('bb-thema', t); } catch (e) { /* egal */ }
@@ -1775,6 +1797,22 @@ ${SKRIPT_ENDE}
     setze(aktuell());
     document.querySelectorAll('.thema-knopf').forEach((k) => k.addEventListener('click', () => setze(aktuell() === 'dunkel' ? 'hell' : 'dunkel')));
   }
+
+  /* ---------- Schalter "Auf diesem Gerät merken" (über dem Board, in allen Ansichten) ---------- */
+  (function baueMerkenSchalter() {
+    const tippId = neueId();
+    const box = h('input', { type: 'checkbox', class: 'qw-merken-box' });
+    box.checked = merkenAn();
+    box.addEventListener('change', () => { if (!setzeMerken(box.checked)) box.checked = false; });
+    const tipp = h('span', { class: 'qw-tipp', id: tippId, role: 'tooltip' },
+      'Speichert Entwurf und Spielstand im Local Storage dieses Browsers (rechtlich einem Cookie gleichgestellt, § 25 TDDDG). Keine Übertragung an einen Server. Deaktivieren löscht die Daten sofort.');
+    const info = h('button', { type: 'button', class: 'qw-info', 'aria-label': 'Was bedeutet das?', 'aria-describedby': tippId }, 'i');
+    info.addEventListener('click', () => info.parentElement.classList.toggle('offen'));
+    const leiste = h('div', { class: 'qw-merken' },
+      h('label', null, box, h('span', null, 'Auf diesem Gerät merken')),
+      h('span', { class: 'qw-info-halter' }, info, tipp));
+    wurzel.before(leiste);
+  })();
 
   /* ---------- Los geht's ---------- */
   if (OFFLINE) {
