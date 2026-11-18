@@ -1,6 +1,7 @@
 /* Base B | Grundstil für alle Seiten (nutzt tokens.css) */
 
 *, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }   /* ausgeblendet bleibt ausgeblendet, auch bei display-Regeln */
 html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0;

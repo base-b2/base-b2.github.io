@@ -985,7 +985,7 @@ ${SKRIPT_ENDE}
           h('button', { class: 'qw-textlink', type: 'button', onclick: () => herunterladen(`${NAME}_Vorlage.csv`, baueCsv(beispiel()), 'text/csv;charset=utf-8') }, icon('speichern', 18), 'CSV-Vorlage für Excel herunterladen'))),
       h('p', { class: 'qw-klein qw-schloss' }, icon('schloss', 16),
         OFFLINE ? 'Diese Datei läuft komplett auf Ihrem Gerät.'
-          : 'Ihre Quizze bleiben auf Ihrem Gerät: kein Konto, kein Server, keine Links. Speichern heißt hier herunterladen. Der aktuelle Entwurf wird zusätzlich nur in diesem Browser zwischengespeichert.'));
+          : 'Ihre Quizze bleiben auf Ihrem Gerät: kein Konto, kein Server, keine Links. Speichern heißt hier herunterladen. Zwischenspeichern im Browser nur mit dem Häkchen "Auf diesem Gerät merken".'));
   }
 
   /* =================================================================
