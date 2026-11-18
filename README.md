@@ -9,7 +9,9 @@ Kleine Werkzeuge, die einfach funktionieren. Statische Webseite für GitHub Page
 | `index.html` | Startseite mit Eingabezeile (Suche und Befehle: `hilfe`, `42`, `plan b`, `dunkel`, `hell`) |
 | `404.html` | Fehlerseite |
 | `werkzeuge/` | Übersicht, `zufallsgenerator/`, `fotobox/` |
-| `leitfaeden/`, `spiele/` | Platzhalter |
+| `spiele/baseboard/` | BaseBoard: Quiz im Raster erstellen, als .html/.csv speichern, mit Teams spielen (Logik in `baseboard.js`, Stil in `baseboard.css`) |
+| `leitfaeden/` | Platzhalter |
+| `spiele/` | Übersicht der Spiele |
 | `ueber/`, `kontakt/`, `impressum/`, `datenschutz/` | Infoseiten |
 | `fotobox/` | Weiterleitung von der alten Adresse auf `/werkzeuge/fotobox/` |
 | `assets/css/tokens.css` | Farben, Schriften, Abstände (einzige Quelle) |

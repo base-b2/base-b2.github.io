@@ -22,6 +22,7 @@ MENUE = [
     ]),
     ("Spiele", "spiele", [
         ("Alle Spiele", "/spiele/", "spiel"),
+        ("BaseBoard", "/spiele/baseboard/", "raster"),
     ]),
     ("Über", "ueber", [
         ("Über Base B", "/ueber/", "info"),
@@ -42,6 +43,7 @@ ICONS = {
     "brief": '<rect x="3.5" y="5.5" width="17" height="13" rx="2"/><polyline points="4,7 12,13 20,7"/>',
     "absatz": '<line x1="5" y1="6" x2="19" y2="6"/><line x1="5" y1="10" x2="19" y2="10"/><line x1="5" y1="14" x2="19" y2="14"/><line x1="5" y1="18" x2="13" y2="18"/>',
     "schloss": '<rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>',
+    "raster": '<rect x="3.5" y="3.5" width="17" height="17" rx="2"/><line x1="3.5" y1="9.2" x2="20.5" y2="9.2"/><line x1="3.5" y1="14.8" x2="20.5" y2="14.8"/><line x1="9.2" y1="3.5" x2="9.2" y2="20.5"/><line x1="14.8" y1="3.5" x2="14.8" y2="20.5"/>',
     "runter": '<polyline points="6,9 12,15 18,9"/>',
     "pfeil": '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="13,6 19,12 13,18"/>',
     "zurueck": '<polyline points="15,6 9,12 15,18"/>',
@@ -179,6 +181,9 @@ KACHEL_FOTOBOX = kachel("/werkzeuge/fotobox/", "WERKZEUG", "Fotobox",
 KACHEL_LEITFAEDEN = kachel("/leitfaeden/", "LEITFÄDEN", "Leitfäden",
                            "Word, Excel und Co. Schritt für Schritt. Die ersten folgen bald.", icon("buch", 32),
                            "kachel-lav", "leitfaden leitfäden anleitung word excel powerpoint office")
+KACHEL_BASEBOARD = kachel("/spiele/baseboard/", "SPIEL", "BaseBoard",
+                          "Fragen im Raster, Punkte für Teams. Gespeichert wird nur auf Ihrem Gerät.", icon("raster", 32),
+                          "kachel-apr", "baseboard board quiz quizwand jeopardy fragen raster punkte teams klasse unterricht spiel")
 KACHEL_SPIELE = kachel("/spiele/", "SPIELE", "Plattformer",
                        "Hüpfen mit Bits. In Arbeit, bitte nicht drängeln.", pixel(FIGUR, 40),
                        "kachel-apr", "spiel spiele plattformer game")
@@ -207,6 +212,7 @@ def startseite():
 {KACHEL_ZUFALL}
 {KACHEL_FOTOBOX}
 {KACHEL_LEITFAEDEN}
+{KACHEL_BASEBOARD}
 {KACHEL_SPIELE}
 </div>
 <p class="kachel-text" id="keine-treffer" hidden>Dazu gibt es noch nichts. Tippen Sie <span class="mono">hilfe</span> für alle Befehle.</p>
@@ -300,6 +306,7 @@ def leitfaeden():
 def spiele():
     inhalt = f'''<div class="huelle">
 {seitenkopf("Spiele")}
+<div class="kacheln" style="margin-bottom: 24px">{KACHEL_BASEBOARD}</div>
 <div class="karte" style="background: var(--bb-aprikose); border: none; display: flex; gap: 24px; align-items: center; flex-wrap: wrap; padding: 32px">
 <div style="color: var(--bb-text)">{pixel(FIGUR, 88)}</div>
 <div style="flex: 1 1 320px; display: flex; flex-direction: column; gap: 8px">
@@ -386,6 +393,7 @@ def datenschutz():
 <h2>Werkzeuge</h2>
 <ul>
 <li><b>Zufallsgenerator:</b> Alle Eingaben und hochgeladenen Listen bleiben in Ihrem Browser. Nichts wird übertragen oder gespeichert.</li>
+<li><b>BaseBoard:</b> Quizze werden nicht online gespeichert. Sie laden sie als Datei auf Ihr Gerät herunter und öffnen sie bei Bedarf wieder. Damit nichts verloren geht, merkt sich Ihr Browser den aktuellen Entwurf und einen laufenden Spielstand lokal (Local Storage). Diese Daten verlassen Ihr Gerät nicht.</li>
 <li><b>Fotobox:</b> Fotos werden nur auf Ihrem Gerät bearbeitet und nie hochgeladen. Für die Suche nach Hintergrundbildern wird nur der eingegebene Suchbegriff an Openverse (WordPress.org) geschickt; die Vorschaubilder werden von den jeweiligen Bildquellen geladen. Dabei wird, wie bei jedem Abruf im Internet, Ihre IP-Adresse an diese Server übermittelt.</li>
 </ul>
 <h2>Kontakt</h2>
@@ -427,6 +435,18 @@ def zufallsgenerator():
           extra_skripte='<script src="zufall.js" defer></script>')
 
 
+def baseboard():
+    inhalt = f'''<div class="huelle">
+{seitenkopf("BaseBoard", "Das Quiz-Board von Base B: Fragen im Raster bauen, als Datei speichern und mit Teams im Browser spielen.", [("Spiele", "/spiele/")])}
+<div id="qw" class="qw"><noscript><p class="fehlermeldung">✗ Das BaseBoard braucht JavaScript.</p></noscript></div>
+</div>'''
+    seite("spiele/baseboard/index.html", "BaseBoard", inhalt,
+          "Quiz mit Kategorien und Punkten erstellen, als Datei speichern und im Browser mit Teams spielen. Ohne Konto, ohne Server.",
+          aktiv="/spiele/baseboard/",
+          extra_kopf='<link rel="stylesheet" href="baseboard.css">',
+          extra_skripte='<script src="baseboard.js" defer></script>')
+
+
 def fotobox():
     inhalt = (WURZEL / "_werkstatt" / "fotobox_inhalt.html").read_text(encoding="utf-8")
     for name in ICONS:
@@ -439,7 +459,7 @@ def fotobox():
 
 if __name__ == "__main__":
     startseite(); fehlerseite(); werkzeuge(); leitfaeden(); spiele()
-    ueber(); kontakt(); impressum(); datenschutz(); alte_fotobox()
+    ueber(); kontakt(); impressum(); datenschutz(); alte_fotobox(); baseboard()
     if (WURZEL / "_werkstatt" / "zufall_inhalt.html").exists(): zufallsgenerator()
     if (WURZEL / "_werkstatt" / "fotobox_inhalt.html").exists(): fotobox()
     print("Seiten erzeugt.")

@@ -8,7 +8,7 @@
   const kacheln = [...document.querySelectorAll('#kacheln .kachel')];
   const keine = document.getElementById('keine-treffer');
 
-  const SEITEN = ['/werkzeuge/zufallsgenerator/', '/werkzeuge/fotobox/', '/leitfaeden/', '/spiele/', '/ueber/'];
+  const SEITEN = ['/werkzeuge/zufallsgenerator/', '/werkzeuge/fotobox/', '/leitfaeden/', '/spiele/', '/spiele/baseboard/', '/ueber/'];
   const norm = (s) => s.toLowerCase().trim()
     .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss');
 
