@@ -338,7 +338,7 @@ def ueber():
 <div class="text">
 <p>Base B ist eine kleine Sammlung von Werkzeugen, die direkt im Browser laufen. Ohne Anmeldung, ohne Werbung und ohne Tracking. Dazu kommen bald Leitfäden für Office-Programme, die sich auch im Unterricht einsetzen lassen.</p>
 <h2>Der Name</h2>
-<p>Base B steht für eine Basis, für den Plan B und für das Binärsystem: Die Hex-Ziffer B hat den Wert 11, binär 1011. Genau diese vier Bits bilden das Logo. Und ein bisschen steckt auch der Name des Machers darin: <b>Ba</b>uer <b>Se</b>bastian.</p>
+<p>Base B steht für eine Basis, für den Plan B und für das Binärsystem: Im Hexadezimalsystem mit den Ziffern 0-9 und A-F steht B für den Wert 11, im Binärsystem geschrieben 1011. Genau diese vier Bits bilden das Logo. Und ein bisschen steckt auch der Name des Machers darin: <b>Ba</b>uer <b>Se</b>bastian.</p>
 <h2>Kontakt</h2>
 <p>Fragen, Ideen oder einen Fehler gefunden? Schreiben Sie über das <a href="/kontakt/">Kontaktformular</a>.</p>
 </div>
