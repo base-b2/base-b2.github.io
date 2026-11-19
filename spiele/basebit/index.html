@@ -139,7 +139,7 @@ footer { max-width: 1200px; margin: 32px auto 0; padding: 16px 24px; border-top:
       <div>
         <span class="etikett pille">SPIELE | PLATTFORMER</span>
         <h1 id="t-start">BaseBit</h1>
-        <p>Laufen, springen, Bugs plattmachen. Fünf Level, ein Editor für eigene Level und volle Controller-Unterstützung.</p>
+        <p>Laufen, springen, Bugs plattmachen. Sechs Level, ein Editor für eigene Level und volle Controller-Unterstützung.</p>
         <div class="start-menue">
           <button class="knopf primaer" data-gehe="level">Spielen</button>
           <button class="knopf" data-gehe="figur">Figur wählen</button>
@@ -221,6 +221,7 @@ footer { max-width: 1200px; margin: 32px auto 0; padding: 16px 24px; border-top:
         <button data-tool="auswahl" aria-pressed="false">Eigenschaften</button>
       </div>
       <button class="knopf klein primaer" id="ed-test">Testen</button>
+      <label class="feld">Test-Start als<select id="ed-testform"><option value="klein">klein</option><option value="gross">groß (Byte)</option><option value="pixel">Pixelblume</option><option value="fluegel">Feder</option></select></label>
       <button class="knopf klein" id="ed-rueck">Rückgängig</button>
       <button class="knopf klein" id="ed-laden-knopf">Hochladen</button>
       <input type="file" id="ed-datei" accept=".json,application/json" hidden>
@@ -285,6 +286,7 @@ function readColors() {
   const s = getComputedStyle(document.documentElement), g = n => s.getPropertyValue(n).trim();
   C = { grund: g('--bb-grund'), flaeche: g('--bb-flaeche'), text: g('--bb-text'), neben: g('--bb-nebentext'), akzent: g('--bb-akzent'), akzentText: g('--bb-akzent-text'),
     lav: g('--bb-lavendel'), apr: g('--bb-aprikose'), eis: g('--bb-eisblau'), erfolg: g('--bb-erfolg'), fehler: g('--bb-fehler'), linie: g('--bb-linie') };
+  if (typeof TC !== 'undefined') TC.clear();
 }
 
 /* ---------- Thema ---------- */
@@ -338,12 +340,12 @@ function dashBox(ctx, x, y, w, h, col) {
 
 /* ---------- Figuren ---------- */
 const FIG = {
-  bit: { name: 'Bit', walk: 1.5, run: 2.6, vollgas: 3.25, jump: 5.6, acc: .09, wall: false, pmeter: true,
-    info: 'Das Maskottchen von Base B. Schnell und geradlinig: Nach etwa einer Sekunde Rennen schaltet Bit auf Vollgas und springt dann noch weiter.',
-    werte: [['Tempo', '+++'], ['Sprunghöhe', '++'], ['Vollgas', 'ja'], ['Wandsprung', 'nein']] },
-  katze: { name: 'Katze', walk: 1.4, run: 2.4, vollgas: 2.4, jump: 6.1, acc: .085, wall: true, pmeter: false,
-    info: 'Bits Mitbewohnerin. Springt höher, rutscht an Wänden langsam herunter und stößt sich mit Springen von ihnen ab.',
-    werte: [['Tempo', '++'], ['Sprunghöhe', '+++'], ['Vollgas', 'nein'], ['Wandsprung', 'ja']] }
+  bit: { name: 'Bit', walk: 1.5, run: 2.6, vollgas: 3.25, jump: 5.6, acc: .09, wall: true, wj: 5.3, slide: 2.2, pmeter: true,
+    info: 'Das Maskottchen von Base B. Schnell und geradlinig: Nach etwa einer Sekunde Rennen schaltet Bit auf Vollgas und springt dann noch weiter. Wandsprünge gehen, aber Bit rutscht schnell ab.',
+    werte: [['Tempo', '+++'], ['Sprunghöhe', '++'], ['Vollgas', 'ja'], ['Wandsprung', '+']] },
+  katze: { name: 'Katze', walk: 1.4, run: 2.4, vollgas: 2.4, jump: 6.1, acc: .085, wall: true, wj: 5.9, slide: 1.1, pmeter: false,
+    info: 'Bits Mitbewohnerin. Springt höher, krallt sich an Wänden fest und stößt sich kräftig von ihnen ab. Die Erste im Wandparcours.',
+    werte: [['Tempo', '++'], ['Sprunghöhe', '+++'], ['Vollgas', 'nein'], ['Wandsprung', '+++']] }
 };
 
 function drawFigur(ctx, fig, x, y, big, face, anim, o) {
@@ -352,6 +354,7 @@ function drawFigur(ctx, fig, x, y, big, face, anim, o) {
   ctx.translate(sn(x) + (face < 0 ? 12 : 0), sn(y));
   if (face < 0) ctx.scale(-1, 1);
   const body = o.body || C.text, eye = C.grund, cur = o.cur || C.akzent;
+  if (fig === 'katze') { drawKatze(ctx, big, anim, o, body, eye, cur); ctx.restore(); return; }
   const H = big ? 24 : 14, by = big ? 9 : 4, bh = big ? 11 : 7;
   const r = (a, b, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(a, b, w, h); };
   if (o.wing) { r(-4, by - 2, 4, 2, C.neben); r(-6, by - 4, 3, 2, C.neben); r(-3, by, 3, 2, C.neben); }
@@ -368,13 +371,21 @@ function drawFigur(ctx, fig, x, y, big, face, anim, o) {
   if (o.air) { r(1, ly, 3, lh - 1, body); r(7, ly, 3, lh, body); }
   else { r(1, ly, 3, step ? lh : lh - 1, body); r(7, ly, 3, step ? lh - 1 : lh, body); }
   r(6, by - (big ? 3 : 2), 5, 2, cur);
-  if (fig === 'katze') {
-    r(0, -3, 1, 3, body); r(1, -2, 1, 2, body); r(3, -3, 1, 3, body); r(2, -2, 1, 2, body);
-    r(-2, by + bh - 3, 2, 1, body); r(-3, by + bh - 7, 1, 5, body); r(-2, by + bh - 8, 1, 1, body);
-    r(11, ey + es, 2, 1, C.neben); r(11, ey + es + 2, 2, 1, C.neben);
-  }
   if (o.pixel) r(0, by + bh - 3, 11, 1, cur);
   ctx.restore();
+}
+
+const KATZE_KOPF = ['B............', 'B...B.CCC.B..', 'B...BB...BB..', 'B...BBBBBBB..', 'B...BEEBEEB..', 'B...BEPBEPBWW', 'BB..BBBNBBB..', '.BBBBBBBBBBWW', '..BBBBBBBBB..'];
+function drawKatze(ctx, big, anim, o, body, eye, cur) {
+  const rows = KATZE_KOPF.slice();
+  const nb = big ? 11 : 2, nl = big ? 4 : 3;
+  for (let i = 0; i < nb; i++) rows.push(i === nb - 2 && o.pixel ? '..CCCCCCCCC..' : '..BBBBBBBBB..');
+  const step = Math.floor(anim / 6) % 2;
+  const leg = o.air ? '.BB.......BB.' : step ? '..BB....BB...' : '...BB..BB....';
+  for (let i = 0; i < nl; i++) rows.push(leg);
+  if (o.wing) { ctx.fillStyle = C.neben; ctx.fillRect(-3, 6, 3, 2); ctx.fillRect(-5, 4, 3, 2); ctx.fillRect(-2, 8, 2, 2); }
+  const col = { B: body, E: o.blink ? body : eye, P: body, C: cur, N: cur, W: C.neben };
+  rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) { const ch = row[x]; if (ch === '.') continue; ctx.fillStyle = col[ch]; ctx.fillRect(x - 1, y, 1, 1); } });
 }
 
 /* ---------- Kacheln ---------- */
@@ -395,11 +406,11 @@ const TILES = {
   'C': { name: 'Kanone', info: 'Fest. Feuert Kugeln.', schema: 'kanone' },
   'o': { name: 'Münze', info: 'Ein Bit. 100 Bits = ein Leben. Wird beim P-Schalter zum festen Ziegel.' }
 };
-const INHALTE = [['muenze', 'Münze'], ['power', 'Power (Byte oder Pixelblume)'], ['byte', 'Byte'], ['pixelblume', 'Pixelblume'], ['fluegel', 'Flügel'], ['stern', 'Stern'], ['herz', 'Herz'], ['feder', 'Sprungfeder'], ['pschalter', 'P-Schalter'], ['schluessel', 'Schlüssel'], ['panzer', 'Panzer']];
+const INHALTE = [['muenze', 'Münze'], ['power', 'Power (Byte oder Pixelblume)'], ['byte', 'Byte'], ['pixelblume', 'Pixelblume'], ['fluegel', 'Feder'], ['stern', 'Stern'], ['herz', 'Herz'], ['feder', 'Sprungfeder'], ['pschalter', 'P-Schalter'], ['schluessel', 'Schlüssel'], ['panzer', 'Panzer']];
 const TILE_SCHEMA = {
   inhalt: [{ k: 'inhalt', label: 'Inhalt', type: 'select', opt: INHALTE, def: 'muenze' }],
   kanone: [{ k: 'richtung', label: 'Richtung', type: 'select', opt: [['auto', 'zur Figur'], ['links', 'links'], ['rechts', 'rechts']], def: 'auto' },
-    { k: 'takt', label: 'Takt (s)', type: 'num', min: 1, max: 9, def: 3 }]
+    { k: 'takt', label: 'Takt (1-9, höher = langsamer)', type: 'num', min: 1, max: 9, def: 4 }]
 };
 
 const RICHT = { k: 'richtung', label: 'Richtung', type: 'select', opt: [['links', 'links'], ['rechts', 'rechts']], def: 'links' };
@@ -425,7 +436,7 @@ const ENTS = {
       { k: 'weite', label: 'Weite (Blöcke)', type: 'num', min: 0, max: 12, def: 3 }, { k: 'tempo', label: 'Tempo (1-3)', type: 'num', min: 1, max: 3, def: 1 }] },
   byte: { name: 'Byte', gruppe: 'Gegenstände', info: 'Macht groß. Groß hält einen Treffer aus und zerschlägt Ziegel. Wandert nach rechts.' },
   pixelblume: { name: 'Pixelblume', gruppe: 'Gegenstände', info: 'Mit der Rennen-Taste hüpfende Pixel schießen (max. zwei gleichzeitig). Besiegt fast alles außer Stampfer und Fressblock.' },
-  fluegel: { name: 'Flügel', gruppe: 'Gegenstände', info: 'Sprungtaste beim Fallen halten: langsam gleiten.' },
+  fluegel: { name: 'Feder', gruppe: 'Gegenstände', info: 'Sprungtaste beim Fallen halten: langsam gleiten. Rennen-Taste: Drehschlag, der Gegner (auch Stachelbugs) und Kanonenkugeln zerstört.' },
   stern: { name: 'Stern', gruppe: 'Gegenstände', info: 'Zehn Sekunden unverwundbar. Jede Berührung besiegt Gegner, Stacheln und Fressblöcke tun nichts.' },
   herz: { name: 'Herz', gruppe: 'Gegenstände', info: 'Ein Leben mehr. In eigenen Leveln: ein Fehlversuch weniger.' },
   schluessel: { name: 'Schlüssel', gruppe: 'Gegenstände', info: 'Tragbar (Rennen-Taste halten). Öffnet Schlossblöcke bei Berührung.' },
@@ -455,14 +466,20 @@ function serLevel(L) {
 }
 
 /* ---------- Mitgelieferte Level ---------- */
-function bau(name, w, zeit, fn) {
-  const h = 15, grid = []; for (let y = 0; y < h; y++) grid.push(Array(w).fill('.'));
+function bau(name, w, zeit, fn, h) {
+  h = h || 15; const OFF = 14; w += OFF;
+  const grid = []; for (let y = 0; y < h; y++) grid.push(Array(w).fill('.'));
   const L = { name, width: w, height: h, zeit, figur: 'beide', grid, props: {}, entities: [] };
+  const raw = (x, y, c, p) => { grid[y][x] = c; if (p) L.props[x + ',' + y] = p; };
+  // Startbereich: keine Gegner, drei Blöcke zur Auswahl
+  for (let y = h - 3; y < h; y++) for (let x = 0; x < OFF; x++) grid[y][x] = '#';
+  L.entities.push({ t: 'start', x: 2, y: h - 4, p: {} });
+  raw(5, h - 7, '?', { inhalt: 'byte' }); raw(8, h - 7, '?', { inhalt: 'pixelblume' }); raw(11, h - 7, '?', { inhalt: 'fluegel' });
   const A = {
-    fill(x0, y0, x1, y1, c) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) grid[y][x] = c; },
-    set(x, y, c, p) { grid[y][x] = c; if (p) L.props[x + ',' + y] = p; },
-    ent(t, x, y, p) { L.entities.push({ t, x, y, p: p || {} }); },
-    boden(x0, x1) { A.fill(x0, 12, x1, 14, '#'); },
+    fill(x0, y0, x1, y1, c) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) grid[y][x + OFF] = c; },
+    set(x, y, c, p) { raw(x + OFF, y, c, p); },
+    ent(t, x, y, p) { if (t !== 'start') L.entities.push({ t, x: x + OFF, y, p: p || {} }); },
+    boden(x0, x1) { A.fill(x0, h - 3, x1, h - 1, '#'); },
     row(x, y, s) {
       const m = { U: ['?', 'power'], W: ['?', 'fluegel'], A: ['?', 'stern'], V: ['?', 'herz'], E: ['H', 'power'], h: ['H', 'muenze'], Y: ['H', 'herz'], Q: ['?', 'muenze'] };
       [...s].forEach((c, i) => { if (c === ' ') return; if (m[c]) A.set(x + i, y, m[c][0], { inhalt: m[c][1] }); else A.set(x + i, y, c); });
@@ -515,7 +532,7 @@ const LEVELS = [
     A.row(61, 12, 'LLLLLLLL'); A.ent('checkpoint', 54, 10);
     A.boden(69, 95); A.row(72, 11, 'NNN'); A.row(72, 4, 'ooo');
     A.ent('flatterbug', 79, 8, { bahn: 'waagrecht', weite: 2 });
-    A.set(85, 11, 'C', { richtung: 'auto', takt: 3 });
+    A.set(85, 11, 'C', { richtung: 'auto', takt: 4 });
     A.ent('schluessel', 89, 11); A.ent('checkpoint', 92, 10);
     A.boden(96, 111); A.fill(100, 0, 100, 11, 'K');
     A.ent('flatterbug', 106, 7, { bahn: 'senkrecht', weite: 2 });
@@ -535,7 +552,7 @@ const LEVELS = [
     A.fill(70, 11, 79, 11, '^'); A.row(71, 8, '==='); A.row(76, 8, '===');
     A.ent('plattform', 81, 10, { achse: 'waagrecht', weite: 3, tempo: 2 });
     A.boden(87, 149);
-    A.set(95, 11, 'C', { richtung: 'links', takt: 2 });
+    A.set(95, 11, 'C', { richtung: 'links', takt: 3 });
     A.ent('stachelbug', 100, 11); A.ent('stachelbug', 103, 11); A.ent('stachelbug', 106, 11); A.ent('stachelbug', 109, 11);
     A.ent('checkpoint', 112, 10);
     A.ent('fressblock', 117, 11); A.ent('fressblock', 118, 11); A.ent('fressblock', 119, 11);
@@ -554,13 +571,35 @@ const LEVELS = [
     A.ent('plattform', 97, 11, { achse: 'waagrecht', weite: 5, tempo: 1 });
     A.ent('flatterbug', 99, 8, { bahn: 'senkrecht', weite: 2 }); A.ent('flatterbug', 102, 7, { bahn: 'senkrecht', weite: 2, tempo: 2 });
     A.boden(105, 169);
-    A.ent('stampfer', 112, 5); A.set(118, 11, 'C', { richtung: 'auto', takt: 2 });
+    A.ent('stampfer', 112, 5); A.set(118, 11, 'C', { richtung: 'auto', takt: 3 });
     A.ent('stachelbug', 122, 11); A.ent('panzerbug', 126, 11); A.ent('bug', 130, 11); A.ent('bug', 132, 11); A.ent('bug', 134, 11);
     A.ent('checkpoint', 136, 10);
     A.set(139, 8, 'S'); A.fill(142, 0, 142, 11, 'R');
     A.fill(146, 11, 151, 11, '^'); A.set(148, 8, 'L'); A.set(149, 8, 'L');
     A.ent('ziel', 164, 9);
-  })
+  }),
+  bau('Wandparcours', 84, 400, A => {
+    A.boden(0, 19);
+    A.row(6, 22, 'ooo');
+    // Kletterschacht 1: freie Wand links, Klippe rechts
+    A.fill(16, 3, 16, 23, '#');
+    A.fill(20, 9, 34, 29, '#'); A.row(17, 4, 'ooo');
+    A.ent('checkpoint', 24, 7);
+    A.ent('bug', 29, 8, { vorsichtig: true });
+    // Schacht 2 über dem Abgrund
+    A.fill(38, 5, 38, 18, '#');
+    A.row(35, 3, 'ooo');
+    A.fill(42, 5, 60, 29, '#'); A.row(39, 20, 'ooo');
+    A.ent('checkpoint', 46, 3);
+    A.ent('flatterbug', 52, 2, { bahn: 'waagrecht', weite: 3 });
+    // Schlussturm
+    A.boden(61, 73);
+    A.ent('stachelbug', 64, 26);
+    A.set(67, 26, 'C', { richtung: 'links', takt: 4 });
+    A.fill(70, 6, 70, 23, '#'); A.row(71, 20, 'o'); A.row(72, 15, 'o'); A.row(71, 10, 'o');
+    A.fill(74, 8, 83, 29, '#');
+    A.ent('ziel', 79, 5);
+  }, 30)
 ];
 
 /* ---------- Eingabe ---------- */
@@ -603,8 +642,8 @@ function ov(a, b) { return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h
 
 class Game {
   constructor(data, opts) {
-    this.src = data; this.o = opts; this.ctx = $('#spiel').getContext('2d');
-    this.leben = opts.leben || 5; this.tode = 0; this.bits = 0; this.cp = null; this.frame = 0; this.paused = false; this.ended = false;
+    this.src = data; this.o = opts; this.ctx = $('#spiel').getContext('2d', { alpha: false });
+    this.leben = opts.leben || 5; this.startForm = opts.form || 'klein'; this.tode = 0; this.bits = 0; this.cp = null; this.frame = 0; this.paused = false; this.ended = false;
     const L0 = normLevel(data);
     this.figur = L0.figur !== 'beide' ? L0.figur : (store.get('figur', 'bit'));
     this.load();
@@ -614,7 +653,7 @@ class Game {
     this.L = L; this.W = L.width; this.H = L.height; this.g = L.grid; this.props = L.props;
     this.ents = []; this.parts = []; this.bumps = {}; this.an = true; this.pTimer = 0; this.sCool = 0; this.shake = 0;
     this.zeit = L.zeit * 60; this.cannons = [];
-    for (let y = 0; y < this.H; y++) for (let x = 0; x < this.W; x++) if (this.g[y][x] === 'C') this.cannons.push({ x, y, t: 60 });
+    for (let y = 0; y < this.H; y++) for (let x = 0; x < this.W; x++) if (this.g[y][x] === 'C') this.cannons.push({ x, y, t: 100 });
     let start = { x: 2, y: this.H - 4 };
     for (const e of L.entities) {
       if (e.t === 'start') start = e;
@@ -625,6 +664,8 @@ class Game {
     this.p = { x: sp.x * T + 3, y: (sp.y + 1) * T - 14, w: 10, h: 14, vx: 0, vy: 0, on: false, face: 1, form: 'klein', spin: false, inv: 0, stern: 0,
       coy: 0, buf: 0, bufSpin: false, pm: 0, lock: 0, carry: null, anim: 0, dead: 0, won: 0, wallDir: 0, ice: false, plat: null, prevBottom: 0 };
     this.cx = Math.max(0, Math.min(this.W * T - VW, this.p.x - VW / 2)); this.cy = Math.max(0, Math.min(this.H * T - VH, this.p.y - VH / 2));
+    if (this.startForm && this.startForm !== 'klein') this.setForm(this.startForm);
+    this.startForm = null;
     this.hudKey = ''; this.look = 0; this.pcx = this.cx; this.pcy = this.cy;
   }
   mk(t, x, y, p) {
@@ -790,14 +831,14 @@ class Game {
         P.vy = -(F.jump + Math.abs(P.vx) * .28 - (spin ? .4 : 0)); P.spin = spin; P.on = false; P.coy = 0; P.buf = 0; P.plat = null;
         Snd.play(spin ? 'spin' : 'sprung');
       } else if (F.wall && P.wallDir && !P.on) {
-        P.vy = -5.6; P.vx = -P.wallDir * 2.4; P.face = -P.wallDir; P.lock = 10; P.buf = 0; P.spin = P.bufSpin; Snd.play('sprung');
+        P.vy = -F.wj; P.vx = -P.wallDir * 2.4; P.face = -P.wallDir; P.lock = 10; P.buf = 0; P.spin = P.bufSpin; Snd.play('sprung');
       }
     }
     const holding = In.held('jump') || In.held('spin');
     const g = (P.vy < 0 && holding) ? .24 : .6;
     let maxFall = 5;
     if (P.form === 'fluegel' && P.vy > 0 && holding) maxFall = 1.1;
-    if (F.wall && P.wallDir && dirIn === P.wallDir && P.vy > 0) maxFall = 1.4;
+    if (F.wall && P.wallDir && dirIn === P.wallDir && P.vy > 0) maxFall = F.slide;
     P.vy += g; if (P.vy > maxFall) P.vy = Math.max(maxFall, P.vy - 1);
     // Plattform mitnehmen
     if (P.plat && !P.plat.dead) { P.x += P.plat.dx || 0; if (P.vy >= 0) P.y = P.plat.y - P.h; }
@@ -823,6 +864,12 @@ class Game {
     if (P.y > this.H * T + 8) this.die();
     if (P.form === 'pixel' && In.hit('run') && !P.carry && this.ents.filter(e => e.t === 'schuss' && !e.dead).length < 2) {
       const s = this.mk('schuss', 0, 0); s.x = P.face > 0 ? P.x + P.w : P.x - 6; s.y = P.y + 6; s.vx = P.face * 3.2; s.vy = 1; s.act = true; this.ents.push(s); Snd.play('schuss');
+    }
+    if (P.form === 'fluegel' && In.hit('run') && !P.carry && !P.twirl) { P.twirl = 20; Snd.play('spin'); }
+    if (P.twirl > 0) {
+      P.twirl--;
+      const hb = { x: P.x - 12, y: P.y + P.h - 16, w: P.w + 24, h: 16 };
+      for (const e of this.ents) if (!e.dead && KILLBAR.has(e.t) && e !== P.carry && ov(hb, e)) this.kill(e, 'puff');
     }
     if (P.carry) {
       const c = P.carry;
@@ -855,7 +902,9 @@ class Game {
         continue;
       }
       if (!ov(P, e)) continue;
-      const stomp = P.vy > 0 && P.prevBottom <= e.y + 6;
+      const above = P.prevBottom <= e.y + 8 || (e.py !== undefined && P.prevBottom <= e.py + 8);
+      const fly = e.t === 'flatterbug' || e.t === 'kugel';
+      const stomp = (P.vy > 0 && above) || (fly && P.y + P.h <= e.y + e.h * .6 && P.vy > -2);
       switch (e.t) {
         case 'byte': e.dead = true; if (P.form === 'klein') this.setForm('gross'); Snd.play('power'); break;
         case 'pixelblume': e.dead = true; this.setForm('pixel'); Snd.play('power'); break;
@@ -1032,11 +1081,11 @@ class Game {
       if (cx < this.cx - 32 || cx > this.cx + VW + 32) continue;
       if (--c.t > 0) continue;
       const pr = this.props[c.x + ',' + c.y] || {};
-      c.t = Math.max(1, pr.takt || 3) * 60;
+      c.t = Math.max(1, pr.takt || 4) * 80;
       if (Math.abs(cx - P.x) < 24) continue;
       const dir = (pr.richtung === 'links') ? -1 : (pr.richtung === 'rechts') ? 1 : (P.x < cx ? -1 : 1);
       if (this.solid(c.x + dir, c.y)) continue;
-      const k = this.mk('kugel', c.x, c.y, {}); k.x = cx + (dir > 0 ? 16 : -16); k.y = c.y * T + 2; k.vx = dir * 1.6; k.dir = dir; k.act = true;
+      const k = this.mk('kugel', c.x, c.y, {}); k.x = cx + (dir > 0 ? 16 : -16); k.y = c.y * T + 2; k.vx = dir * 1.25; k.dir = dir; k.act = true;
       this.ents.push(k); this.puff(cx + 8 + dir * 10, c.y * T + 8, C.neben, 3, 'rauch'); Snd.play('schuss');
     }
   }
@@ -1089,7 +1138,8 @@ class Game {
     for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) {
       const c = this.tile(tx, ty); if (c === '.' || ty >= this.H || ty < 0) continue;
       const b = this.bumps[tx + ',' + ty]; const by = b ? -Math.sin(b / 8 * Math.PI) * 4 : 0;
-      drawTile(ctx, c, tx * T - cx, ty * T - cy + by, st, c === '#' && !'#IBXK'.includes(this.tile(tx, ty - 1)));
+      if (c === 'H') continue;
+      ctx.drawImage(tileImg(c, st, c === '#' && !'#IBXK'.includes(this.tile(tx, ty - 1))), sn(tx * T - cx), sn(ty * T - cy + by), 16, 16);
     }
     for (const e of this.ents) if (!e.dead && e !== this.p.carry) drawEnt(ctx, e, L(e.px, e.x) - cx, L(e.py, e.y) - cy, this.frame, this);
     // Spieler
@@ -1098,7 +1148,7 @@ class Game {
       const big = P.form !== 'klein';
       let body = C.text, cur = C.akzent;
       if (P.stern > 0) { const f = Math.floor(this.frame / 4) % 3; body = [C.text, C.akzent, C.neben][f]; cur = [C.akzent, C.text, C.akzent][f]; }
-      if (P.spin && !P.on) { const f = Math.floor(this.frame / 3) % 4; P.face = (f < 2) ? 1 : -1; }
+      if ((P.spin && !P.on) || P.twirl > 0) { const f = Math.floor(this.frame / 3) % 4; P.face = (f < 2) ? 1 : -1; }
       drawFigur(ctx, this.figur, L(P.px, P.x) - 1 - cx, L(P.py, P.y) - cy, big, P.face, P.anim, { body, cur, air: !P.on, wing: P.form === 'fluegel', pixel: P.form === 'pixel', dead: P.dead > 0, blink: (this.frame % 200) < 6 });
     }
     if (P.carry && !P.carry.dead) drawEnt(ctx, P.carry, L(P.carry.px, P.carry.x) - cx, L(P.carry.py, P.carry.y) - cy, this.frame, this);
@@ -1132,6 +1182,15 @@ function drawCoin(ctx, x, y, f) {
   const ph = Math.floor(f / 8) % 4, w = [8, 6, 2, 6][ph];
   ctx.fillStyle = C.akzent; ctx.fillRect(x + 8 - w / 2, y + 2, w, 12);
   if (w >= 6) glyph(ctx, '1', x + 7 - (w === 8 ? 0 : 1) + (w === 8 ? 0 : 1) - 1, y + 5, 1, C.akzentText);
+}
+const TC = new Map();
+function tileImg(c, st, top) {
+  const anim = c === 'o' || c === 'B';
+  const ph = anim ? Math.floor(st.f / 8) % 4 : 0;
+  const key = c + (st.an ? 1 : 0) + (st.p ? 1 : 0) + (top ? 1 : 0) + ph;
+  let cv = TC.get(key);
+  if (!cv) { cv = document.createElement('canvas'); cv.width = cv.height = 16 * S; const x = cv.getContext('2d'); x.scale(S, S); drawTile(x, c, 0, 0, { an: st.an, p: st.p, f: ph * 8, ed: false }, top); TC.set(key, cv); }
+  return cv;
 }
 function drawTile(ctx, c, x, y, s, top) {
   x = sn(x); y = sn(y);
@@ -1268,7 +1327,7 @@ function zeigeEnde(g, kind) {
       t.textContent = 'Level ' + nr + ' = ' + nr.toString(2) + '₂ geschafft.';
       const frei = store.get('frei', 1); if (nr + 1 > frei) store.set('frei', Math.min(LEVELS.length, nr + 1));
       $('#b-ende-weiter').hidden = nr >= LEVELS.length;
-      if (nr >= LEVELS.length) t.textContent = 'Alle Level geschafft. 101₂ von 101₂.';
+      if (nr >= LEVELS.length) t.textContent = 'Alle Level geschafft. ' + nr.toString(2) + '₂ von ' + nr.toString(2) + '₂.';
     } else { t.textContent = 'Geschafft.'; $('#b-ende-weiter').hidden = true; }
     txt.textContent = 'BITS ' + g.bits + ' | ZEIT ' + sek + ' s | FEHLVERSUCHE ' + g.tode;
   }
@@ -1280,7 +1339,7 @@ $('#b-neu').onclick = () => { if (!game) return; const g = game; starteSpiel(g.s
 $('#b-ende').onclick = beendeSpiel;
 $('#b-ende-menue').onclick = beendeSpiel;
 $('#b-ende-nochmal').onclick = () => { if (!game) return; const g = game; starteSpiel(g.src, Object.assign({}, g.o, { leben: (g.o.mode === 'story' && g.leben > 0) ? g.leben : 5 })); };
-$('#b-ende-weiter').onclick = () => { if (!game) return; const g = game, i = g.o.idx + 1; if (i < LEVELS.length) starteSpiel(LEVELS[i], { mode: 'story', idx: i, leben: g.leben }); };
+$('#b-ende-weiter').onclick = () => { if (!game) return; const g = game, i = g.o.idx + 1; if (i < LEVELS.length) starteSpiel(LEVELS[i], { mode: 'story', idx: i, leben: g.leben, form: g.p.form }); };
 $('#b-vollbild').onclick = () => { const el = $('#spielrahmen'); if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); else if (el.requestFullscreen) el.requestFullscreen().catch(() => {}); };
 
 function baueLevelListe() {
@@ -1543,7 +1602,7 @@ const Ed = {
     if (!n('ziel')) return 'Dem Level fehlt ein Ziel. Ohne Ziel wird es sehr lang.';
     return '';
   },
-  test() { const m = this.check(); if (m) { fehler('#ed-fehler', m); return; } fehler('#ed-fehler'); store.set('entwurf', serLevel(this.L)); starteSpiel(serLevel(this.L), { mode: 'test' }); },
+  test() { const m = this.check(); if (m) { fehler('#ed-fehler', m); return; } fehler('#ed-fehler'); store.set('entwurf', serLevel(this.L)); starteSpiel(serLevel(this.L), { mode: 'test', form: $('#ed-testform').value }); },
   download() {
     const m = this.check(); if (m) { fehler('#ed-fehler', m); return; } fehler('#ed-fehler');
     const d = new Date(), pad = n => String(n).padStart(2, '0');
