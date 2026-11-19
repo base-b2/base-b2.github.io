@@ -6,6 +6,8 @@ Aufruf aus dem Hauptordner der Webseite:  python3 _werkstatt/seiten.py
 Der Ordner _werkstatt wird von GitHub Pages nicht veröffentlicht.
 Neue Menüpunkte: Liste MENUE unten ergänzen und das Skript erneut ausführen.
 """
+import hashlib
+import re
 from pathlib import Path
 
 WURZEL = Path(__file__).resolve().parent.parent
@@ -157,7 +159,21 @@ def seite(pfad, titel, inhalt, beschreibung="Werkzeuge, Leitfäden und Spiele f�
 '''
     ziel = WURZEL / pfad
     ziel.parent.mkdir(parents=True, exist_ok=True)
+    html = mit_version(html, ziel.parent)
     ziel.write_text(html, encoding="utf-8", newline="\n")   # immer Unix-Zeilenenden, auch unter Windows
+
+
+def mit_version(html, ordner):
+    """Hängt an eigene CSS-/JS-Dateien eine Kennung aus ihrem Inhalt an (datei.css?v=1a2b3c4d).
+    Ändert sich eine Datei, lädt der Browser sie sofort neu statt eine alte Fassung aus dem Zwischenspeicher zu nehmen."""
+    def ersetze(m):
+        attr, pfad = m.group(1), m.group(2)
+        datei = (WURZEL / pfad.lstrip("/")) if pfad.startswith("/") else (ordner / pfad)
+        if not datei.is_file():
+            return m.group(0)
+        kennung = hashlib.md5(datei.read_bytes()).hexdigest()[:8]
+        return f'{attr}="{pfad}?v={kennung}"'
+    return re.sub(r'(href|src)="((?!https?:|//|data:)[^"?#]+\.(?:css|js))"', ersetze, html)
 
 
 def seitenkopf(titel, einleitung="", krumen=None):

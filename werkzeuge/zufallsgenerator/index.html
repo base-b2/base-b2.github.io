@@ -10,9 +10,9 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preload" href="/assets/fonts/lexend.woff" as="font" type="font/woff" crossorigin>
-<link rel="stylesheet" href="/assets/css/tokens.css">
-<link rel="stylesheet" href="/assets/css/base.css">
-<link rel="stylesheet" href="zufall.css">
+<link rel="stylesheet" href="/assets/css/tokens.css?v=1d75a7cf">
+<link rel="stylesheet" href="/assets/css/base.css?v=9e34bed2">
+<link rel="stylesheet" href="zufall.css?v=a87ede7e">
 </head>
 <body>
 <a class="unsichtbar" href="#inhalt">Zum Inhalt springen</a>
@@ -36,7 +36,7 @@
       <option value="buchstaben">Buchstaben</option>
       <option value="wuerfel">Würfel</option>
       <option value="muenze">Münze</option>
-      <option value="import">Eigene Liste (aus Datei)</option>
+      <option value="import">Eigene Liste</option>
     </select>
   </div>
 
@@ -46,7 +46,6 @@
     <div class="zg-pillen" role="radiogroup" aria-label="Bereich">
       <label class="zg-pille"><input type="radio" name="bereich" value="1-10">1-10</label>
       <label class="zg-pille"><input type="radio" name="bereich" value="1-100" checked>1-100</label>
-      <label class="zg-pille"><input type="radio" name="bereich" value="1-1000">1-1.000</label>
       <label class="zg-pille"><input type="radio" name="bereich" value="eigen">Eigener Bereich</label>
     </div>
     <div class="zg-zwei" id="eigener-bereich" hidden>
@@ -65,16 +64,18 @@
       <button class="knopf knopf-zwei knopf-klein" type="button" data-buchstaben="ohne">Ohne Q, X, Y</button>
       <button class="knopf knopf-zwei knopf-klein" type="button" data-buchstaben="keine">Keine</button>
     </div>
+    <div class="zg-gruppen">
+      <span class="feld-titel">Weitere Zeichen dazunehmen</span>
+      <div class="zg-pillen" id="gruppen" role="group" aria-label="Weitere Zeichen"></div>
+      <div id="gruppen-felder"></div>
+    </div>
   </fieldset>
 
   <!-- Würfel: Seitenzahl frei wählbar (1 bis 100) -->
   <fieldset class="zg-panel" data-panel="wuerfel" hidden>
     <legend class="feld-titel">Würfel mit</legend>
     <div class="zg-pillen" role="radiogroup" aria-label="Seiten pro Würfel">
-      <label class="zg-pille"><input type="radio" name="seiten" value="4">4 Seiten</label>
       <label class="zg-pille"><input type="radio" name="seiten" value="6" checked>6 Seiten</label>
-      <label class="zg-pille"><input type="radio" name="seiten" value="10">10 Seiten</label>
-      <label class="zg-pille"><input type="radio" name="seiten" value="12">12 Seiten</label>
       <label class="zg-pille"><input type="radio" name="seiten" value="20">20 Seiten</label>
       <label class="zg-pille"><input type="radio" name="seiten" value="eigen">Eigene Zahl</label>
     </div>
@@ -82,7 +83,7 @@
     <p class="zg-klein">Jeder Würfel zeigt eine Zahl von 1 bis zur gewählten Seitenzahl. Bei mehreren Würfeln steht die Summe darunter.</p>
   </fieldset>
   <!-- Münze hat keine eigenen Optionen außer der Anzahl -->
-  <div class="zg-panel" data-panel="muenze" hidden><p class="zg-klein">Kopf oder Zahl.</p></div>
+  <div class="zg-panel" data-panel="muenze" hidden><p class="zg-klein">Kopf oder Zahl. Auf der Kopfseite ist das Bit von Base B zu sehen.</p></div>
 
   <!-- Eigene Liste -->
   <div class="zg-panel" data-panel="import" hidden>
@@ -97,7 +98,7 @@
       <summary>Oder Liste direkt einfügen</summary>
       <div class="feld" style="margin-top: 12px">
         <label for="liste-text">Erste Zeile Überschrift, dann ein Eintrag pro Zeile</label>
-        <textarea class="eingabe" id="liste-text" rows="6" placeholder="Klasse 4a&#10;Anna&#10;Ben&#10;Can"></textarea>
+        <textarea class="eingabe" id="liste-text" rows="6" placeholder="SuS&#10;Name 1&#10;Name 2&#10;Name 3"></textarea>
       </div>
       <button class="knopf knopf-zwei knopf-klein" type="button" id="liste-uebernehmen" style="margin-top: 10px">Liste übernehmen</button>
     </details>
@@ -158,7 +159,7 @@
 <span class="mono">base-b.de | kein Tracking, keine Werbung, nur Bits</span>
 </div>
 </footer>
-<script src="/assets/js/site.js" defer></script>
-<script src="zufall.js" defer></script>
+<script src="/assets/js/site.js?v=47ec5c3d" defer></script>
+<script src="zufall.js?v=8d2270a8" defer></script>
 </body>
 </html>

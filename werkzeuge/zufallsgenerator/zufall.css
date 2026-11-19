@@ -19,6 +19,7 @@
 .zg-pille:has(input:focus-visible) { outline: 2px solid var(--bb-fokus); outline-offset: 2px; }
 
 .zg-buchstaben { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 6px; }
+.zg-bs { white-space: nowrap; padding: 0 2px; }
 .zg-bs {
   height: 44px; border-radius: var(--bb-radius-s); cursor: pointer;
   font-family: var(--bb-font-mono); font-size: 17px; font-weight: 700;
@@ -47,7 +48,8 @@
 .zg-check input { width: 20px; height: 20px; accent-color: var(--bb-akzent); flex: none; }
 .zg-ziehen { min-height: 56px; font-size: 18px; }
 
-.zg-ergebnis-kopf { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.zg-ergebnis-kopf { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.zg-ergebnis-kopf > * { white-space: nowrap; }
 .zg-anzeige {
   min-height: 240px; border-radius: var(--bb-radius-m); background: var(--bb-eisblau);
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 20px; text-align: center;
@@ -85,3 +87,39 @@
   .zg-wert { font-size: 88px; }
   .zg-ergebnis { position: static; }
 }
+
+/* Weitere Zeichen */
+.zg-gruppen { display: flex; flex-direction: column; gap: 10px; padding-top: 6px; border-top: 1px solid var(--bb-linie); margin-top: 4px; }
+.zg-gruppen > .feld-titel { margin-top: 8px; }
+.zg-gruppe-knopf {
+  min-height: 40px; padding: 0 14px; border-radius: 20px; border: 1px solid var(--bb-linie); background: var(--bb-flaeche);
+  color: var(--bb-text); font: inherit; font-size: 15px; cursor: pointer;
+}
+.zg-gruppe-knopf[aria-pressed="true"] { background: var(--bb-tinte); border-color: var(--bb-tinte); color: #FFFFFF; }
+.zg-gruppe-knopf:focus-visible { outline: 2px solid var(--bb-fokus); outline-offset: 2px; }
+#gruppen-felder { display: flex; flex-direction: column; gap: 12px; }
+.zg-gruppe { display: flex; flex-direction: column; gap: 6px; }
+
+/* Münze */
+.zg-muenze-wert { display: inline-flex; flex-direction: column; align-items: center; gap: 8px; font-size: 0; line-height: 1; }
+.zg-werte.viele .zg-muenze-wert { padding: 0; border: none; background: none; }
+.zg-muenze { display: block; width: 150px; height: 150px; }
+.zg-muenze svg { width: 100%; height: 100%; display: block; }
+.zg-werte.viele .zg-muenze { width: 64px; height: 64px; }
+.zg-muenze-text { font-family: var(--bb-font-text); font-weight: 700; font-size: 22px; }
+.zg-werte.viele .zg-muenze-text { font-size: 14px; }
+.zg-werte.rattert .zg-muenze { animation: zg-dreh 0.18s linear infinite; }
+.zg-werte.rattert .zg-muenze-text { visibility: hidden; }
+.zg-muenze.landet { animation: zg-landen 0.6s ease-out; }
+@keyframes zg-dreh { 0% { transform: scaleX(1); } 50% { transform: scaleX(0.08); } 100% { transform: scaleX(1); } }
+@keyframes zg-landen { 0% { transform: scaleX(0.1) translateY(-14px); } 40% { transform: scaleX(1) translateY(-6px); } 70% { transform: scaleX(0.85) translateY(0); } 100% { transform: scaleX(1); } }
+.zg-gross-werte .zg-muenze { width: min(48vh, 38vw); height: min(48vh, 38vw); }
+.zg-gross-werte.viele .zg-muenze { width: min(18vh, 12vw); height: min(18vh, 12vw); }
+.zg-gross-werte .zg-muenze-text { font-size: min(6vh, 4vw); }
+@media (prefers-reduced-motion: reduce) { .zg-muenze, .zg-werte.rattert .zg-muenze { animation: none !important; } }
+
+.zg-bs.breit { grid-column: span 2; }
+/* Kategorie im Ergebnis normal geschrieben ("Zahlen 1-10"), nicht in Versalien */
+#ergebnis-titel, #gross-titel { text-transform: none; letter-spacing: 0; font-family: var(--bb-font-text); font-weight: 600; color: var(--bb-text); }
+#ergebnis-titel { font-size: 16px; }
+#gross-titel { font-size: 24px; }
