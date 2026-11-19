@@ -284,6 +284,89 @@
     });
   }
 
+  // Würfel: Form passt sich der Seitenzahl an, gestaltet wie die Münze (Aprikose, Tinte-Rand, gestrichelte Innenlinie)
+  const W_FLAECHE = '#F7E4D4';
+  const W_TINTE = '#1C2E4A';
+  const W_BORDEAUX = '#6A1B2B';
+  const punkte = (pts) => pts.map((p) => p.map((v) => v.toFixed(1)).join(',')).join(' ');
+  function vieleck(n, r, drehung = 0, cx = 50, cy = 50) {
+    return Array.from({ length: n }, (_, i) => {
+      const a = (-90 + drehung + (360 / n) * i) * Math.PI / 180;
+      return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+    });
+  }
+  const schrumpfe = (pts, f, cx, cy) => pts.map(([x, y]) => [cx + (x - cx) * f, cy + (y - cy) * f]);
+  function wuerfelForm(seiten) {
+    // liefert Umriss, Mittelpunkt für die Zahl und Schriftfaktor
+    if (seiten === 6 || seiten <= 2) return null;
+    if (seiten === 4) return { pts: [[50, 6], [94, 88], [6, 88]], cx: 50, cy: 61, f: 0.62 };
+    if (seiten === 8) return { pts: vieleck(4, 46), cx: 50, cy: 50, f: 0.78 };
+    if (seiten === 10) return { pts: [[50, 4], [94, 33], [50, 96], [6, 33]], cx: 50, cy: 39, f: 0.6, drachen: true };
+    if (seiten === 12) return { pts: vieleck(5, 47), cx: 50, cy: 53, f: 0.82 };
+    if (seiten === 20) return { pts: vieleck(6, 47), cx: 50, cy: 57, f: 0.66, facette: true };
+    if (seiten >= 3) return { pts: vieleck(Math.min(seiten, 12), 47, seiten % 2 ? 0 : 180 / Math.min(seiten, 12)), cx: 50, cy: 50, f: seiten === 3 ? 0.62 : 0.85 };
+    return null; // 1, 2 und 6 Seiten: Quadrat
+  }
+  const AUGEN = { 1: [4], 2: [2, 6], 3: [2, 4, 6], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+  function wuerfelSvg(seiten, wert) {
+    const zahl = Number(wert);
+    let koerper;
+    let mitte = { cx: 50, cy: 50, f: 0.9 };
+    const form = wuerfelForm(seiten);
+    if (!form) {
+      koerper = `<rect x="6" y="6" width="88" height="88" rx="14" fill="${W_FLAECHE}" stroke="${W_TINTE}" stroke-width="4"/>`
+        + `<rect x="15" y="15" width="70" height="70" rx="8" fill="none" stroke="${W_TINTE}" stroke-width="1.5" stroke-dasharray="3 4"/>`;
+    } else {
+      mitte = form;
+      const innen = schrumpfe(form.pts, 0.8, 50, form.pts.length === 3 ? 61 : 50);
+      koerper = `<polygon points="${punkte(form.pts)}" fill="${W_FLAECHE}" stroke="${W_TINTE}" stroke-width="4" stroke-linejoin="round"/>`;
+      if (form.facette) {
+        // Sechseck mit Dreiecksfacette, wie ein echter W20 von vorne
+        const d = [[50, 20], [83, 75], [17, 75]];
+        const ecken = form.pts;
+        koerper += `<polygon points="${punkte(d)}" fill="none" stroke="${W_TINTE}" stroke-width="1.5" stroke-dasharray="3 4" stroke-linejoin="round"/>`
+          + [[d[0], ecken[0]], [d[1], ecken[2]], [d[2], ecken[4]]]
+            .map(([a, b]) => `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}" stroke="${W_TINTE}" stroke-width="1.5" stroke-dasharray="3 4"/>`).join('');
+      } else if (form.drachen) {
+        // Drachenform wie ein W10: Mittelkante deutet die zweite Fläche an
+        koerper += `<polygon points="${punkte(innen)}" fill="none" stroke="${W_TINTE}" stroke-width="1.5" stroke-dasharray="3 4" stroke-linejoin="round"/>`
+          + `<polyline points="6,33 50,64 94,33" fill="none" stroke="${W_TINTE}" stroke-width="1.5" stroke-dasharray="3 4"/>`;
+      } else {
+        koerper += `<polygon points="${punkte(innen)}" fill="none" stroke="${W_TINTE}" stroke-width="1.5" stroke-dasharray="3 4" stroke-linejoin="round"/>`;
+      }
+    }
+    let inhalt;
+    if (seiten === 6 && AUGEN[zahl]) {
+      // quadratische Augen im Bit-Stil; die Eins in Bordeaux wie der Cursor
+      inhalt = AUGEN[zahl].map((i) => {
+        const x = 25 + (i % 3) * 25 - 6;
+        const y = 25 + Math.floor(i / 3) * 25 - 6;
+        return `<rect x="${x}" y="${y}" width="12" height="12" fill="${zahl === 1 ? W_BORDEAUX : W_TINTE}"/>`;
+      }).join('');
+      inhalt = `<g shape-rendering="crispEdges">${inhalt}</g>`;
+    } else {
+      const stellen = String(wert).length;
+      const groesse = (stellen === 1 ? 54 : stellen === 2 ? 44 : 32) * mitte.f;
+      inhalt = `<text x="${mitte.cx}" y="${mitte.cy}" dy="0.35em" text-anchor="middle" font-family="JetBrains Mono, Consolas, monospace" font-weight="700" font-size="${groesse.toFixed(1)}" fill="${W_TINTE}">${wert}</text>`;
+    }
+    return `<svg viewBox="0 0 100 100" aria-hidden="true">${koerper}${inhalt}</svg>`;
+  }
+  function zeichneWuerfel(ziel, werte, seiten, art) {
+    // art: 'rollt' (während der Animation), 'landet' (Ergebnis mit Aufprall) oder '' (ruhig)
+    ziel.textContent = '';
+    ziel.classList.toggle('viele', werte.length > 1);
+    ziel.classList.remove('text');
+    werte.forEach((w) => {
+      const s = document.createElement('span');
+      s.className = 'zg-wert zg-wuerfel-wert';
+      const stil = art === 'rollt'
+        ? ` style="transform: translateY(${(Math.random() * -14).toFixed(1)}px) rotate(${(Math.random() * 70 - 35).toFixed(0)}deg)"` : '';
+      s.innerHTML = `<span class="zg-wuerfel${art === 'landet' ? ' landet' : ''}"${stil} role="img" aria-label="Würfel zeigt ${w}">${wuerfelSvg(seiten, w)}</span>`
+        + (seiten === 6 ? `<span class="zg-muenze-text">${w}</span>` : '');
+      ziel.append(s);
+    });
+  }
+
   function zeichne(ziel, werte, text, leer) {
     ziel.textContent = '';
     ziel.classList.toggle('viele', werte.length > 1);
@@ -313,8 +396,9 @@
     $('#anzahl').value = n;
     const ziele = [$('#werte'), $('#gross-werte')];
     const muenze = k.typ === 'muenze';
+    const wuerfel = k.typ === 'wuerfel';
     const text = !!k.liste;
-    const male = (z, w, landen) => (muenze ? zeichneMuenzen(z, w, landen) : zeichne(z, w, text));
+    const male = (z, w, landen) => (muenze ? zeichneMuenzen(z, w, landen) : wuerfel ? zeichneWuerfel(z, w, k.seiten, 'rollt') : zeichne(z, w, text));
 
     if ($('#animation').checked && !RUHIG) {
       st.laeuft = true;
@@ -335,7 +419,8 @@
       aktualisiere();
       return;
     }
-    ziele.forEach((z) => (muenze ? zeichneMuenzen(z, r.werte, !RUHIG) : zeichne(z, r.werte, r.text)));
+    ziele.forEach((z) => (muenze ? zeichneMuenzen(z, r.werte, !RUHIG)
+      : wuerfel ? zeichneWuerfel(z, r.werte, k.seiten, RUHIG ? '' : 'landet') : zeichne(z, r.werte, r.text)));
     setzeZusatz(r.zusatz || (k.typ === 'zahl' && n === 1 && r.werte[0] === '42' ? '101010₂. Gern geschehen.' : spruch()));
     $('#gross-titel').textContent = k.titel;
     st.letzte = { titel: k.titel, ...r };

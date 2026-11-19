@@ -387,4 +387,11 @@ html.qw-gesperrt { overflow: hidden; }
   background: var(--bb-tinte); color: #FFFFFF; border-radius: var(--bb-radius-s); font-size: 14px; line-height: 1.45;
   opacity: 0; visibility: hidden; transition: opacity 0.15s;
 }
-.qw-info-halter:hover .qw-tipp, .qw-info:focus-visible + .qw-tipp, .qw-info-halter.offen .qw-tipp { opacity: 1; visibility: visible; }
+/* Hover nur bei echter Maus: auf Touch-Geräten bleibt :hover sonst nach dem Tippen hängen */
+.qw-info-halter.offen .qw-tipp, .qw-info-halter:not(.zu) .qw-info:focus-visible + .qw-tipp { opacity: 1; visibility: visible; }
+@media (hover: hover) and (pointer: fine) {
+  .qw-info-halter:not(.zu):hover .qw-tipp { opacity: 1; visibility: visible; }
+}
+/* größere Tippfläche (44 px), ohne das Zeichen größer zu machen */
+.qw-info { position: relative; }
+.qw-info::after { content: ""; position: absolute; inset: -9px; }

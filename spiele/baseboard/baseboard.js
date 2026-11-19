@@ -1806,11 +1806,24 @@ ${SKRIPT_ENDE}
     box.addEventListener('change', () => { if (!setzeMerken(box.checked)) box.checked = false; });
     const tipp = h('span', { class: 'qw-tipp', id: tippId, role: 'tooltip' },
       'Speichert Entwurf und Spielstand im Local Storage dieses Browsers (rechtlich einem Cookie gleichgestellt, § 25 TDDDG). Keine Übertragung an einen Server. Deaktivieren löscht die Daten sofort.');
-    const info = h('button', { type: 'button', class: 'qw-info', 'aria-label': 'Was bedeutet das?', 'aria-describedby': tippId }, 'i');
-    info.addEventListener('click', () => info.parentElement.classList.toggle('offen'));
+    const info = h('button', { type: 'button', class: 'qw-info', 'aria-label': 'Was bedeutet das?', 'aria-describedby': tippId, 'aria-expanded': 'false' }, 'i');
+    // offen = per Klick festgehalten; zu = gerade geschlossen, Hover/Fokus zeigen ihn dann nicht sofort wieder
+    let halter = null;
+    const zeigeTipp = (an) => {
+      halter.classList.toggle('offen', an);
+      halter.classList.toggle('zu', !an);
+      info.setAttribute('aria-expanded', an ? 'true' : 'false');
+    };
+    info.addEventListener('click', (e) => { e.stopPropagation(); zeigeTipp(!halter.classList.contains('offen')); });
+    // Klick oder Tipp irgendwo anders schließt den Hinweis, ebenso Esc
+    document.addEventListener('pointerdown', (e) => { if (halter && !halter.contains(e.target) && halter.classList.contains('offen')) zeigeTipp(false); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && halter) zeigeTipp(false); });
     const leiste = h('div', { class: 'qw-merken' },
       h('label', null, box, h('span', null, 'Auf diesem Gerät merken')),
-      h('span', { class: 'qw-info-halter' }, info, tipp));
+      halter = h('span', { class: 'qw-info-halter' }, info, tipp));
+    // Maus verlässt das Zeichen oder Fokus wandert weiter: Sperre aufheben, damit der nächste Hover wieder eine Vorschau zeigt
+    halter.addEventListener('mouseleave', () => { if (!halter.classList.contains('offen')) halter.classList.remove('zu'); });
+    info.addEventListener('blur', () => { if (!halter.classList.contains('offen')) halter.classList.remove('zu'); });
     wurzel.before(leiste);
   })();
 
