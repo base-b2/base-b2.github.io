@@ -62,6 +62,8 @@ button.karte { cursor: pointer; }
 .karte canvas { width: 91px; height: 98px; image-rendering: pixelated; display: block; margin-bottom: 16px; }
 .werte { font-family: var(--bb-font-mono); font-size: 14px; margin: 8px 0 0; padding: 0; list-style: none; }
 .werte li { display: flex; justify-content: space-between; border-bottom: 1px solid var(--bb-linie); padding: 4px 0; }
+.testschalter { display: flex; gap: 12px; align-items: center; min-height: 44px; margin-bottom: 16px; cursor: pointer; }
+.testschalter input { width: 24px; height: 24px; accent-color: var(--bb-akzent); }
 .levels { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
 .level-knopf { min-height: 96px; border-radius: 12px; border: 1px solid var(--bb-linie); background: var(--bb-lavendel); color: var(--bb-text); font: 600 17px var(--bb-font-text); text-align: left; padding: 16px; cursor: pointer; }
 :root[data-theme="dunkel"] .level-knopf { background: var(--bb-flaeche); }
@@ -139,7 +141,7 @@ footer { max-width: 1200px; margin: 32px auto 0; padding: 16px 24px; border-top:
       <div>
         <span class="etikett pille">SPIELE | PLATTFORMER</span>
         <h1 id="t-start">BaseBit</h1>
-        <p>Laufen, springen, Bugs plattmachen. Sechs Level, ein Editor für eigene Level und volle Controller-Unterstützung.</p>
+        <p>Laufen, springen, Bugs plattmachen. Zehn Level mit Wandparcours und Bossen, ein Editor für eigene Level und volle Controller-Unterstützung.</p>
         <div class="start-menue">
           <button class="knopf primaer" data-gehe="level">Spielen</button>
           <button class="knopf" data-gehe="figur">Figur wählen</button>
@@ -162,6 +164,7 @@ footer { max-width: 1200px; margin: 32px auto 0; padding: 16px 24px; border-top:
   <!-- Level -->
   <section class="screen" id="s-level" aria-labelledby="t-level">
     <h2 id="t-level">Level wählen</h2>
+    <label class="testschalter"><input type="checkbox" id="testmodus"> <span><b>Testmodus</b> <span class="neben">alle Level offen, Blöcke mit allen Power-ups am Start, unbegrenzte Versuche</span></span></label>
     <div class="levels" id="level-liste"></div>
     <h2>Eigenes Level spielen</h2>
     <p>Eine BaseBit-Leveldatei (.json) aus dem Editor laden. Eigene Level haben unbegrenzt Versuche, gezählt wird trotzdem.</p>
@@ -269,7 +272,8 @@ footer { max-width: 1200px; margin: 32px auto 0; padding: 16px 24px; border-top:
 <script>
 (() => {
 'use strict';
-const T = 16, VW = 400, VH = 240, DT = 1000 / 60, S = 3;
+const T = 16, VW = 400, VH = 240, DT = 1000 / 60;
+let S = 3;
 const sn = v => Math.round(v * S) / S;
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -343,18 +347,19 @@ const FIG = {
   bit: { name: 'Bit', walk: 1.5, run: 2.6, vollgas: 3.25, jump: 5.6, acc: .09, wall: true, wj: 5.3, slide: 2.2, pmeter: true,
     info: 'Das Maskottchen von Base B. Schnell und geradlinig: Nach etwa einer Sekunde Rennen schaltet Bit auf Vollgas und springt dann noch weiter. Wandsprünge gehen, aber Bit rutscht schnell ab.',
     werte: [['Tempo', '+++'], ['Sprunghöhe', '++'], ['Vollgas', 'ja'], ['Wandsprung', '+']] },
-  katze: { name: 'Katze', walk: 1.4, run: 2.4, vollgas: 2.4, jump: 6.1, acc: .085, wall: true, wj: 5.9, slide: 1.1, pmeter: false,
+  katze: { name: 'Katze', walk: 1.4, run: 2.4, vollgas: 3.0, jump: 6.1, acc: .085, wall: true, wj: 5.9, slide: 1.1, pmeter: true,
     info: 'Bits Mitbewohnerin. Springt höher, krallt sich an Wänden fest und stößt sich kräftig von ihnen ab. Die Erste im Wandparcours.',
-    werte: [['Tempo', '++'], ['Sprunghöhe', '+++'], ['Vollgas', 'nein'], ['Wandsprung', '+++']] }
+    werte: [['Tempo', '++'], ['Sprunghöhe', '+++'], ['Vollgas', 'ja'], ['Wandsprung', '+++']] }
 };
 
 function drawFigur(ctx, fig, x, y, big, face, anim, o) {
   o = o || {};
   ctx.save();
-  ctx.translate(sn(x) + (face < 0 ? 12 : 0), sn(y));
+  const ww = fig === 'katze' ? 14 : 12, ox = fig === 'katze' ? -1 : 0;
+  ctx.translate(sn(x) + ox + (face < 0 ? ww : 0), sn(y));
   if (face < 0) ctx.scale(-1, 1);
-  const body = o.body || C.text, eye = C.grund, cur = o.cur || C.akzent;
-  if (fig === 'katze') { drawKatze(ctx, big, anim, o, body, eye, cur); ctx.restore(); return; }
+  const body = o.body || (fig === 'katze' ? C.akzent : C.text), eye = C.grund, cur = o.cur || (body === C.akzent ? C.text : C.akzent);
+  if (fig === 'katze') { drawKatze(ctx, big, anim, Object.assign({}, o, { cur: o.cur || (body === C.akzent ? C.text : C.akzent) }), body, eye, cur); ctx.restore(); return; }
   const H = big ? 24 : 14, by = big ? 9 : 4, bh = big ? 11 : 7;
   const r = (a, b, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(a, b, w, h); };
   if (o.wing) { r(-4, by - 2, 4, 2, C.neben); r(-6, by - 4, 3, 2, C.neben); r(-3, by, 3, 2, C.neben); }
@@ -370,22 +375,28 @@ function drawFigur(ctx, fig, x, y, big, face, anim, o) {
   const ly = by + bh, lh = H - ly, step = Math.floor(anim / 6) % 2;
   if (o.air) { r(1, ly, 3, lh - 1, body); r(7, ly, 3, lh, body); }
   else { r(1, ly, 3, step ? lh : lh - 1, body); r(7, ly, 3, step ? lh - 1 : lh, body); }
+  r(1, H - 1, 3, 1, o.air ? body : cur); r(7, H - 1, 3, 1, cur);
   r(6, by - (big ? 3 : 2), 5, 2, cur);
   if (o.pixel) r(0, by + bh - 3, 11, 1, cur);
   ctx.restore();
 }
 
-const KATZE_KOPF = ['B............', 'B...B.CCC.B..', 'B...BB...BB..', 'B...BBBBBBB..', 'B...BEEBEEB..', 'B...BEPBEPBWW', 'BB..BBBNBBB..', '.BBBBBBBBBBWW', '..BBBBBBBBB..'];
+const KATZE_GROSS = [
+  '...........CCC', '..............', '......B....B..', '......BB..BB..', '......BLBBLB..', '.....BBBBBBBB.', '.....BEEBBEEB.', '.....BEPBBEPB.',
+  '....WBBBNNBBBW', 'B....BBLLLLBB.', 'B.....BBBBBB..', 'B....BBBBBB...', 'BBBBBBBBBBBB..', 'BBBBBBBBBBBB..', '.BBBLLLLLLBB..', '..BBLLLLLLBB..',
+  '..BBLLLLLLBB..', '..BBBBBBBBBB..', '..BBBBBBBBBB..', '..BBBBBBBBBB..'];
+const KATZE_KLEIN = ['...........CCC', '......B....B..', '.....BBBBBBBB.', '.....BEPBBEPB.', '....WBBBNNBBBW', 'B.....BBBBBB..', 'B.BBBBBBBBB...', 'BBBBBBBBBBBB..', '.BBBLLLLLBBB..', '..BBBBBBBBBB..', '..BBBBBBBBBB..'];
 function drawKatze(ctx, big, anim, o, body, eye, cur) {
-  const rows = KATZE_KOPF.slice();
-  const nb = big ? 11 : 2, nl = big ? 4 : 3;
-  for (let i = 0; i < nb; i++) rows.push(i === nb - 2 && o.pixel ? '..CCCCCCCCC..' : '..BBBBBBBBB..');
+  const rows = (big ? KATZE_GROSS : KATZE_KLEIN).slice();
   const step = Math.floor(anim / 6) % 2;
-  const leg = o.air ? '.BB.......BB.' : step ? '..BB....BB...' : '...BB..BB....';
+  const leg = o.air ? '.BB.......BB..' : step ? '..BB.BB.BB.BB.' : '.BB..BB..BB.BB';
+  const nl = big ? 4 : 3;
   for (let i = 0; i < nl; i++) rows.push(leg);
-  if (o.wing) { ctx.fillStyle = C.neben; ctx.fillRect(-3, 6, 3, 2); ctx.fillRect(-5, 4, 3, 2); ctx.fillRect(-2, 8, 2, 2); }
-  const col = { B: body, E: o.blink ? body : eye, P: body, C: cur, N: cur, W: C.neben };
-  rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) { const ch = row[x]; if (ch === '.') continue; ctx.fillStyle = col[ch]; ctx.fillRect(x - 1, y, 1, 1); } });
+  if (o.wing) { ctx.fillStyle = C.neben; ctx.fillRect(-2, big ? 11 : 4, 4, 2); ctx.fillRect(-4, big ? 9 : 2, 3, 2); ctx.fillRect(-1, big ? 13 : 6, 3, 2); }
+  const col = { B: body, L: C.apr, E: o.blink ? body : eye, P: C.text, C: o.cur || C.akzent, N: C.apr, W: C.neben };
+  if (body !== C.akzent && body !== C.text) col.L = body;
+  rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) { const ch = row[x]; if (ch === '.') continue; ctx.fillStyle = col[ch]; ctx.fillRect(x, y, 1, 1); } });
+  if (o.pixel) { ctx.fillStyle = C.erfolg; ctx.fillRect(2, rows.length - nl - 2, 10, 1); }
 }
 
 /* ---------- Kacheln ---------- */
@@ -434,6 +445,10 @@ const ENTS = {
   plattform: { name: 'Plattform', gruppe: 'Gegner', fw: 3, fh: 1, info: 'Bewegliches Brett, nur von oben fest. Nimmt die Figur mit.',
     schema: [{ k: 'achse', label: 'Achse', type: 'select', opt: [['waagrecht', 'waagrecht'], ['senkrecht', 'senkrecht (nach oben)']], def: 'waagrecht' },
       { k: 'weite', label: 'Weite (Blöcke)', type: 'num', min: 0, max: 12, def: 3 }, { k: 'tempo', label: 'Tempo (1-3)', type: 'num', min: 1, max: 3, def: 1 }] },
+  grossbug: { name: 'Großbug', gruppe: 'Bosse', fw: 2, fh: 2, info: 'Boss. Läuft hin und her, springt immer öfter und wird mit jedem Treffer schneller. Draufspringen, Panzer, Pixel, Drehschlag und Stern treffen. Besiegt öffnet er alle Schlossblöcke.',
+    schema: [{ k: 'leben', label: 'Treffer bis besiegt', type: 'num', min: 1, max: 9, def: 3 }] },
+  panzerkoenig: { name: 'Panzerkönig', gruppe: 'Bosse', fw: 2, fh: 2, info: 'Boss mit Stachelkrone: Draufspringen tut weh (Drehsprung prallt ab). Wirft Panzerbugs. Ein Panzer zählt einen ganzen Treffer, Pixel und Drehschlag je ein Drittel. Besiegt öffnet er alle Schlossblöcke.',
+    schema: [{ k: 'leben', label: 'Treffer bis besiegt', type: 'num', min: 1, max: 9, def: 3 }] },
   byte: { name: 'Byte', gruppe: 'Gegenstände', info: 'Macht groß. Groß hält einen Treffer aus und zerschlägt Ziegel. Wandert nach rechts.' },
   pixelblume: { name: 'Pixelblume', gruppe: 'Gegenstände', info: 'Mit der Rennen-Taste hüpfende Pixel schießen (max. zwei gleichzeitig). Besiegt fast alles außer Stampfer und Fressblock.' },
   fluegel: { name: 'Feder', gruppe: 'Gegenstände', info: 'Sprungtaste beim Fallen halten: langsam gleiten. Rennen-Taste: Drehschlag, der Gegner (auch Stachelbugs) und Kanonenkugeln zerstört.' },
@@ -474,7 +489,7 @@ function bau(name, w, zeit, fn, h) {
   // Startbereich: keine Gegner, drei Blöcke zur Auswahl
   for (let y = h - 3; y < h; y++) for (let x = 0; x < OFF; x++) grid[y][x] = '#';
   L.entities.push({ t: 'start', x: 2, y: h - 4, p: {} });
-  raw(5, h - 7, '?', { inhalt: 'byte' }); raw(8, h - 7, '?', { inhalt: 'pixelblume' }); raw(11, h - 7, '?', { inhalt: 'fluegel' });
+  L.testStart = true;
   const A = {
     fill(x0, y0, x1, y1, c) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) grid[y][x + OFF] = c; },
     set(x, y, c, p) { raw(x + OFF, y, c, p); },
@@ -486,7 +501,7 @@ function bau(name, w, zeit, fn, h) {
     }
   };
   fn(A);
-  return serLevel(L);
+  const out = serLevel(L); out.testStart = true; return out;
 }
 const LEVELS = [
   bau('Erster Bit', 110, 300, A => {
@@ -599,7 +614,50 @@ const LEVELS = [
     A.fill(70, 6, 70, 23, '#'); A.row(71, 20, 'o'); A.row(72, 15, 'o'); A.row(71, 10, 'o');
     A.fill(74, 8, 83, 29, '#');
     A.ent('ziel', 79, 5);
-  }, 30)
+  }, 30),
+  bau('Bugzentrale', 62, 300, A => {
+    A.boden(0, 61); A.row(4, 8, 'QUQ'); A.ent('checkpoint', 10, 10);
+    A.fill(14, 6, 14, 9, '#');
+    A.row(22, 8, '==='); A.row(37, 8, '===');
+    A.ent('grossbug', 30, 10, { leben: 3 });
+    A.fill(49, 0, 49, 11, 'K');
+    A.row(52, 7, 'ooo'); A.ent('ziel', 56, 9);
+  }),
+  bau('Kaminklettern', 82, 450, A => {
+    A.boden(0, 16); A.row(4, 22, 'ooo');
+    A.fill(13, 8, 13, 23, '#');
+    A.fill(17, 12, 26, 29, '#'); A.row(14, 9, 'ooo');
+    A.ent('bug', 22, 11, { vorsichtig: true });
+    A.fill(30, 9, 30, 22, '#'); A.row(31, 15, 'o'); A.row(32, 11, 'o');
+    A.fill(34, 7, 44, 29, '#');
+    A.ent('checkpoint', 37, 5); A.ent('flatterbug', 41, 3, { bahn: 'waagrecht', weite: 2 });
+    A.fill(48, 4, 48, 20, '#'); A.row(45, 12, 'o'); A.row(49, 16, 'o');
+    A.fill(45, 26, 51, 26, '^'); A.boden(45, 51);
+    A.fill(52, 4, 62, 29, '#'); A.ent('checkpoint', 54, 2);
+    A.set(61, 3, 'C', { richtung: 'links', takt: 5 });
+    A.boden(63, 81); A.ent('bug', 68, 26); A.ent('panzerbug', 71, 26);
+    A.ent('ziel', 76, 24);
+  }, 30),
+  bau('Turmspitze', 72, 500, A => {
+    A.boden(0, 13);
+    A.fill(10, 4, 10, 33, '#'); A.fill(14, 8, 14, 39, '#');
+    A.row(12, 30, 'o'); A.row(12, 20, 'o'); A.row(12, 11, 'o');
+    A.fill(15, 8, 28, 9, '#'); A.ent('checkpoint', 17, 6); A.row(20, 5, 'QUQ');
+    A.ent('plattform', 30, 18, { achse: 'senkrecht', weite: 8, tempo: 1 });
+    A.row(35, 18, '==='); A.ent('flatterbug', 36, 14, { bahn: 'waagrecht', weite: 2 });
+    A.row(40, 24, '==='); A.row(45, 30, '===');
+    A.ent('flatterbug', 44, 26, { bahn: 'senkrecht', weite: 2, tempo: 2 });
+    A.boden(48, 71); A.ent('stachelbug', 55, 36); A.ent('stachelbug', 59, 36);
+    A.ent('ziel', 66, 34);
+  }, 40),
+  bau('Panzerkönig', 66, 400, A => {
+    A.boden(0, 65); A.row(6, 8, 'QUQ'); A.ent('checkpoint', 12, 10);
+    A.fill(18, 4, 18, 9, '#');
+    A.row(25, 8, '===='); A.row(40, 8, '====');
+    A.ent('panzerkoenig', 33, 10, { leben: 3 });
+    A.fill(52, 0, 52, 11, 'K');
+    A.row(55, 7, 'ooo'); A.ent('ziel', 59, 9);
+  })
 ];
 
 /* ---------- Eingabe ---------- */
@@ -652,6 +710,10 @@ class Game {
     const L = normLevel(JSON.parse(JSON.stringify(this.src)));
     this.L = L; this.W = L.width; this.H = L.height; this.g = L.grid; this.props = L.props;
     this.ents = []; this.parts = []; this.bumps = {}; this.an = true; this.pTimer = 0; this.sCool = 0; this.shake = 0;
+    if (this.o.test && this.src.testStart) {
+      const hy = this.H - 7, inh = ['byte', 'pixelblume', 'fluegel', 'stern', 'herz'];
+      inh.forEach((t, i) => { const x = 3 + i * 2; this.g[hy][x] = '?'; this.props[x + ',' + hy] = { inhalt: t }; });
+    }
     this.zeit = L.zeit * 60; this.cannons = [];
     for (let y = 0; y < this.H; y++) for (let x = 0; x < this.W; x++) if (this.g[y][x] === 'C') this.cannons.push({ x, y, t: 100 });
     let start = { x: 2, y: this.H - 4 };
@@ -666,7 +728,7 @@ class Game {
     this.cx = Math.max(0, Math.min(this.W * T - VW, this.p.x - VW / 2)); this.cy = Math.max(0, Math.min(this.H * T - VH, this.p.y - VH / 2));
     if (this.startForm && this.startForm !== 'klein') this.setForm(this.startForm);
     this.startForm = null;
-    this.hudKey = ''; this.look = 0; this.pcx = this.cx; this.pcy = this.cy;
+    this.hudKey = ''; this.look = 0; this.cvx = 0; this.cvy = 0; this.tyc = undefined; this.pcx = this.cx; this.pcy = this.cy;
   }
   mk(t, x, y, p) {
     p = p || {};
@@ -675,6 +737,8 @@ class Game {
       case 'bug': case 'stachelbug': e.w = 14; e.h = 12; e.x += 1; e.y += 4; break;
       case 'panzerbug': e.w = 14; e.h = 14; e.x += 1; e.y += 2; if (p.panzer) { e.t = 'panzer'; e.st = 'ruhe'; e.h = 12; e.y += 2; } break;
       case 'panzer': e.w = 14; e.h = 12; e.x += 1; e.y += 4; e.st = 'ruhe'; break;
+      case 'grossbug': e.w = 28; e.h = 26; e.x += 2; e.y += 6; e.boss = true; e.teil = 1; e.max = e.hp = (p.leben || 3); e.hx = e.x; e.timer = 150; e.inv = 0; break;
+      case 'panzerkoenig': e.w = 30; e.h = 30; e.x += 1; e.y += 2; e.boss = true; e.teil = 3; e.max = e.hp = (p.leben || 3) * 3; e.hx = e.x; e.timer = 160; e.inv = 0; break;
       case 'flatterbug': e.w = 14; e.h = 12; e.x += 1; e.y += 2; e.bx = e.x; e.by = e.y; e.ph = 0; break;
       case 'huepfer': e.w = 14; e.h = 14; e.x += 1; e.y += 2; e.timer = 60; break;
       case 'stampfer': e.w = 30; e.h = 30; e.x += 1; e.hy = e.y; e.st = 'warten'; break;
@@ -794,7 +858,7 @@ class Game {
     P.dead = 1; P.vy = -5; this.tode++; if (P.carry) { P.carry = null; } Snd.play('tod');
   }
   afterDeath() {
-    if (this.o.mode === 'story') { this.leben--; if (this.leben <= 0) { this.end('gameover'); return; } }
+    if (this.o.mode === 'story' && !this.o.test) { this.leben--; if (this.leben <= 0) { this.end('gameover'); return; } }
     this.load();
   }
   win() { const P = this.p; if (P.won || P.dead) return; P.won = 1; P.carry = null; Snd.play('ziel'); }
@@ -865,11 +929,12 @@ class Game {
     if (P.form === 'pixel' && In.hit('run') && !P.carry && this.ents.filter(e => e.t === 'schuss' && !e.dead).length < 2) {
       const s = this.mk('schuss', 0, 0); s.x = P.face > 0 ? P.x + P.w : P.x - 6; s.y = P.y + 6; s.vx = P.face * 3.2; s.vy = 1; s.act = true; this.ents.push(s); Snd.play('schuss');
     }
-    if (P.form === 'fluegel' && In.hit('run') && !P.carry && !P.twirl) { P.twirl = 20; Snd.play('spin'); }
+    const tragNah = this.ents.some(e => !e.dead && TRAGBAR.has(e.t) && e.st !== 'rollt' && e.st !== 'flach' && ov({ x: P.x - 6, y: P.y - 2, w: P.w + 12, h: P.h + 4 }, e));
+    if (P.form === 'fluegel' && In.hit('run') && !P.carry && !P.twirl && !tragNah) { P.twirl = 20; Snd.play('spin'); }
     if (P.twirl > 0) {
       P.twirl--;
       const hb = { x: P.x - 12, y: P.y + P.h - 16, w: P.w + 24, h: 16 };
-      for (const e of this.ents) if (!e.dead && KILLBAR.has(e.t) && e !== P.carry && ov(hb, e)) this.kill(e, 'puff');
+      for (const e of this.ents) if (!e.dead && this.foe(e) && e !== P.carry && ov(hb, e)) this.treffer(e, 'puff', 1);
     }
     if (P.carry) {
       const c = P.carry;
@@ -935,6 +1000,16 @@ class Game {
             else this.hurt();
           }
           break;
+        case 'grossbug':
+          if (P.stern > 0) { this.bossDamage(e, 1); break; }
+          if (stomp) { this.bossDamage(e, 1); P.y = e.y - P.h; P.vy = -((In.held('jump') || In.held('spin')) ? 7 : 5); P.on = false; }
+          else if (e.inv < 35) this.hurt();
+          break;
+        case 'panzerkoenig':
+          if (P.stern > 0) { this.bossDamage(e, 3); break; }
+          if (stomp && P.spin) { P.y = e.y - P.h; this.bounce(); Snd.play('stampf'); }
+          else this.hurt();
+          break;
         case 'stampfer':
           if (stomp) { P.y = e.y - P.h; P.vy = 0; P.on = true; P.spin = false; }
           else if (P.stern <= 0) this.hurt();
@@ -980,7 +1055,7 @@ class Game {
       }
       case 'panzer': {
         if (P.carry === e) {
-          for (const o of this.ents) if (o !== e && !o.dead && KILLBAR.has(o.t) && ov(e, o)) { this.kill(o, 'flip'); this.kill(e, 'flip'); break; }
+          for (const o of this.ents) if (o !== e && !o.dead && this.foe(o) && ov(e, o)) { this.treffer(o, 'flip', o.teil || 1); this.kill(e, 'flip'); break; }
           return;
         }
         if (e.grace > 0) e.grace--;
@@ -991,7 +1066,8 @@ class Game {
         if (i.u) this.hitBlock(i.u.tx, i.u.ty, e);
         if (e.st === 'rollt' || !e.on) {
           for (const o of this.ents) {
-            if (o === e || o.dead || !KILLBAR.has(o.t) || !ov(e, o)) continue;
+            if (o === e || o.dead || !this.foe(o) || !ov(e, o)) continue;
+            if (o.boss) { if (this.bossDamage(o, o.teil)) { this.kill(e, 'flip'); break; } continue; }
             if (o.t === 'panzer' && o.st === 'rollt' && e.st === 'rollt') { this.kill(o, 'flip'); this.kill(e, 'flip'); break; }
             if (o.t === 'panzer' && o.st === 'ruhe' && e.on) continue;
             this.kill(o, 'flip'); if (!e.on && e.st !== 'rollt') { this.kill(e, 'flip'); break; }
@@ -1016,7 +1092,7 @@ class Game {
       case 'stampfer': {
         const px = P.x + P.w / 2, cx = e.x + e.w / 2;
         e.dy = 0;
-        if (e.st === 'warten') { if (Math.abs(px - cx) < 36 && P.y > e.y && !P.dead) { e.st = 'fall'; e.vy = 0; } }
+        if (e.st === 'warten') { if (Math.abs(px - cx) < 76 && P.y > e.y && !P.dead) { e.st = 'fall'; e.vy = 0; } }
         else if (e.st === 'fall') {
           e.vy = Math.min(e.vy + .5, 7); const y0 = e.y; e.vx = 0; const i = this.move(e); e.dy = e.y - y0;
           for (const o of this.ents) if (o !== e && !o.dead && KILLBAR.has(o.t) && ov(e, o)) this.kill(o, 'flip');
@@ -1034,6 +1110,26 @@ class Game {
       }
       case 'byte': case 'herz': {
         e.vx = e.dir * 1; e.vy = Math.min(e.vy + .4, 5); const i = this.move(e); if (i.wall) e.dir *= -1; break;
+      }
+      case 'grossbug': {
+        if (e.inv > 0) e.inv--;
+        const sp = .7 + .35 * (e.max - e.hp); e.vx = e.dir * sp; e.vy = Math.min(e.vy + .4, 6);
+        const i = this.move(e); if (i.wall) e.dir *= -1;
+        if (Math.abs(e.x - e.hx) > 11 * T) e.dir = e.x > e.hx ? -1 : 1;
+        if (e.on && --e.timer <= 0) { e.vy = -6.5; e.dir = P.x < e.x ? -1 : 1; e.timer = Math.max(50, 130 - 30 * (e.max - e.hp)); }
+        if (e.on && e.luft) { this.shake = 5; Snd.play('stampf'); } e.luft = !e.on;
+        break;
+      }
+      case 'panzerkoenig': {
+        if (e.inv > 0) e.inv--;
+        e.vx = e.dir * (.4 + .1 * (e.max - e.hp) / 3); e.vy = Math.min(e.vy + .4, 6);
+        const i = this.move(e); if (i.wall) e.dir *= -1;
+        if (Math.abs(e.x - e.hx) > 9 * T) e.dir = e.x > e.hx ? -1 : 1;
+        if (--e.timer <= 0) {
+          e.timer = 200; const n = this.mk('panzerbug', 0, 0, {}); n.x = e.x + 8; n.y = e.y - 16; n.vy = -5; n.dir = P.x < e.x ? -1 : 1; n.act = true;
+          if (this.ents.filter(o => !o.dead && (o.t === 'panzerbug' || o.t === 'panzer')).length < 3) { this.ents.push(n); Snd.play('kick'); }
+        }
+        break;
       }
       case 'stern': {
         e.vx = e.dir * 1.3; e.vy = Math.min(e.vy + .3, 5); const i = this.move(e); if (i.wall) e.dir *= -1; if (e.on) e.vy = -4.5; break;
@@ -1054,7 +1150,7 @@ class Game {
         e.vy = Math.min(e.vy + .35, 4); const i = this.move(e);
         if (e.on) e.vy = -2.8;
         if (i.wall || e.anim > 150) { e.dead = true; this.puff(e.x, e.y, C.akzent, 3, 'rauch'); break; }
-        for (const o of this.ents) if (!o.dead && KILLBAR.has(o.t) && ov(e, o)) { this.kill(o, 'flip'); e.dead = true; break; }
+        for (const o of this.ents) if (!o.dead && this.foe(o) && ov(e, o)) { this.treffer(o, 'flip', 1); e.dead = true; break; }
         break;
       }
     }
@@ -1066,6 +1162,18 @@ class Game {
       if (o === e || o.dead || !(o.t === 'bug' || o.t === 'stachelbug' || o.t === 'panzerbug' || (o.t === 'panzer' && o.st === 'ruhe'))) continue;
       if (ov(e, o) && ((e.dir > 0 && o.x > e.x) || (e.dir < 0 && o.x < e.x))) { e.dir *= -1; break; }
     }
+  }
+  foe(o) { return KILLBAR.has(o.t) || o.boss; }
+  treffer(o, how, dmg) { if (o.boss) return this.bossDamage(o, dmg || 1); this.kill(o, how); return true; }
+  bossDamage(e, n) {
+    if (e.inv > 0 || e.dead) return false;
+    e.hp -= n; e.inv = 50; Snd.play('stampf'); this.shake = 6; this.puff(e.x + e.w / 2, e.y + 4, C.akzent, 6, 'rauch');
+    if (e.hp <= 0) {
+      this.kill(e, 'flip'); this.shake = 16; this.addBit(10);
+      for (let y = 0; y < this.H; y++) for (let x = 0; x < this.W; x++) if (this.g[y][x] === 'K') { this.g[y][x] = '.'; this.puff(x * T + 8, y * T + 8, C.neben, 2, 'rauch'); }
+      Snd.play('schloss');
+    }
+    return true;
   }
   tryLock(e) {
     const t = this.touchTile(e, 'K'); if (!t) return;
@@ -1089,6 +1197,12 @@ class Game {
       this.ents.push(k); this.puff(cx + 8 + dir * 10, c.y * T + 8, C.neben, 3, 'rauch'); Snd.play('schuss');
     }
   }
+  damp(cur, target, k, time) {
+    const om = 2 / time, x = om / 60, ex = 1 / (1 + x + .48 * x * x + .235 * x * x * x);
+    const ch = cur - target, tmp = ((this[k] || 0) + om * ch) / 60;
+    this[k] = ((this[k] || 0) - om * tmp) * ex;
+    return target + (ch + tmp) * ex;
+  }
   step() {
     if (this.paused || this.ended) return;
     this.frame++;
@@ -1107,11 +1221,12 @@ class Game {
     // Kamera
     const P = this.p;
     if (!P.dead) {
-      if (Math.abs(P.vx) > .8) this.look += (Math.sign(P.vx) * 36 - this.look) * .025;
-      const tx = P.x + P.w / 2 - VW / 2 + this.look, d = tx - this.cx;
-      this.cx += Math.max(-4.5, Math.min(4.5, d * .09)); this.cx = Math.max(0, Math.min(this.W * T - VW, this.cx));
+      if (Math.abs(P.vx) > .8) this.look += (Math.sign(P.vx) * 36 - this.look) * .03;
+      const tx = P.x + P.w / 2 - VW / 2 + this.look;
+      this.cx = this.damp(this.cx, tx, 'cvx', .2); this.cx = Math.max(0, Math.min(this.W * T - VW, this.cx));
       const sy = P.y - this.cy;
-      if (P.on || sy < 50 || sy > VH - 70) { const ty = P.y - VH * .55; this.cy += (ty - this.cy) * (P.on ? .06 : .12); }
+      if (P.on || sy < 50 || sy > VH - 70) this.tyc = P.y - VH * .55;
+      this.cy = this.damp(this.cy, this.tyc === undefined ? this.cy : this.tyc, 'cvy', P.on ? .3 : .18);
       this.cy = Math.max(0, Math.min(this.H * T - VH, this.cy));
     }
     if (In.hit('start')) pauseSpiel(true);
@@ -1146,8 +1261,9 @@ class Game {
     const P = this.p;
     if (!(P.inv > 0 && Math.floor(P.inv / 4) % 2)) {
       const big = P.form !== 'klein';
-      let body = C.text, cur = C.akzent;
-      if (P.stern > 0) { const f = Math.floor(this.frame / 4) % 3; body = [C.text, C.akzent, C.neben][f]; cur = [C.akzent, C.text, C.akzent][f]; }
+      const kat = this.figur === 'katze';
+      let body = (kat ? P.form !== 'pixel' : P.form === 'pixel') ? C.akzent : C.text, cur = body === C.akzent ? C.text : C.akzent;
+      if (P.stern > 0) { const f = Math.floor(this.frame / 4) % 3; body = [C.text, C.akzent, C.erfolg][f]; cur = [C.akzent, C.text, C.akzent][f]; }
       if ((P.spin && !P.on) || P.twirl > 0) { const f = Math.floor(this.frame / 3) % 4; P.face = (f < 2) ? 1 : -1; }
       drawFigur(ctx, this.figur, L(P.px, P.x) - 1 - cx, L(P.py, P.y) - cy, big, P.face, P.anim, { body, cur, air: !P.on, wing: P.form === 'fluegel', pixel: P.form === 'pixel', dead: P.dead > 0, blink: (this.frame % 200) < 6 });
     }
@@ -1166,7 +1282,9 @@ class Game {
   hud() {
     const P = this.p, F = FIG[this.figur];
     const parts = [];
-    if (this.o.mode === 'story') parts.push(['LEBEN', this.leben]); else parts.push(['VERSUCHE', this.tode + 1]);
+    if (this.o.test) parts.push(['TEST', 'VERSUCH ' + (this.tode + 1)]); else if (this.o.mode === 'story') parts.push(['LEBEN', this.leben]); else parts.push(['VERSUCHE', this.tode + 1]);
+    const boss = this.ents.find(e => e.boss && !e.dead && e.act);
+    if (boss) parts.push(['BOSS', '|'.repeat(Math.ceil(boss.hp / boss.teil)).padEnd(Math.ceil(boss.max / boss.teil), '.')]);
     parts.push(['BITS', String(this.bits).padStart(3, '0')]);
     if (this.L.zeit > 0) parts.push(['ZEIT', Math.ceil(this.zeit / 60)]);
     if (F.pmeter) parts.push(['VOLLGAS', '|'.repeat(Math.floor(P.pm / 10)).padEnd(6, '.')]);
@@ -1189,9 +1307,17 @@ function tileImg(c, st, top) {
   const ph = anim ? Math.floor(st.f / 8) % 4 : 0;
   const key = c + (st.an ? 1 : 0) + (st.p ? 1 : 0) + (top ? 1 : 0) + ph;
   let cv = TC.get(key);
-  if (!cv) { cv = document.createElement('canvas'); cv.width = cv.height = 16 * S; const x = cv.getContext('2d'); x.scale(S, S); drawTile(x, c, 0, 0, { an: st.an, p: st.p, f: ph * 8, ed: false }, top); TC.set(key, cv); }
+  if (!cv) { cv = document.createElement('canvas'); cv.width = cv.height = Math.ceil(16 * S); const x = cv.getContext('2d'); x.scale(S, S); drawTile(x, c, 0, 0, { an: st.an, p: st.p, f: ph * 8, ed: false }, top); TC.set(key, cv); }
   return cv;
 }
+function fitCanvas() {
+  const cv = $('#spiel'), r = cv.getBoundingClientRect(); if (!r.width) return;
+  const dpr = window.devicePixelRatio || 1, ns = Math.max(1, Math.min(8, Math.ceil(r.width * dpr / VW - .15)));
+  if (Math.abs(ns - S) < .01 && cv.width === Math.round(VW * ns)) return;
+  S = ns; cv.width = Math.round(VW * S); cv.height = Math.round(VH * S); TC.clear();
+}
+addEventListener('resize', () => { if (screen === 'spiel') fitCanvas(); });
+document.addEventListener('fullscreenchange', () => setTimeout(fitCanvas, 50));
 function drawTile(ctx, c, x, y, s, top) {
   x = sn(x); y = sn(y);
   const r = (a, b, w, h, col) => { ctx.fillStyle = col; ctx.fillRect(x + a, y + b, w, h); };
@@ -1225,7 +1351,7 @@ function drawEnt(ctx, e, x, y, f, game) {
     r(2, 9, 2, step ? 3 : 2, C.text); r(6, 9, 2, step ? 2 : 3, C.text); r(10, 9, 2, step ? 3 : 2, C.text);
   };
   switch (e.t) {
-    case 'bug': bugBody(C.fehler); if (e.p && e.p.vorsichtig) r(4, 2, 6, 1, C.grund); break;
+    case 'bug': bugBody(C.fehler); r(3, 7, 8, 1, C.apr); if (e.p && e.p.vorsichtig) r(4, 2, 6, 1, C.grund); break;
     case 'stachelbug': bugBody(C.akzent); for (let k = 0; k < 4; k++) { r(2 + k * 3, -2, 1, 3, C.text); r(1 + k * 3, 0, 3, 2, C.text); } break;
     case 'flatterbug': bugBody(C.fehler); r(3, step ? -3 : -1, 8, 2, C.text); r(4, step ? -3 : -1, 6, 1, C.lav); r(5, step ? -5 : -2, 4, 2, C.text); break;
     case 'panzerbug': {
@@ -1244,12 +1370,12 @@ function drawEnt(ctx, e, x, y, f, game) {
       if (e.on) { r(3, 10, 2, 4, C.text); r(9, 10, 2, 4, C.text); } else { r(2, 10, 2, 2, C.text); r(4, 12, 2, 2, C.text); r(8, 10, 2, 2, C.text); r(10, 12, 2, 2, C.text); } break;
     case 'kugel': {
       const d = e.dir || -1; r(2, 0, 12, 12, C.text); r(0, 2, 16, 8, C.text);
-      r(d > 0 ? 9 : 4, 3, 3, 3, C.grund); r(d > 0 ? 11 : 4, 4, 1, 1, C.text);
+      r(d > 0 ? 9 : 4, 3, 3, 3, C.grund); r(d > 0 ? 11 : 4, 4, 1, 1, C.fehler);
       r(d > 0 ? 0 : 13, 0, 3, 2, C.akzent); r(d > 0 ? 0 : 13, 10, 3, 2, C.akzent);
       break;
     }
     case 'stampfer': {
-      r(0, 0, 30, 30, C.text); box(ctx, x + 2, y + 2, 26, 26, C.neben);
+      r(0, 0, 30, 30, C.text); r(2, 2, 26, 26, C.neben); box(ctx, x + 3, y + 3, 24, 24, C.lav);
       for (let k = 0; k < 5; k++) { r(2 + k * 6, -2, 2, 2, C.text); r(2 + k * 6, 30, 2, 2, C.text); }
       const angry = e.st !== 'warten';
       r(5, 8, 7, 5, C.grund); r(18, 8, 7, 5, C.grund); r(9, 10, 2, 2, C.text); r(19, 10, 2, 2, C.text);
@@ -1259,9 +1385,27 @@ function drawEnt(ctx, e, x, y, f, game) {
     }
     case 'fressblock': {
       const open = Math.floor(f / 12) % 2;
-      r(1, 3, 14, 13, C.fehler); r(2, open ? 5 : 7, 12, open ? 5 : 2, C.grund);
-      for (let k = 0; k < 3; k++) { r(3 + k * 4, open ? 5 : 7, 2, 2, C.fehler); }
+      r(1, 3, 14, 13, C.erfolg); r(2, open ? 5 : 7, 12, open ? 5 : 2, C.fehler);
+      for (let k = 0; k < 3; k++) { r(3 + k * 4, open ? 5 : 7, 2, 2, C.grund); }
       r(4, 12, 2, 2, C.text); r(10, 12, 2, 2, C.text);
+      break;
+    }
+    case 'grossbug': {
+      if (e.inv > 0 && Math.floor(e.inv / 4) % 2) break;
+      r(4, 6, 20, 13, C.fehler); r(2, 9, 24, 8, C.fehler); r(5, 15, 18, 2, C.apr);
+      const ex = face > 0 ? 16 : 4; r(ex, 8, 7, 6, C.grund); r(ex + (face > 0 ? 4 : 1), 10, 2, 3, C.text); r(ex + 4, 7, 4, 1, C.text);
+      r(8, 2, 12, 4, C.akzent); r(8, 0, 2, 2, C.akzent); r(13, 0, 2, 2, C.akzent); r(18, 0, 2, 2, C.akzent); r(13, 3, 2, 1, C.apr);
+      r(face > 0 ? 24 : 2, 1, 2, 6, C.text);
+      for (let k = 0; k < 3; k++) r(4 + k * 8, 19, 3, step ? 7 : 6, C.text);
+      break;
+    }
+    case 'panzerkoenig': {
+      if (e.inv > 0 && Math.floor(e.inv / 4) % 2) break;
+      r(3, 6, 24, 16, C.text); r(4, 7, 22, 14, C.erfolg); r(8, 10, 4, 4, C.flaeche); r(18, 10, 4, 4, C.flaeche); r(13, 15, 4, 3, C.flaeche);
+      for (let k = 0; k < 5; k++) { r(4 + k * 5, 2, 2, 4, C.text); r(5 + k * 5, 0, 1, 2, C.text); }
+      r(8, 3, 14, 3, C.akzent);
+      const hx = face > 0 ? 24 : -2; r(hx, 12, 8, 8, C.fehler); r(hx + (face > 0 ? 4 : 2), 14, 2, 2, C.grund);
+      r(5, 22, 6, 8, C.fehler); r(19, 22, 6, 8, C.fehler); r(5, 28, 6, 2, C.text); r(19, 28, 6, 2, C.text);
       break;
     }
     case 'plattform': r(0, 0, 48, 5, C.text); for (let k = 0; k < 6; k++) r(3 + k * 8, 1, 2, 2, C.grund); r(4, 5, 40, 2, C.neben); break;
@@ -1302,7 +1446,7 @@ $$('[data-gehe]').forEach(b => b.addEventListener('click', () => zeige(b.dataset
 function starteSpiel(data, opts) {
   game = new Game(data, opts);
   $('#ov-pause').classList.remove('offen'); $('#ov-ende').classList.remove('offen');
-  zeige('spiel'); $('#spiel').focus && $('#spiel').setAttribute('tabindex', '-1'); $('#spiel').focus();
+  zeige('spiel'); fitCanvas(); $('#spiel').focus && $('#spiel').setAttribute('tabindex', '-1'); $('#spiel').focus();
 }
 function pauseSpiel(an) {
   if (!game || game.ended) return;
@@ -1325,7 +1469,7 @@ function zeigeEnde(g, kind) {
     if (o.mode === 'story') {
       const nr = o.idx + 1;
       t.textContent = 'Level ' + nr + ' = ' + nr.toString(2) + '₂ geschafft.';
-      const frei = store.get('frei', 1); if (nr + 1 > frei) store.set('frei', Math.min(LEVELS.length, nr + 1));
+      const frei = store.get('frei', 1); if (!o.test && nr + 1 > frei) store.set('frei', Math.min(LEVELS.length, nr + 1));
       $('#b-ende-weiter').hidden = nr >= LEVELS.length;
       if (nr >= LEVELS.length) t.textContent = 'Alle Level geschafft. ' + nr.toString(2) + '₂ von ' + nr.toString(2) + '₂.';
     } else { t.textContent = 'Geschafft.'; $('#b-ende-weiter').hidden = true; }
@@ -1339,21 +1483,23 @@ $('#b-neu').onclick = () => { if (!game) return; const g = game; starteSpiel(g.s
 $('#b-ende').onclick = beendeSpiel;
 $('#b-ende-menue').onclick = beendeSpiel;
 $('#b-ende-nochmal').onclick = () => { if (!game) return; const g = game; starteSpiel(g.src, Object.assign({}, g.o, { leben: (g.o.mode === 'story' && g.leben > 0) ? g.leben : 5 })); };
-$('#b-ende-weiter').onclick = () => { if (!game) return; const g = game, i = g.o.idx + 1; if (i < LEVELS.length) starteSpiel(LEVELS[i], { mode: 'story', idx: i, leben: g.leben, form: g.p.form }); };
+$('#b-ende-weiter').onclick = () => { if (!game) return; const g = game, i = g.o.idx + 1; if (i < LEVELS.length) starteSpiel(LEVELS[i], { mode: 'story', idx: i, leben: g.leben, form: g.p.form, test: g.o.test }); };
 $('#b-vollbild').onclick = () => { const el = $('#spielrahmen'); if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); else if (el.requestFullscreen) el.requestFullscreen().catch(() => {}); };
 
 function baueLevelListe() {
-  const frei = store.get('frei', 1), box = $('#level-liste'); box.innerHTML = '';
+  const test = store.get('testmodus', false); $('#testmodus').checked = test;
+  const frei = test ? LEVELS.length : store.get('frei', 1), box = $('#level-liste'); box.innerHTML = '';
   LEVELS.forEach((L, i) => {
     const b = document.createElement('button'); b.className = 'level-knopf';
     const nr = i + 1;
     b.innerHTML = `<span class="etikett">LEVEL ${nr} | ${nr.toString(2).padStart(3, '0')}₂</span>`;
     b.append(document.createTextNode(L.name));
     if (nr > frei) { b.disabled = true; b.setAttribute('aria-label', L.name + ', gesperrt'); }
-    b.onclick = () => starteSpiel(L, { mode: 'story', idx: i, leben: 5 });
+    b.onclick = () => starteSpiel(L, { mode: 'story', idx: i, leben: 5, test });
     box.append(b);
   });
 }
+$('#testmodus').addEventListener('change', e => { store.set('testmodus', e.target.checked); baueLevelListe(); });
 $('#level-datei').addEventListener('change', e => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
   leseLevelDatei(f, d => starteSpiel(d, { mode: 'eigen' }), msg => fehler('#level-fehler', msg));
@@ -1428,6 +1574,7 @@ const PAL = [
   ['Gelände', [['tile', '#'], ['tile', 'B'], ['tile', '?'], ['tile', 'H'], ['tile', 'X'], ['tile', '='], ['tile', 'I'], ['tile', 'N'], ['tile', '^'], ['tile', 'o']]],
   ['Schalter und Schlösser', [['tile', 'S'], ['tile', 'R'], ['tile', 'L'], ['tile', 'K'], ['tile', 'C']]],
   ['Gegner', [['ent', 'bug'], ['ent', 'panzerbug'], ['ent', 'stachelbug'], ['ent', 'flatterbug'], ['ent', 'huepfer'], ['ent', 'stampfer'], ['ent', 'fressblock'], ['ent', 'plattform']]],
+  ['Bosse', [['ent', 'grossbug'], ['ent', 'panzerkoenig']]],
   ['Gegenstände', [['ent', 'byte'], ['ent', 'pixelblume'], ['ent', 'fluegel'], ['ent', 'stern'], ['ent', 'herz'], ['ent', 'schluessel'], ['ent', 'feder'], ['ent', 'pschalter']]],
   ['Spezial', [['ent', 'start'], ['ent', 'ziel'], ['ent', 'checkpoint']]]
 ];
