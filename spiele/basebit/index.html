@@ -49,6 +49,9 @@ p { max-width: 70ch; margin: 0 0 16px; }
 .icon-knopf { width: 44px; height: 44px; border-radius: 8px; border: 1px solid var(--bb-linie); background: var(--bb-flaeche); color: var(--bb-text); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
 .icon-knopf svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
 :focus-visible { outline: 2px solid var(--bb-text); outline-offset: 2px; }
+body.pad :focus { outline: 3px solid var(--bb-akzent); outline-offset: 3px; }
+body.pad .level-knopf:focus, body.pad .karte:focus, body.pad .knopf:focus { background: var(--bb-lavendel); color: var(--bb-text); }
+body.pad .knopf.primaer:focus { background: var(--bb-akzent); color: var(--bb-akzent-text); outline-color: var(--bb-text); }
 :root[data-theme="dunkel"] :focus-visible { outline-color: var(--bb-akzent); }
 .reihe { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
 .start-buehne { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: center; }
@@ -812,8 +815,13 @@ class Game {
       this.g[ty][tx] = 'X'; this.bumps[key] = 8;
       if (inh === 'muenze') { this.addBit(); this.parts.push({ x: tx * T + 4, y: ty * T - 14, vx: 0, vy: -3, life: 22, kind: 'muenze' }); }
       else {
-        if (inh === 'power') inh = P.form === 'klein' ? 'byte' : 'pixelblume';
-        const n = this.mk(inh, tx, ty, {}); n.emerge = 16; n.y = ty * T + (T - n.h); n.act = true; this.ents.push(n); Snd.play('power');
+        if (inh === 'power' || (inh === 'byte' && P.form !== 'klein')) {
+          if (P.form === 'klein') inh = 'byte';
+          else if (P.form === 'pixel') inh = 'fluegel';
+          else if (P.form === 'fluegel') inh = 'pixelblume';
+          else { this.upg = !this.upg; inh = this.upg ? 'pixelblume' : 'fluegel'; }
+        }
+        const n = this.mk(inh, tx, ty, {}); n.emerge = 16; n.wait = 45; n.y = ty * T + (T - n.h); n.act = true; this.ents.push(n); Snd.play('power');
       }
       this.bumpKill(tx, ty);
     } else if (c === 'B' && this.pTimer === 0) {
@@ -969,14 +977,15 @@ class Game {
       if (!ov(P, e)) continue;
       const above = P.prevBottom <= e.y + 8 || (e.py !== undefined && P.prevBottom <= e.py + 8);
       const fly = e.t === 'flatterbug' || e.t === 'kugel';
-      const stomp = (P.vy > 0 && above) || (fly && P.y + P.h <= e.y + e.h * .6 && P.vy > -2);
+      const stomp = (P.vy > 0 && above) || (P.y + P.h <= e.y + e.h * (fly ? .8 : .55));
+      if (e.sCool > 0 && KILLBAR.has(e.t)) continue;
       switch (e.t) {
         case 'byte': e.dead = true; if (P.form === 'klein') this.setForm('gross'); Snd.play('power'); break;
         case 'pixelblume': e.dead = true; this.setForm('pixel'); Snd.play('power'); break;
         case 'fluegel': e.dead = true; this.setForm('fluegel'); Snd.play('power'); break;
         case 'stern': e.dead = true; P.stern = 600; Snd.play('power'); break;
         case 'herz': e.dead = true; if (this.o.mode === 'story') this.leben++; else this.tode = Math.max(0, this.tode - 1); Snd.play('leben'); break;
-        case 'checkpoint': if (this.cp !== e.key) { this.cp = e.key; for (const c of this.ents) if (c.t === 'checkpoint') c.aktiv = c === e; Snd.play('schalter'); } break;
+        case 'checkpoint': if (this.cp !== e.key) { this.cp = e.key; if (P.form === 'klein') { this.setForm('gross'); Snd.play('power'); } for (const c of this.ents) if (c.t === 'checkpoint') c.aktiv = c === e; Snd.play('schalter'); } break;
         case 'ziel': this.win(); break;
         case 'feder':
           if (stomp) { P.y = e.y - P.h; P.vy = -(holding ? 10.5 : 7); P.on = false; e.squash = 8; Snd.play('feder'); }
@@ -1025,8 +1034,8 @@ class Game {
             if (e.t === 'stachelbug') { if (P.spin) { this.bounce(); Snd.play('stampf'); } else this.hurt(); }
             else if (P.spin) { this.kill(e, 'puff'); P.vy = -3.5; }
             else {
-              if (e.t === 'panzerbug') { e.t = 'panzer'; e.st = 'ruhe'; e.y += e.h - 12; e.h = 12; e.vx = 0; e.grace = 6; }
-              else if (e.t === 'flatterbug') { e.t = 'bug'; e.vy = 0; e.dir = P.x < e.x ? 1 : -1; }
+              if (e.t === 'panzerbug') { e.t = 'panzer'; e.st = 'ruhe'; e.y += e.h - 12; e.h = 12; e.vx = 0; e.grace = 6; e.sCool = 10; }
+              else if (e.t === 'flatterbug') { e.t = 'bug'; e.vy = 0; e.dir = P.x < e.x ? 1 : -1; e.sCool = 12; }
               else this.kill(e, 'platt');
               this.bounce(); Snd.play('stampf');
             }
@@ -1040,6 +1049,7 @@ class Game {
     if (e.emerge > 0) { e.emerge--; e.y -= e.h / 16; return; }
     if (!e.act) { if (e.x > this.cx - 40 && e.x < this.cx + VW + 40 && e.y > this.cy - 80 && e.y < this.cy + VH + 80) e.act = true; else return; }
     if (e.thrown > 0) e.thrown--;
+    if (e.sCool > 0) e.sCool--;
     e.anim++;
     const P = this.p;
     switch (e.t) {
@@ -1109,6 +1119,7 @@ class Game {
         break;
       }
       case 'byte': case 'herz': {
+        if (e.wait > 0) { e.wait--; e.vx = 0; e.vy = Math.min(e.vy + .4, 5); this.move(e); break; }
         e.vx = e.dir * 1; e.vy = Math.min(e.vy + .4, 5); const i = this.move(e); if (i.wall) e.dir *= -1; break;
       }
       case 'grossbug': {
@@ -1803,8 +1814,9 @@ function menuPad() {
   const sec = $('#s-' + screen);
   let ov = null; if (screen === 'spiel') ov = $('.overlay.offen');
   const scope = ov || sec;
+  if (['up', 'down', 'left', 'right', 'jump', 'spin', 'start'].some(edge)) document.body.classList.add('pad');
   if (scope && (edge('up') || edge('down') || edge('left') || edge('right') || edge('jump') || edge('spin') || edge('start'))) {
-    const list = [...scope.querySelectorAll('button:not([disabled]):not([hidden]), label.knopf, .level-knopf:not([disabled])')].filter(b => b.offsetParent !== null);
+    const list = [...scope.querySelectorAll('button:not([disabled]):not([hidden]), label.knopf, .level-knopf:not([disabled]), input[type="checkbox"]')].filter(b => b.offsetParent !== null);
     let i = list.indexOf(document.activeElement);
     if (edge('down') || edge('right')) { i = (i + 1) % list.length; list[i] && list[i].focus(); }
     else if (edge('up') || edge('left')) { i = (i - 1 + list.length) % list.length; list[i] && list[i].focus(); }
@@ -1816,6 +1828,9 @@ function menuPad() {
   }
   for (const k of ['up', 'down', 'left', 'right', 'jump', 'spin', 'start']) menuPrev[k] = p[k];
 }
+
+addEventListener('mousedown', () => document.body.classList.remove('pad'));
+addEventListener('keydown', e => { if (e.key === 'Tab') document.body.classList.remove('pad'); });
 
 /* ---------- Schleife ---------- */
 let last = 0, acc = 0;
