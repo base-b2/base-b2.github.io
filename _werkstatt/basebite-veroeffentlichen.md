@@ -17,7 +17,7 @@ Das ergänzt automatisch:
 - die Kachel auf der Startseite und unter **Werkzeuge**,
 - den Abschnitt zu BaseBite in der **Datenschutzerklärung** (`/datenschutz/`) und passt den Satz "Nichts auf Ihrem Gerät gespeichert" an.
 
-4. In `werkzeuge/kalorienzaehler/sw.js` die Zeile `const VERSION = 'basebite-v1';` auf `v2` erhöhen (siehe unten), hochladen, 1-2 Minuten warten, prüfen.
+4. Hochladen, 1-2 Minuten warten, prüfen.
 
 Die Ausgabe mit `False` ist geprüft identisch mit den jetzigen Seiten; der Schalter ändert also nur, was zu BaseBite gehört.
 
@@ -25,7 +25,9 @@ Die Ausgabe mit `False` ist geprüft identisch mit den jetzigen Seiten; der Scha
 
 ## Bei jeder Änderung an BaseBite
 
-Der Service Worker liefert die App-Dateien aus dem Speicher des Handys (damit sie offline läuft). Damit Änderungen ankommen, in `sw.js` die `VERSION` hochzählen (`basebite-v2`, `basebite-v3` ...). Die App zeigt dann beim nächsten Öffnen "Neue Version von BaseBite ist da" mit **Neu laden**. Neue Dateien zusätzlich in die Liste `DATEIEN` in `sw.js` eintragen.
+Der Service Worker arbeitet nach "Netz zuerst": Mit Internet lädt BaseBite die Dateien immer frisch von base-b.de, Änderungen wirken also beim nächsten Öffnen ohne weiteres Zutun. Die gespeicherte Kopie wird nur ohne Netz (oder wenn der Server länger als 4 Sekunden braucht) verwendet. Zu beachten:
+- **Neue Dateien** zusätzlich in die Liste `DATEIEN` in `sw.js` eintragen und dort `VERSION` hochzählen, damit sie auch offline von Anfang an da sind.
+- `VERSION` hochzählen räumt außerdem alte Kopien auf; für normale Änderungen ist es nicht nötig.
 
 ## Entwurf: Abschnitt für die Datenschutzerklärung
 

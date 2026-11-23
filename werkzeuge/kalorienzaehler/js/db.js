@@ -12,7 +12,7 @@ export const SPEICHER = [
   { was: 'Tagebuch', wo: 'IndexedDB', name: 'basebite → tagebuch', zweck: 'Was Sie wann gegessen haben (Menge, kcal, Nährwerte)' },
   { was: 'Gewicht', wo: 'IndexedDB', name: 'basebite → gewicht', zweck: 'Ihr Gewicht pro Tag für Verlauf und Prognose' },
   { was: 'Wasser', wo: 'IndexedDB', name: 'basebite → wasser', zweck: 'Getrunkene Gläser pro Tag' },
-  { was: 'Profil und Ziele', wo: 'IndexedDB', name: 'basebite → profil', zweck: 'Geschlecht, Alter, Größe, Gewicht, Aktivität, Ziele, Makro- und Wasserziel' },
+  { was: 'Profil, Ziele, Einstellungen', wo: 'IndexedDB', name: 'basebite → profil', zweck: 'Geschlecht, Alter, Größe, Gewicht, Aktivität, Ziele, Makro- und Wasserziel; Mahlzeiten und Anzeige-Einstellungen; aus dem Verlauf entfernte Lebensmittel' },
   { was: 'Dunkelmodus', wo: 'localStorage', name: 'basebite.thema', zweck: 'Ob die App hell oder dunkel angezeigt wird' },
   { was: 'Erinnerungen', wo: 'localStorage', name: 'basebite.erinnerungen', zweck: 'Ein/aus, Uhrzeiten und wann zuletzt erinnert wurde' },
   { was: 'Nur offline', wo: 'localStorage', name: 'basebite.nurOffline', zweck: 'Ob Abfragen an Open Food Facts abgeschaltet sind' },
@@ -85,6 +85,23 @@ export async function profil() {
   const p = await hole('profil', 'profil');
   return { ...PROFIL_STANDARD, ...(p || {}), makro: { ...PROFIL_STANDARD.makro, ...((p && p.makro) || {}) } };
 }
+
+/* ---------- Einstellungen der Oberfläche (eigener Datensatz im Speicherbereich profil) ---------- */
+export const MAHLZEITEN_STANDARD = [
+  { k: 'fruehstueck', n: 'Frühstück', sichtbar: true }, { k: 'mittag', n: 'Mittagessen', sichtbar: true },
+  { k: 'abend', n: 'Abendessen', sichtbar: true }, { k: 'snacks', n: 'Snacks', sichtbar: true },
+];
+export const EINSTELLUNGEN_STANDARD = {
+  id: 'einstellungen', mahlzeiten: MAHLZEITEN_STANDARD,
+  zeigeWasser: true, zeigeMakros: true, zeigeTipps: true,
+  verlaufAusgeblendet: {},   // Schlüssel des Lebensmittels -> Zeitpunkt; ausgeblendet, bis es danach wieder gegessen wird
+};
+export async function einstellungen() {
+  const e = await hole('profil', 'einstellungen');
+  const m = e && Array.isArray(e.mahlzeiten) && e.mahlzeiten.length ? e.mahlzeiten : MAHLZEITEN_STANDARD;
+  return { ...EINSTELLUNGEN_STANDARD, ...(e || {}), mahlzeiten: m.map((x) => ({ ...x })), verlaufAusgeblendet: { ...((e && e.verlaufAusgeblendet) || {}) } };
+}
+export const speichereEinstellungen = (e) => speichere('profil', { ...e, id: 'einstellungen' });
 
 /* ---------- Sicherung ---------- */
 export async function exportiere() {

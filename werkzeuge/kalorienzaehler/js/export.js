@@ -2,7 +2,8 @@
 import { exportiere, alle, speichereViele, neueId } from './db.js';
 import { lies } from './rechner.js';
 
-const MAHLZEIT_CSV = { fruehstueck: 'Frühstück', mittag: 'Mittagessen', abend: 'Abendessen', snacks: 'Snacks' };
+/* Anzeigenamen der Mahlzeiten (Schlüssel -> Name); die App übergibt beim Export/Import die eigenen Mahlzeiten */
+const MAHLZEIT_STANDARD = { fruehstueck: 'Frühstück', mittag: 'Mittagessen', abend: 'Abendessen', snacks: 'Snacks' };
 
 export function dateiname(endung, d = new Date()) {
   const p = (n) => String(n).padStart(2, '0');
@@ -46,7 +47,8 @@ const feld = (v) => {
   return /[;"\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
 
-export async function exportCsv() {
+export async function exportCsv(namen = MAHLZEIT_STANDARD) {
+  const MAHLZEIT_CSV = { ...MAHLZEIT_STANDARD, ...namen };
   const zeilen = [SPALTEN.join(';')];
   const tb = (await alle('tagebuch')).sort((a, b) => a.datum.localeCompare(b.datum) || (a.erstellt || '').localeCompare(b.erstellt || ''));
   for (const e of tb) {
@@ -82,7 +84,8 @@ function parseCsv(text) {
 }
 
 /** CSV im BaseBite-Format einlesen (ergänzt Einträge, Gewicht und Wasser). Doppelte Tagebuch-Zeilen werden übersprungen. */
-export async function importCsv(text) {
+export async function importCsv(text, namen = MAHLZEIT_STANDARD) {
+  const MAHLZEIT_CSV = { ...MAHLZEIT_STANDARD, ...namen };
   const zeilen = parseCsv(text);
   if (!zeilen.length || zeilen[0][0] !== 'Datum' || zeilen[0][1] !== 'Art') throw new Error('Unbekanntes CSV-Format. Erwartet wird eine CSV aus BaseBite.');
   const rueck = Object.fromEntries(Object.entries(MAHLZEIT_CSV).map(([k, v]) => [v, k]));

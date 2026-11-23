@@ -9,7 +9,7 @@ import * as ex from './export.js';
 import * as erin from './erinnerung.js';
 import * as aw from './auswertung.js';
 
-export const VERSION = '1.1.0';
+export const VERSION = '1.2.0';
 
 /* ====================================================================== Hilfen */
 const $ = (s, r = document) => r.querySelector(s);
@@ -31,6 +31,8 @@ const ICONS = {
   stift: '<path d="M15.5 4.5l4 4L8 20H4v-4z"/><line x1="13" y1="7" x2="17" y2="11"/>',
   muell: '<polyline points="4,7 20,7"/><path d="M9 7V4.5h6V7"/><path d="M6 7l1 13h10l1-13"/>',
   kopie: '<rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6a1.5 1.5 0 0 0-1.5-1.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5"/>',
+  hoch: '<polyline points="6,15 12,9 18,15"/>',
+  runter: '<polyline points="6,9 12,15 18,9"/>',
   menue: '<line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/>',
   schliessen: '<line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>',
   mond: '<path d="M19.5 14.5A7.5 7.5 0 1 1 9.5 4.5a6 6 0 0 0 10 10z"/>',
@@ -62,15 +64,30 @@ const tagName = (iso) => {
   return TAGE_LANG[alsDatum(iso).getDay()];
 };
 
-const MAHLZEITEN = [
-  { k: 'fruehstueck', n: 'Frühstück' }, { k: 'mittag', n: 'Mittagessen' },
-  { k: 'abend', n: 'Abendessen' }, { k: 'snacks', n: 'Snacks' },
-];
-const mahlzeitName = (k) => (MAHLZEITEN.find((m) => m.k === k) || MAHLZEITEN[3]).n;
+/* Mahlzeiten und Anzeige kommen aus den Einstellungen (Menü → Einstellungen) */
+let EIN = { ...db.EINSTELLUNGEN_STANDARD };
+let MAHLZEITEN = db.MAHLZEITEN_STANDARD;   // alle, auch ausgeblendete, in der gewählten Reihenfolge
+const sichtbareMahlzeiten = () => MAHLZEITEN.filter((m) => m.sichtbar);
+async function ladeEinstellungen() {
+  try { EIN = await db.einstellungen(); } catch (e) { EIN = { ...db.EINSTELLUNGEN_STANDARD }; }
+  MAHLZEITEN = EIN.mahlzeiten;
+}
+const mahlzeitName = (k) => (MAHLZEITEN.find((m) => m.k === k) || { n: 'Ohne Mahlzeit' }).n;
 function mahlzeitJetzt() {
   const h = new Date().getHours();
-  return h < 10 ? 'fruehstueck' : h < 14 ? 'mittag' : h >= 17 && h < 21 ? 'abend' : 'snacks';
+  const passend = h < 10 ? 'fruehstueck' : h < 14 ? 'mittag' : h >= 17 && h < 21 ? 'abend' : 'snacks';
+  const s = sichtbareMahlzeiten();
+  return s.some((m) => m.k === passend) ? passend : (s[0] || MAHLZEITEN[0]).k;
 }
+/** Auswahlliste der Mahlzeiten: sichtbare, dazu die gerade gewählte, falls sie ausgeblendet ist */
+const mahlzeitOptionen = (gewaehlt) => MAHLZEITEN.filter((m) => m.sichtbar || m.k === gewaehlt)
+  .map((m) => `<option value="${esc(m.k)}"${m.k === gewaehlt ? ' selected' : ''}>${esc(m.n)}</option>`).join('');
+/** Aus Verlauf und Vorschlägen entfernt? Gilt, bis das Lebensmittel danach wieder eingetragen wird. */
+const nichtAusgeblendet = (g) => {
+  const t = EIN.verlaufAusgeblendet[g.key];
+  const e = g.letzterGesamt || g.letzter;
+  return !t || (e.erstellt || e.datum) > t;
+};
 
 /* ---------- Meldungen ---------- */
 let meldungTimer;
@@ -175,6 +192,7 @@ const ROUTEN = [
   [/^\/rezept\/(.+)$/, (m) => rezeptAnsicht(decodeURIComponent(m[1]))],
   [/^\/verlauf$/, () => verlauf()],
   [/^\/auswertung$/, () => auswertung()],
+  [/^\/einstellungen$/, () => einstellungenSeite()],
   [/^\/ziele$/, () => ziele()],
   [/^\/erinnerungen$/, () => erinnerungen()],
   [/^\/daten$/, () => ihreDaten()],
@@ -214,7 +232,11 @@ async function tagebuch(datum) {
   const [eintraege, ziel, wasser, umfeld] = await Promise.all([
     db.perIndex('tagebuch', 'datum', datum), zielDaten(), db.hole('wasser', datum),
     db.bereich('tagebuch', 'datum', plusTage(datum, -42), datum)]);
-  const tipps = Object.fromEntries(MAHLZEITEN.map((m) => [m.k, aw.vorschlaege(umfeld, { mahlzeit: m.k, datum, max: 3 }).filter((g) => g.beiMahlzeit > 0)]));
+  // Abschnitte: sichtbare Mahlzeiten, ausgeblendete nur, wenn an diesem Tag etwas darin steht, unbekannte als "Ohne Mahlzeit"
+  const abschnitte = MAHLZEITEN.filter((m) => m.sichtbar || eintraege.some((e) => e.mahlzeit === m.k));
+  for (const k of new Set(eintraege.map((e) => e.mahlzeit))) if (!MAHLZEITEN.some((m) => m.k === k)) abschnitte.push({ k, n: 'Ohne Mahlzeit', sichtbar: true });
+  const tipps = Object.fromEntries(abschnitte.map((m) => [m.k, EIN.zeigeTipps && m.sichtbar
+    ? aw.vorschlaege(umfeld, { mahlzeit: m.k, datum, max: 6 }).filter((g) => g.beiMahlzeit > 0 && nichtAusgeblendet(g)).slice(0, 3) : []]));
   eintraege.sort((a, b) => (a.erstellt || '').localeCompare(b.erstellt || ''));
   const summe = { kcal: 0, eiweiss: 0, fett: 0, kh: 0 };
   for (const e of eintraege) for (const k of Object.keys(summe)) summe[k] += Number(e[k]) || 0;
@@ -238,16 +260,16 @@ async function tagebuch(datum) {
 <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path class="glas-rand" d="M6 4h12l-1.5 16h-9z"/><path class="glas-wasser" d="M7.2 10h9.6l-1 9h-7.6z"/></svg></button>`;
   }
 
-  const mahlzeitenHtml = MAHLZEITEN.map((m) => {
+  const mahlzeitenHtml = abschnitte.map((m) => {
     const liste = eintraege.filter((e) => e.mahlzeit === m.k);
     const kc = liste.reduce((s, e) => s + (Number(e.kcal) || 0), 0);
-    return `<section class="mahlzeit" aria-labelledby="mz-${m.k}">
-<div class="mahlzeit-kopf"><h3 id="mz-${m.k}">${m.n}</h3><span class="mono mahlzeit-summe">${zahl(kc)} kcal</span></div>
+    return `<section class="mahlzeit" aria-labelledby="mz-${esc(m.k)}">
+<div class="mahlzeit-kopf"><h3 id="mz-${esc(m.k)}">${esc(m.n)}${m.sichtbar ? '' : ' <span class="klein">(ausgeblendet)</span>'}</h3><span class="mono mahlzeit-summe">${zahl(kc)} kcal</span></div>
 ${liste.length ? `<ul class="eintraege">${liste.map((e) => `<li><button type="button" class="eintrag" data-eintrag="${esc(e.id)}">
 <span class="eintrag-name">${esc(e.name)}${e.marke ? `<span class="eintrag-marke">${esc(e.marke)}</span>` : ''}</span>
 <span class="eintrag-menge mono">${esc(e.einheitText || dez(e.menge, 1) + ' g')}</span><span class="eintrag-kcal mono">${zahl(e.kcal)}</span></button></li>`).join('')}</ul>` : ''}
-${tipps[m.k].length ? `<div class="tipps" role="group" aria-label="Häufig zu ${m.n}, sofort eintragen">${tipps[m.k].map((g) => `<button type="button" class="tipp" data-tipp="${m.k}|${esc(g.key)}" aria-label="${esc(g.name)}, ${esc(g.letzter.einheitText || dez(g.letzter.menge, 1) + ' g')}, sofort zu ${m.n} eintragen">${icon('plus', 16)}<span class="tipp-name">${esc(g.name)}</span><span class="mono tipp-menge">${esc(g.letzter.einheitText || dez(g.letzter.menge, 1) + ' g')}</span></button>`).join('')}</div>` : ''}
-<a class="hinzu" href="#/suche?mahlzeit=${m.k}&datum=${datum}">${icon('plus', 20)}Hinzufügen</a>
+${tipps[m.k].length ? `<div class="tipps" role="group" aria-label="Häufig zu ${esc(m.n)}, sofort eintragen">${tipps[m.k].map((g) => `<button type="button" class="tipp" data-tipp="${esc(m.k)}|${esc(g.key)}" aria-label="${esc(g.name)}, ${esc(g.letzter.einheitText || dez(g.letzter.menge, 1) + ' g')}, sofort zu ${esc(m.n)} eintragen">${icon('plus', 16)}<span class="tipp-name">${esc(g.name)}</span><span class="mono tipp-menge">${esc(g.letzter.einheitText || dez(g.letzter.menge, 1) + ' g')}</span></button>`).join('')}</div>` : ''}
+${m.sichtbar && MAHLZEITEN.some((x) => x.k === m.k) ? `<a class="hinzu" href="#/suche?mahlzeit=${encodeURIComponent(m.k)}&datum=${datum}">${icon('plus', 20)}Hinzufügen</a>` : ''}
 </section>`;
   }).join('');
 
@@ -268,12 +290,12 @@ ${$('#verpasst-vorlage') ? $('#verpasst-vorlage').innerHTML : ''}
 </div>
 <div class="balken balken-gross" role="img" aria-label="${zahl(summe.kcal)} von ${z ? zahl(z) : 'unbekannt'} kcal"><span class="balken-fuell${uebrig != null && uebrig < 0 ? ' balken-ueber' : ''}" style="width:${anteil}%"></span></div>
 ${z ? '' : `<p class="klein">Noch kein Tagesziel. <a href="#/ziele">Ziel festlegen</a></p>`}
-<div class="makros">${makroZeile('eiweiss', 'Eiweiß')}${makroZeile('fett', 'Fett')}${makroZeile('kh', 'Kohlenhydrate')}</div>
+${EIN.zeigeMakros ? `<div class="makros">${makroZeile('eiweiss', 'Eiweiß')}${makroZeile('fett', 'Fett')}${makroZeile('kh', 'Kohlenhydrate')}</div>` : ''}
 </section>
-<section class="karte wasser" aria-labelledby="wasser-titel">
+${EIN.zeigeWasser ? `<section class="karte wasser" aria-labelledby="wasser-titel">
 <div class="mahlzeit-kopf"><h3 id="wasser-titel">Wasser</h3><span class="mono">${glaeser} / ${wz} Gläser | ${dez((glaeser * (ziel.profil.glasMl || 250)) / 1000, 2)} l</span></div>
 <div class="glaeser">${glasHtml}</div>
-</section>
+</section>` : ''}
 ${eintraege.length ? '' : leer('teller', 'Leerer Teller.', 'Entweder ein Fastentag oder noch nichts eingetragen. Tippen Sie bei einer Mahlzeit auf Hinzufügen.')}
 ${mahlzeitenHtml}
 </div>`;
@@ -334,7 +356,7 @@ function mengenDialog(lm, ref, ziel) {
 </div>
 <div class="ergebnis" aria-live="polite"><span class="etikett">Ergibt</span><div class="ergebnis-zahl mono" id="m-kcal">-</div><div class="ergebnis-rechnung mono" id="m-rechnung"></div><div class="naehr" id="m-naehr"></div></div>
 ${mitMahlzeit ? `<div class="zwei">
-<div class="feld"><label for="m-mahlzeit">Mahlzeit</label><select class="eingabe" id="m-mahlzeit">${MAHLZEITEN.map((m) => `<option value="${m.k}"${m.k === (bearb ? bearb.mahlzeit : ziel.mahlzeit) ? ' selected' : ''}>${m.n}</option>`).join('')}</select></div>
+<div class="feld"><label for="m-mahlzeit">Mahlzeit</label><select class="eingabe" id="m-mahlzeit">${mahlzeitOptionen(bearb ? bearb.mahlzeit : ziel.mahlzeit)}</select></div>
 <div class="feld"><label for="m-datum">Datum</label><input class="eingabe" type="date" id="m-datum" value="${bearb ? bearb.datum : ziel.datum}"></div>
 </div>` : ''}
 <p class="fehlermeldung" id="m-fehler" hidden></p>
@@ -345,7 +367,7 @@ ${ref && ref.store !== 'eintrag' ? `<button type="button" class="knopf knopf-zwe
 </form>
 ${bearb ? `<details class="aufklapp"><summary>${icon('kopie', 20)}Auf anderen Tag kopieren</summary>
 <div class="zwei"><div class="feld"><label for="k-datum">Datum</label><input class="eingabe" type="date" id="k-datum" value="${plusTage(bearb.datum, 1)}"></div>
-<div class="feld"><label for="k-mahlzeit">Mahlzeit</label><select class="eingabe" id="k-mahlzeit">${MAHLZEITEN.map((m) => `<option value="${m.k}"${m.k === bearb.mahlzeit ? ' selected' : ''}>${m.n}</option>`).join('')}</select></div></div>
+<div class="feld"><label for="k-mahlzeit">Mahlzeit</label><select class="eingabe" id="k-mahlzeit">${mahlzeitOptionen(bearb.mahlzeit)}</select></div></div>
 <button type="button" class="knopf knopf-zwei" id="k-los">${icon('kopie', 20)}Kopieren</button></details>
 <button type="button" class="knopf knopf-gefahr-zwei" id="m-loeschen">${icon('muell', 20)}Eintrag löschen</button>` : ''}`, { titel: lm.name });
 
@@ -469,7 +491,18 @@ function gruppenZeile(g, { schnell, mitDatum } = {}) {
   return `<li class="lm-zeile"><button type="button" class="lm" data-gruppe="${esc(g.key)}">
 <span class="lm-name"><span>${esc(g.name)}</span><span class="lm-marke">${g.marke ? esc(g.marke) + ' | ' : ''}${esc(info)}</span></span>
 <span class="lm-kcal mono">${zahl(e.kcal)}<small> kcal</small></span></button>
-${schnell ? `<button type="button" class="symbol-knopf schnell-knopf" data-schnell="${esc(g.key)}" aria-label="${esc(g.name)}, ${esc(menge)}, sofort eintragen">${icon('plus', 22)}</button>` : ''}</li>`;
+${schnell ? `<button type="button" class="symbol-knopf schnell-knopf" data-schnell="${esc(g.key)}" aria-label="${esc(g.name)}, ${esc(menge)}, sofort eintragen">${icon('plus', 22)}</button>` : ''}
+<button type="button" class="symbol-knopf weg-knopf" data-ausblenden="${esc(g.key)}" aria-label="${esc(g.name)} aus Verlauf und Vorschlägen entfernen">${icon('schliessen', 20)}</button></li>`;
+}
+
+/** Aus Verlauf und Vorschlägen entfernen (das Tagebuch bleibt unverändert). Kommt wieder, sobald es erneut eingetragen wird. */
+async function ausblenden(g, danach) {
+  EIN.verlaufAusgeblendet[g.key] = new Date().toISOString();
+  await db.speichereEinstellungen(EIN);
+  meldung(`${g.name} aus Verlauf und Vorschlägen entfernt.`, 'ok', {
+    text: 'Rückgängig', fn: async () => { delete EIN.verlaufAusgeblendet[g.key]; await db.speichereEinstellungen(EIN); if (danach) danach(); },
+  });
+  if (danach) danach();
 }
 
 async function lokaleLebensmittel() {
@@ -535,9 +568,9 @@ ${LISTEN.map(([k, n]) => `<button type="button" class="reiter-knopf" data-liste=
     const box = $('#liste');
     if (r === 'haeufig' || r === 'verlauf') {
       const tb = await tagebuchSeit(r === 'haeufig' ? 42 : 120);
-      gruppen = r === 'haeufig'
-        ? aw.vorschlaege(tb, { mahlzeit: kontext.mahlzeit, datum: kontext.datum, max: 12 })
-        : aw.verlauf(tb, 40);
+      gruppen = (r === 'haeufig'
+        ? aw.vorschlaege(tb, { mahlzeit: kontext.mahlzeit, datum: kontext.datum, max: 40 })
+        : aw.verlauf(tb, 200)).filter(nichtAusgeblendet).slice(0, r === 'haeufig' ? 12 : 40);
       if (!gruppen.length) {
         box.innerHTML = r === 'haeufig'
           ? leer('lupe', 'Noch keine Vorschläge.', 'Was Sie in sechs Wochen mindestens zweimal essen, erscheint hier, passend zur Mahlzeit. Bis dahin: oben suchen oder scannen.')
@@ -556,6 +589,9 @@ ${LISTEN.map(([k, n]) => `<button type="button" class="reiter-knopf" data-liste=
       });
       $$('[data-schnell]', box).forEach((b) => {
         b.onclick = () => schnellEintragen(gruppen.find((x) => x.key === b.dataset.schnell), kontext.datum, kontext.mahlzeit, zeigeListe);
+      });
+      $$('[data-ausblenden]', box).forEach((b) => {
+        b.onclick = () => ausblenden(gruppen.find((x) => x.key === b.dataset.ausblenden), zeigeListe);
       });
       return;
     }
@@ -989,7 +1025,10 @@ async function auswertung() {
   const tb = await db.bereich('tagebuch', 'datum', z.von, z.bis);
   const s = aw.statistik(tb, z.von, z.bis);
   const ziel = (await zielDaten()).kcal;
-  const maxMz = Math.max(1, ...MAHLZEITEN.map((m) => s.proMahlzeit[m.k] || 0));
+  const mzListe = MAHLZEITEN.filter((m) => m.sichtbar || s.proMahlzeit[m.k]).map((m) => ({ name: m.n, kcal: s.proMahlzeit[m.k] || 0 }));
+  const ohne = Object.entries(s.proMahlzeit).filter(([k]) => !MAHLZEITEN.some((m) => m.k === k)).reduce((a, [, v]) => a + v, 0);
+  if (ohne) mzListe.push({ name: 'Ohne Mahlzeit', kcal: ohne });
+  const maxMz = Math.max(1, ...mzListe.map((m) => m.kcal));
   $('#ansicht').innerHTML = `<div class="huelle">
 <h1 class="seiten-titel">Auswertung</h1>
 <div class="reiter" role="group" aria-label="Zeitraum">
@@ -1023,11 +1062,120 @@ ${rangliste(s.topKcal, { wert: (x) => x.kcal, max: s.topKcal[0].kcal, klasse: 'r
 
 <section class="karte" aria-labelledby="mz-titel">
 <h2 id="mz-titel" class="h3">Nach Mahlzeit</h2>
-${rangliste(MAHLZEITEN.map((m) => ({ name: m.n, kcal: s.proMahlzeit[m.k] || 0 })), { wert: (x) => x.kcal, max: maxMz, klasse: 'rang-mahlzeit', titel: 'Kalorien nach Mahlzeit', nummern: false,
+${rangliste(mzListe, { wert: (x) => x.kcal, max: maxMz, klasse: 'rang-mahlzeit', titel: 'Kalorien nach Mahlzeit', nummern: false,
     text: (x) => `${zahl(x.kcal)} kcal <span class="rang-neben">| ${s.summe ? dez((x.kcal / s.summe) * 100, 0) : 0} %</span>` })}
 </section>`}
 </div>`;
   $$('[data-zeitraum]').forEach((b) => { b.onclick = () => { auswertungZeitraum = b.dataset.zeitraum; auswertung(); }; });
+}
+
+/* ====================================================================== Einstellungen */
+async function einstellungenSeite() {
+  await ladeEinstellungen();
+  const tb = await db.alle('tagebuch');
+  const anzahlJe = {};
+  for (const e of tb) anzahlJe[e.mahlzeit] = (anzahlJe[e.mahlzeit] || 0) + 1;
+  const standard = new Set(db.MAHLZEITEN_STANDARD.map((m) => m.k));
+  const ausgeblendet = Object.keys(EIN.verlaufAusgeblendet).length;
+  const schalter = (id, an, titel, text) => `<label class="schalter"><input type="checkbox" id="${id}"${an ? ' checked' : ''}><span class="schalter-bahn" aria-hidden="true"></span><span class="schalter-text">${titel}${text ? `<br><span class="klein">${text}</span>` : ''}</span></label>`;
+  const dunkel = document.documentElement.getAttribute('data-theme') === 'dunkel';
+  $('#ansicht').innerHTML = `<div class="huelle">
+<h1 class="seiten-titel">Einstellungen</h1>
+<p class="klein">Änderungen werden sofort gespeichert.</p>
+
+<section class="karte" aria-labelledby="mz-einst">
+<h2 id="mz-einst" class="h3">Mahlzeiten</h2>
+<p class="klein">Ausgeblendete Mahlzeiten verschwinden aus Tagebuch und Auswahl. Einträge darin bleiben erhalten und erscheinen an ihrem Tag weiter.</p>
+<ol class="mz-liste">${MAHLZEITEN.map((m, i) => `<li class="mz-zeile${m.sichtbar ? '' : ' mz-aus'}">
+<label class="schalter mz-schalter"><input type="checkbox" data-mz-sichtbar="${i}"${m.sichtbar ? ' checked' : ''} aria-label="${esc(m.n)} anzeigen"><span class="schalter-bahn" aria-hidden="true"></span></label>
+<label class="unsichtbar" for="mz-name-${i}">Name der Mahlzeit ${i + 1}</label>
+<input class="eingabe eingabe-text mz-name" id="mz-name-${i}" data-mz-name="${i}" maxlength="30" value="${esc(m.n)}">
+<span class="mz-knoepfe">
+<button type="button" class="symbol-knopf" data-mz-hoch="${i}" aria-label="${esc(m.n)} nach oben"${i === 0 ? ' disabled' : ''}>${icon('hoch', 18)}</button>
+<button type="button" class="symbol-knopf" data-mz-runter="${i}" aria-label="${esc(m.n)} nach unten"${i === MAHLZEITEN.length - 1 ? ' disabled' : ''}>${icon('runter', 18)}</button>
+${standard.has(m.k) ? '' : `<button type="button" class="symbol-knopf" data-mz-weg="${i}" aria-label="${esc(m.n)} löschen">${icon('muell', 18)}</button>`}
+</span>
+<span class="klein mono mz-anzahl">${anzahlJe[m.k] || 0} Einträge</span></li>`).join('')}</ol>
+<form id="mz-neu" class="such-form abstand-oben"><label class="unsichtbar" for="mz-neu-name">Neue Mahlzeit</label><input class="eingabe eingabe-text" id="mz-neu-name" maxlength="30" placeholder="z. B. Zwischenmahlzeit, Nach dem Sport" autocomplete="off"><button class="knopf" type="submit">${icon('plus', 20)}Hinzufügen</button></form>
+<p class="fehlermeldung" id="mz-fehler" hidden></p>
+<button type="button" class="knopf knopf-zwei knopf-klein abstand-oben" id="mz-standard">Mahlzeiten auf Standard zurücksetzen</button>
+</section>
+
+<section class="karte" aria-labelledby="anz-einst">
+<h2 id="anz-einst" class="h3">Anzeige im Tagebuch</h2>
+<div class="formular">
+${schalter('e-makros', EIN.zeigeMakros, 'Makros anzeigen', 'Balken für Eiweiß, Fett und Kohlenhydrate')}
+${schalter('e-wasser', EIN.zeigeWasser, 'Wasserzähler anzeigen', '')}
+${schalter('e-tipps', EIN.zeigeTipps, 'Vorschläge bei den Mahlzeiten', 'Bis zu drei Knöpfe zum Sofort-Eintragen häufiger Lebensmittel')}
+${schalter('e-dunkel', dunkel, 'Dunkelmodus', '')}
+</div>
+</section>
+
+<section class="karte" aria-labelledby="vl-einst">
+<h2 id="vl-einst" class="h3">Verlauf und Vorschläge</h2>
+<p class="klein">${ausgeblendet ? `<span class="mono">${ausgeblendet}</span> ${ausgeblendet === 1 ? 'Lebensmittel ist' : 'Lebensmittel sind'} ausgeblendet. Sie erscheinen von selbst wieder, sobald Sie sie erneut eintragen.` : 'Nichts ausgeblendet. Mit dem x in Lebensmittel → Häufig bzw. Verlauf entfernen Sie Einträge aus diesen Listen.'}</p>
+${ausgeblendet ? '<button type="button" class="knopf knopf-zwei knopf-klein" id="vl-zurueck">Alle wieder anzeigen</button>' : ''}
+</section>
+</div>`;
+
+  const fehler = $('#mz-fehler');
+  const sichern = async (text) => {
+    if (!EIN.mahlzeiten.some((m) => m.sichtbar)) { fehler.hidden = false; fehler.textContent = '✗ Mindestens eine Mahlzeit muss sichtbar bleiben.'; return false; }
+    fehler.hidden = true;
+    await db.speichereEinstellungen(EIN);
+    MAHLZEITEN = EIN.mahlzeiten;
+    meldung(text || 'Gespeichert.');
+    return true;
+  };
+  const neuZeichnen = () => einstellungenSeite();
+  $$('[data-mz-sichtbar]').forEach((c) => {
+    c.onchange = async () => {
+      const m = EIN.mahlzeiten[Number(c.dataset.mzSichtbar)];
+      m.sichtbar = c.checked;
+      if (!(await sichern(`${m.n} ${m.sichtbar ? 'eingeblendet' : 'ausgeblendet'}.`))) { m.sichtbar = true; c.checked = true; return; }
+      c.closest('.mz-zeile').classList.toggle('mz-aus', !m.sichtbar);
+    };
+  });
+  $$('[data-mz-name]').forEach((f) => {
+    f.onchange = async () => {
+      const m = EIN.mahlzeiten[Number(f.dataset.mzName)];
+      const n = f.value.trim();
+      if (!n) { f.value = m.n; fehler.hidden = false; fehler.textContent = '✗ Eine Mahlzeit braucht einen Namen.'; return; }
+      m.n = n; await sichern(`Umbenannt in ${n}.`);
+    };
+  });
+  const tausche = async (i, j) => { const l = EIN.mahlzeiten; [l[i], l[j]] = [l[j], l[i]]; await sichern('Reihenfolge gespeichert.'); neuZeichnen(); };
+  $$('[data-mz-hoch]').forEach((b) => { b.onclick = () => { const i = Number(b.dataset.mzHoch); if (i > 0) tausche(i, i - 1); }; });
+  $$('[data-mz-runter]').forEach((b) => { b.onclick = () => { const i = Number(b.dataset.mzRunter); if (i < EIN.mahlzeiten.length - 1) tausche(i, i + 1); }; });
+  $$('[data-mz-weg]').forEach((b) => {
+    b.onclick = async () => {
+      const i = Number(b.dataset.mzWeg), m = EIN.mahlzeiten[i];
+      if (anzahlJe[m.k]) { fehler.hidden = false; fehler.textContent = `✗ ${m.n} hat ${anzahlJe[m.k]} Einträge und kann daher nicht gelöscht werden. Blenden Sie die Mahlzeit stattdessen aus.`; return; }
+      EIN.mahlzeiten.splice(i, 1);
+      if (await sichern(`${m.n} gelöscht.`)) neuZeichnen(); else EIN.mahlzeiten.splice(i, 0, m);
+    };
+  });
+  $('#mz-neu').onsubmit = async (ev) => {
+    ev.preventDefault();
+    const n = $('#mz-neu-name').value.trim();
+    if (!n) { $('#mz-neu-name').focus(); return; }
+    if (EIN.mahlzeiten.some((m) => m.n.toLowerCase() === n.toLowerCase())) { fehler.hidden = false; fehler.textContent = `✗ ${n} gibt es schon.`; return; }
+    EIN.mahlzeiten.push({ k: 'm_' + Date.now().toString(36), n, sichtbar: true });
+    if (await sichern(`${n} hinzugefügt.`)) neuZeichnen();
+  };
+  $('#mz-standard').onclick = async () => {
+    // Standard-Mahlzeiten wiederherstellen, eigene bleiben (ausgeblendet) erhalten, damit ihre Einträge nicht verloren gehen
+    const eigene = EIN.mahlzeiten.filter((m) => !standard.has(m.k)).map((m) => ({ ...m, sichtbar: false }));
+    EIN.mahlzeiten = [...db.MAHLZEITEN_STANDARD.map((m) => ({ ...m })), ...eigene];
+    if (await sichern('Mahlzeiten zurückgesetzt.')) neuZeichnen();
+  };
+  const anzeige = (id, feld, text) => { $(id).onchange = async (ev) => { EIN[feld] = ev.target.checked; await sichern(`${text} ${ev.target.checked ? 'an' : 'aus'}.`); }; };
+  anzeige('#e-makros', 'zeigeMakros', 'Makros');
+  anzeige('#e-wasser', 'zeigeWasser', 'Wasserzähler');
+  anzeige('#e-tipps', 'zeigeTipps', 'Vorschläge');
+  $('#e-dunkel').onchange = (ev) => setzeThema(ev.target.checked ? 'dunkel' : 'hell');
+  const vz = $('#vl-zurueck');
+  if (vz) vz.onclick = async () => { EIN.verlaufAusgeblendet = {}; await sichern('Alle Lebensmittel werden wieder angezeigt.'); neuZeichnen(); };
 }
 
 /* ====================================================================== Ziele */
@@ -1253,7 +1401,7 @@ async function ihreDaten() {
 
   $('#nur-offline').onchange = (ev) => { db.lsSchreib('basebite.nurOffline', ev.target.checked ? '1' : null); meldung(ev.target.checked ? 'Nur offline: Keine Abfragen mehr an Open Food Facts.' : 'Open Food Facts ist wieder eingeschaltet.'); };
   $('#exp-json').onclick = async () => { try { meldung(await ex.exportJson()); } catch (e) { meldung('Export fehlgeschlagen: ' + e.message, 'fehler'); } };
-  $('#exp-csv').onclick = async () => { try { meldung(await ex.exportCsv()); } catch (e) { meldung('Export fehlgeschlagen: ' + e.message, 'fehler'); } };
+  $('#exp-csv').onclick = async () => { try { meldung(await ex.exportCsv(Object.fromEntries(MAHLZEITEN.map((m) => [m.k, m.n])))); } catch (e) { meldung('Export fehlgeschlagen: ' + e.message, 'fehler'); } };
   $('#imp-datei').onchange = async (ev) => {
     const datei = ev.target.files[0];
     ev.target.value = '';
@@ -1261,13 +1409,14 @@ async function ihreDaten() {
     const text = await datei.text();
     try {
       if (/\.csv$/i.test(datei.name) || datei.type.includes('csv')) {
-        const r = await ex.importCsv(text);
+        const r = await ex.importCsv(text, Object.fromEntries(MAHLZEITEN.map((m) => [m.k, m.n])));
         meldung(`Importiert: ${r.eintraege} Einträge, ${r.gewicht} Gewichte, ${r.wasser} Wassertage.`);
       } else {
         const s = JSON.parse(text);
         if (s.app !== 'BaseBite') throw new Error('Das ist keine BaseBite-Sicherung.');
         const ersetzen = await bestaetige(`Sicherung vom <span class="mono">${esc(kurz((s.exportiert || '').slice(0, 10) || heute()))}</span> einspielen.<br><br><b>Ja, ersetzen</b>: alle jetzigen Daten werden durch die Sicherung ersetzt.<br><b>Abbrechen</b>: Sicherung wird mit den jetzigen Daten zusammengeführt (gleiche Einträge werden überschrieben).`, { titel: 'Backup importieren', ja: 'Ja, ersetzen', gefahr: true });
         const n = await db.importiere(s, ersetzen);
+        await ladeEinstellungen();
         setzeThema(db.lsLies('basebite.thema') === 'dunkel' ? 'dunkel' : 'hell');
         meldung(`${n} Datensätze importiert${ersetzen ? ' (ersetzt)' : ' (zusammengeführt)'}.`);
       }
@@ -1358,19 +1507,8 @@ function startNativ() {
 
 function startPwa() {
   if (!('serviceWorker' in navigator)) return;
-  navigator.serviceWorker.register('sw.js').then((reg) => {
-    reg.addEventListener('updatefound', () => {
-      const neu = reg.installing;
-      if (!neu) return;
-      neu.addEventListener('statechange', () => {
-        if (neu.state === 'installed' && navigator.serviceWorker.controller) {
-          meldung('Neue Version von BaseBite ist da.', 'info', { text: 'Neu laden', fn: () => { neu.postMessage('weiter'); } });
-        }
-      });
-    });
-  }).catch(() => { /* ohne Service Worker kein Offline-Betrieb */ });
-  let neuGeladen = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => { if (neuGeladen) return; neuGeladen = true; location.reload(); });
+  // Der Service Worker lädt mit Internet immer frisch ("Netz zuerst"), ein Neuladen nach Updates ist daher nicht nötig.
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => { /* ohne Service Worker kein Offline-Betrieb */ });
   erin.starteBrowserTakt(verpasst);
 }
 
@@ -1385,7 +1523,7 @@ function start() {
   dlg().addEventListener('click', (e) => { if (e.target === dlg()) schliesseDialog(); });   // Klick auf den Hintergrund
   window.addEventListener('hashchange', route);
   if (nativ()) startNativ(); else startPwa();
-  route().then(erststart);
+  ladeEinstellungen().then(route).then(erststart);
 }
 
 start();

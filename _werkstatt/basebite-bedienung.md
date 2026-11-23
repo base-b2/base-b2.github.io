@@ -37,6 +37,8 @@ Was Sie in den letzten sechs Wochen mindestens zweimal gegessen haben, schlägt 
 - **Im Tagebuch** stehen unter jeder Mahlzeit bis zu drei gestrichelte Knöpfe, z. B. "+ Apfel 220 g". Ein Tipp trägt sofort die gleiche Menge ein wie beim letzten Mal bei dieser Mahlzeit.
 - **Unter Lebensmittel → Häufig** stehen bis zu zwölf Vorschläge. Das **+** rechts trägt sofort ein, ein Tipp auf den Namen öffnet den Mengen-Dialog.
 - Versehentlich eingetragen? In der Meldung unten **Rückgängig** antippen.
+- Etwas soll nicht mehr in **Häufig** oder **Verlauf** auftauchen? Auf das **x** rechts tippen. Das Tagebuch bleibt unverändert; trägt man es später wieder ein, erscheint es von selbst wieder. Alles zurückholen: Menü → Einstellungen → **Alle wieder anzeigen**.
+- Wer einen Eintrag im Tagebuch löscht, löscht ihn auch aus dem Verlauf, sofern das Lebensmittel nicht an anderen Tagen eingetragen ist.
 
 ## 3. Unbekannter Barcode, eigene Lebensmittel
 
@@ -76,13 +78,19 @@ Unten **Auswertung** antippen und den Zeitraum wählen (Diese Woche, Letzte Woch
 - **Top 10 nach Kalorien:** welche Lebensmittel die meisten kcal geliefert haben, mit Anteil in Prozent.
 - **Nach Mahlzeit:** wie sich die kcal auf Frühstück, Mittag, Abend und Snacks verteilen.
 
-## 8. Erinnerungen
+## 8. Einstellungen (Menü → Einstellungen)
+
+- **Mahlzeiten:** mit dem Schalter ein- oder ausblenden, Namen direkt ändern, mit den Pfeilen sortieren, unten eigene hinzufügen (z. B. "Nach dem Sport"). Eigene Mahlzeiten ohne Einträge lassen sich löschen; mit Einträgen nur ausblenden, damit nichts verloren geht. Ausgeblendete Mahlzeiten erscheinen im Tagebuch nur an Tagen, an denen etwas darin steht.
+- **Anzeige im Tagebuch:** Makros, Wasserzähler und Vorschläge ein- oder ausschalten, Dunkelmodus.
+- Alles wird sofort gespeichert und ist im Backup enthalten.
+
+## 9. Erinnerungen
 
 Menü → **Erinnerungen** → einschalten, Uhrzeit(en) eintragen → **Speichern** → Benachrichtigungen erlauben.
 
 In der **APK** kommen die Erinnerungen zuverlässig. In der **PWA** nur, solange BaseBite geöffnet ist; Verpasstes zeigt das Tagebuch beim nächsten Öffnen an.
 
-## 9. Ihre Daten und Backup
+## 10. Ihre Daten und Backup
 
 Menü → **Ihre Daten**:
 - Tabelle, was wo gespeichert ist.

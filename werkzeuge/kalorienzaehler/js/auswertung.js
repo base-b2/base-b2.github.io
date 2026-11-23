@@ -42,7 +42,7 @@ export function vorschlaege(eintraege, { mahlzeit, datum, tage = 42, max = 8 } =
       const seit = Math.max(0, ende - tagNr(x.letzter.datum));
       const beiMahlzeit = x.mahlzeiten[mahlzeit] || 0;
       // Menge wie beim letzten Mal bei DIESER Mahlzeit (Snack-Portion statt Mittagsportion)
-      return { ...x, letzter: x.letzterJe[mahlzeit] || x.letzter, beiMahlzeit, punkte: runde(3 * beiMahlzeit + x.anzahl + 4 / (1 + seit / 7), 2) };
+      return { ...x, letzterGesamt: x.letzter, letzter: x.letzterJe[mahlzeit] || x.letzter, beiMahlzeit, punkte: runde(3 * beiMahlzeit + x.anzahl + 4 / (1 + seit / 7), 2) };
     })
     .sort((a, b) => b.punkte - a.punkte || a.name.localeCompare(b.name, 'de'))
     .slice(0, max);
