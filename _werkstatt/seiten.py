@@ -12,13 +12,18 @@ from pathlib import Path
 
 WURZEL = Path(__file__).resolve().parent.parent
 
+# BaseBite (Kalorienzähler, /werkzeuge/kalorienzaehler/): vorerst nicht verlinkt.
+# Zum Veröffentlichen auf True setzen, in werkzeuge/kalorienzaehler/index.html die robots-Zeile löschen
+# und dieses Skript ausführen (siehe _werkstatt/basebite-veroeffentlichen.md).
+BASEBITE_OEFFENTLICH = False
+
 # ---------- Menü (erweiterbar) ----------
 MENUE = [
     ("Werkzeuge", "werkzeuge", [
         ("Alle Werkzeuge", "/werkzeuge/", "liste"),
         ("Zufallsgenerator", "/werkzeuge/zufallsgenerator/", "wuerfel"),
         ("Fotobox", "/werkzeuge/fotobox/", "kamera"),
-    ]),
+    ] + ([("BaseBite", "/werkzeuge/kalorienzaehler/", "teller")] if BASEBITE_OEFFENTLICH else [])),
     ("Leitfäden", "leitfaeden", [
         ("Alle Leitfäden", "/leitfaeden/", "buch"),
     ]),
@@ -64,6 +69,7 @@ ICONS = {
     "wechseln": '<path d="M4 9a8 8 0 0 1 14-3l2 2"/><polyline points="20,4 20,8 16,8"/><path d="M20 15a8 8 0 0 1-14 3l-2-2"/><polyline points="4,20 4,16 8,16"/>',
     "schliessen": '<line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>',
     "senden": '<path d="M4 12l16-8-6 16-2.5-6.5z"/><line x1="11.5" y1="13.5" x2="20" y2="4"/>',
+    "teller": '<circle cx="12" cy="12" r="5.5"/><line x1="3.5" y1="4" x2="3.5" y2="20"/><path d="M2 4v4a1.5 1.5 0 0 0 3 0V4"/><path d="M20.5 20V4c-1.5 1-2.5 3-2.5 6s1 3 2.5 3"/>',
 }
 
 
@@ -201,6 +207,9 @@ KACHEL_ZUFALL = kachel("/werkzeuge/zufallsgenerator/", "WERKZEUG", "Zufallsgener
 KACHEL_FOTOBOX = kachel("/werkzeuge/fotobox/", "WERKZEUG", "Fotobox",
                         "Greenscreen weg, neuer Hintergrund. Gemacht für Kinder ab 10.", icon("kamera", 32),
                         suche="fotobox foto kamera greenscreen hintergrund bild")
+KACHEL_BASEBITE = kachel("/werkzeuge/kalorienzaehler/", "WERKZEUG", "BaseBite",
+                         "Kalorien zählen, auch offline. Tagebuch, Gewicht und Ziele bleiben auf Ihrem Gerät.", icon("teller", 32),
+                         suche="basebite kalorien kalorienzaehler kalorienzähler kcal abnehmen ernaehrung ernährung gewicht diaet diät barcode") if BASEBITE_OEFFENTLICH else ""
 KACHEL_LEITFAEDEN = kachel("/leitfaeden/", "LEITFADEN", "Leitfäden",
                            "Word, Excel und Co. Schritt für Schritt. Die ersten folgen bald.", icon("buch", 32),
                            "kachel-lav", "leitfaden leitfäden anleitung word excel powerpoint office")
@@ -240,7 +249,7 @@ def startseite():
 </div>
 <div class="kacheln" id="kacheln">
 {KACHEL_ZUFALL}
-{KACHEL_FOTOBOX}
+{KACHEL_FOTOBOX}{chr(10) + KACHEL_BASEBITE if KACHEL_BASEBITE else ""}
 {KACHEL_LEITFAEDEN}
 {KACHEL_BASEBOARD}
 {KACHEL_SPIELE}
@@ -311,7 +320,7 @@ def fehlerseite():
 def werkzeuge():
     inhalt = f'''<div class="huelle">
 {seitenkopf("Werkzeuge", "Alle Werkzeuge laufen direkt im Browser. Ohne Anmeldung, ohne Werbung.")}
-<div class="kacheln">{KACHEL_ZUFALL}{KACHEL_FOTOBOX}</div>
+<div class="kacheln">{KACHEL_ZUFALL}{KACHEL_FOTOBOX}{KACHEL_BASEBITE}</div>
 </div>'''
     seite("werkzeuge/index.html", "Werkzeuge", inhalt, aktiv="/werkzeuge/")
 
@@ -408,7 +417,17 @@ def impressum():
     seite("impressum/index.html", "Impressum", inhalt, aktiv="/impressum/")
 
 
+BASEBITE_GERAET = ("Base B legt von sich aus nichts auf Ihrem Gerät ab, auch keine Einstellungen. Der Dunkelmodus gilt deshalb nur für die gerade geöffnete Seite. "
+                   "Ausnahmen sind das BaseBoard, wenn Sie dort ausdrücklich \"Auf diesem Gerät merken\" einschalten, und der Kalorienzähler BaseBite, "
+                   "der Ihre Einträge auf Ihrem Gerät speichern muss, damit er funktioniert (siehe unten).")
+BASEBITE_DATENSCHUTZ = '''<li><b>BaseBite (Kalorienzähler):</b> Tagebuch, Gewicht, Profil (Geschlecht, Alter, Größe, Ziele), Rezepte und eigene Lebensmittel speichert BaseBite ausschließlich in Ihrem Browser bzw. in der App auf Ihrem Gerät (IndexedDB), dazu wenige Einstellungen wie Dunkelmodus und Erinnerungszeiten (localStorage) und die Programmdateien für den Offline-Betrieb (Cache Storage). Diese Speicherung ist technisch nötig, damit der von Ihnen gewünschte Kalorienzähler funktioniert. Es gibt kein Konto und keinen Server: Diese Daten, auch Gesundheitsdaten wie Gewicht und Ernährung, erreichen weder mich noch Dritte. Sie bleiben gespeichert, bis Sie sie in der App unter "Ihre Daten" löschen, die Browserdaten löschen oder die App entfernen. Cookies setzt BaseBite nicht.<br>
+Nur wenn Sie nach einem Lebensmittel suchen oder einen Barcode scannen, schickt Ihr Gerät das Suchwort bzw. die Barcode-Nummer an Open Food Facts (Open Food Facts, gemeinnütziger Verein nach französischem Recht, Paris). Dabei wird technisch bedingt Ihre IP-Adresse übermittelt. Weitere Daten, insbesondere Ihr Tagebuch, Gewicht oder Kamerabild, werden nicht übertragen. Rechtsgrundlage ist Ihre Nutzung dieser Funktion (Art. 6 Abs. 1 lit. b bzw. f DSGVO). Für die Verarbeitung bei Open Food Facts gilt deren <a href="https://world.openfoodfacts.org/privacy" rel="noopener">Datenschutzerklärung</a>. Mit der Einstellung "Nur offline" schalten Sie diese Abfragen vollständig ab.</li>
+'''
+
+
 def datenschutz():
+    geraet = BASEBITE_GERAET if BASEBITE_OEFFENTLICH else "Base B legt von sich aus nichts auf Ihrem Gerät ab, auch keine Einstellungen. Der Dunkelmodus gilt deshalb nur für die gerade geöffnete Seite. Einzige Ausnahme ist das BaseBoard, und nur, wenn Sie dort ausdrücklich \"Auf diesem Gerät merken\" einschalten (siehe unten)."
+    basebite = BASEBITE_DATENSCHUTZ if BASEBITE_OEFFENTLICH else ""
     inhalt = f'''<div class="huelle">
 {seitenkopf("Datenschutz", "Kurz gesagt: Base B sammelt keine Daten über Sie.")}
 <div class="text">
@@ -419,13 +438,13 @@ def datenschutz():
 <h2>Kein Tracking, keine Cookies</h2>
 <p>Es gibt keine Analyse-Werkzeuge, keine Werbung und keine Cookies. Schriften und Grafiken liegen auf dieser Webseite selbst und werden nicht von fremden Servern geladen.</p>
 <h2>Nichts auf Ihrem Gerät gespeichert</h2>
-<p>Base B legt von sich aus nichts auf Ihrem Gerät ab, auch keine Einstellungen. Der Dunkelmodus gilt deshalb nur für die gerade geöffnete Seite. Einzige Ausnahme ist das BaseBoard, und nur, wenn Sie dort ausdrücklich "Auf diesem Gerät merken" einschalten (siehe unten).</p>
+<p>{geraet}</p>
 <h2>Werkzeuge</h2>
 <ul>
 <li><b>Zufallsgenerator:</b> Alle Eingaben und hochgeladenen Listen bleiben in Ihrem Browser. Nichts wird übertragen oder gespeichert.</li>
 <li><b>BaseBoard:</b> Quizze werden nicht online gespeichert. Sie laden sie als Datei auf Ihr Gerät herunter und öffnen sie bei Bedarf wieder. Nur wenn Sie "Auf diesem Gerät merken" einschalten, legt Ihr Browser den aktuellen Entwurf und einen laufenden Spielstand im Speicher des Browsers ab (Local Storage, rechtlich wie ein Cookie). Diese Daten verlassen Ihr Gerät nicht. Schalten Sie das Häkchen wieder aus, werden sie sofort gelöscht.</li>
 <li><b>Fotobox:</b> Fotos werden nur auf Ihrem Gerät bearbeitet und nie hochgeladen. Für die Suche nach Hintergrundbildern wird nur der eingegebene Suchbegriff an Openverse (WordPress.org) geschickt; die Vorschaubilder werden von den jeweiligen Bildquellen geladen. Dabei wird, wie bei jedem Abruf im Internet, Ihre IP-Adresse an diese Server übermittelt.</li>
-</ul>
+{basebite}</ul>
 <h2>Kontakt</h2>
 <p>Das Kontaktformular öffnet nur Ihr eigenes E-Mail-Programm. Über diese Webseite wird nichts verschickt. Ihre E-Mail wird nur zur Beantwortung verwendet.</p>
 <h2>Ihre Rechte</h2>

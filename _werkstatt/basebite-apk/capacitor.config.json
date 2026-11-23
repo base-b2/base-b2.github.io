@@ -1,0 +1,16 @@
+{
+  "appId": "de.baseb.basebite",
+  "appName": "BaseBite",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false,
+    "webContentsDebuggingEnabled": false,
+    "adjustMarginsForEdgeToEdge": "auto"
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_basebite",
+      "iconColor": "#6A1B2B"
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "id": "./",
+  "name": "BaseBite | Kalorienzähler von Base B",
+  "short_name": "BaseBite",
+  "description": "Kalorienzähler, der offline läuft. Alle Daten bleiben auf Ihrem Gerät.",
+  "lang": "de",
+  "dir": "ltr",
+  "start_url": "./#/",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFFFFF",
+  "theme_color": "#1C2E4A",
+  "categories": ["health", "food", "lifestyle"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Lebensmittel eintragen", "short_name": "Eintragen", "url": "./#/suche" },
+    { "name": "Gewicht eintragen", "short_name": "Gewicht", "url": "./#/verlauf" }
+  ]
+}

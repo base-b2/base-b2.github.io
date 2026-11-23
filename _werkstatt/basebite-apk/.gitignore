@@ -1,0 +1,8 @@
+# Wird vom Bauskript jedes Mal neu erzeugt
+node_modules/
+www/
+android/
+*.apk
+# Signaturschlüssel NIE ins Repo (Sicherung extra aufbewahren)
+*.keystore
+*.jks
