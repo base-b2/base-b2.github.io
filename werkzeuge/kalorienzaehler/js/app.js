@@ -7,8 +7,9 @@ import * as scanner from './scanner.js';
 import * as dia from './diagramme.js';
 import * as ex from './export.js';
 import * as erin from './erinnerung.js';
+import * as aw from './auswertung.js';
 
-export const VERSION = '1.0.0';
+export const VERSION = '1.1.0';
 
 /* ====================================================================== Hilfen */
 const $ = (s, r = document) => r.querySelector(s);
@@ -173,6 +174,7 @@ const ROUTEN = [
   [/^\/rezepte$/, () => rezepte()],
   [/^\/rezept\/(.+)$/, (m) => rezeptAnsicht(decodeURIComponent(m[1]))],
   [/^\/verlauf$/, () => verlauf()],
+  [/^\/auswertung$/, () => auswertung()],
   [/^\/ziele$/, () => ziele()],
   [/^\/erinnerungen$/, () => erinnerungen()],
   [/^\/daten$/, () => ihreDaten()],
@@ -194,9 +196,9 @@ async function route() {
         main.innerHTML = `<div class="huelle"><p class="fehlermeldung">✗ Hier ist etwas schiefgegangen: ${esc(e.message)}</p></div>`;
       }
       const reiter = pfad.startsWith('/suche') || pfad.startsWith('/lebensmittel') || pfad.startsWith('/rezept') ? 'suche'
-        : pfad.startsWith('/verlauf') ? 'verlauf' : pfad.startsWith('/ziele') ? 'ziele'
+        : pfad.startsWith('/verlauf') ? 'verlauf' : pfad.startsWith('/ziele') ? 'ziele' : pfad.startsWith('/auswertung') ? 'auswertung'
           : pfad === '/' || pfad === '' || pfad.startsWith('/tag') ? 'tagebuch' : '';
-      $$('.app-navi a').forEach((a) => (a.dataset.reiter === reiter ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current')));
+      $$('.app-navi a').forEach((a) => (a.dataset.navi === reiter ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current')));
       main.focus({ preventScroll: true });
       window.scrollTo(0, 0);
       return;
@@ -209,8 +211,10 @@ const geheZu = (h) => { if (location.hash === h) route(); else location.hash = h
 /* ====================================================================== Tagebuch */
 let wasserSperre = false;
 async function tagebuch(datum) {
-  const [eintraege, ziel, wasser] = await Promise.all([
-    db.perIndex('tagebuch', 'datum', datum), zielDaten(), db.hole('wasser', datum)]);
+  const [eintraege, ziel, wasser, umfeld] = await Promise.all([
+    db.perIndex('tagebuch', 'datum', datum), zielDaten(), db.hole('wasser', datum),
+    db.bereich('tagebuch', 'datum', plusTage(datum, -42), datum)]);
+  const tipps = Object.fromEntries(MAHLZEITEN.map((m) => [m.k, aw.vorschlaege(umfeld, { mahlzeit: m.k, datum, max: 3 }).filter((g) => g.beiMahlzeit > 0)]));
   eintraege.sort((a, b) => (a.erstellt || '').localeCompare(b.erstellt || ''));
   const summe = { kcal: 0, eiweiss: 0, fett: 0, kh: 0 };
   for (const e of eintraege) for (const k of Object.keys(summe)) summe[k] += Number(e[k]) || 0;
@@ -242,6 +246,7 @@ async function tagebuch(datum) {
 ${liste.length ? `<ul class="eintraege">${liste.map((e) => `<li><button type="button" class="eintrag" data-eintrag="${esc(e.id)}">
 <span class="eintrag-name">${esc(e.name)}${e.marke ? `<span class="eintrag-marke">${esc(e.marke)}</span>` : ''}</span>
 <span class="eintrag-menge mono">${esc(e.einheitText || dez(e.menge, 1) + ' g')}</span><span class="eintrag-kcal mono">${zahl(e.kcal)}</span></button></li>`).join('')}</ul>` : ''}
+${tipps[m.k].length ? `<div class="tipps" role="group" aria-label="Häufig zu ${m.n}, sofort eintragen">${tipps[m.k].map((g) => `<button type="button" class="tipp" data-tipp="${m.k}|${esc(g.key)}" aria-label="${esc(g.name)}, ${esc(g.letzter.einheitText || dez(g.letzter.menge, 1) + ' g')}, sofort zu ${m.n} eintragen">${icon('plus', 16)}<span class="tipp-name">${esc(g.name)}</span><span class="mono tipp-menge">${esc(g.letzter.einheitText || dez(g.letzter.menge, 1) + ' g')}</span></button>`).join('')}</div>` : ''}
 <a class="hinzu" href="#/suche?mahlzeit=${m.k}&datum=${datum}">${icon('plus', 20)}Hinzufügen</a>
 </section>`;
   }).join('');
@@ -284,6 +289,13 @@ ${mahlzeitenHtml}
       wasserSperre = false;
       await tagebuch(datum);
       const f = $(`[data-glas="${Math.max(1, neu)}"]`); if (f) f.focus();
+    };
+  });
+  $$('[data-tipp]').forEach((b) => {
+    b.onclick = () => {
+      const [mz, ...rest] = b.dataset.tipp.split('|');
+      const g = tipps[mz].find((x) => x.key === rest.join('|'));
+      if (g) schnellEintragen(g, datum, mz, () => tagebuch(datum));
     };
   });
   $$('[data-eintrag]').forEach((b) => {
@@ -419,7 +431,46 @@ function eintragBearbeiten(e) {
 
 /* ====================================================================== Lebensmittel suchen */
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ß/g, 'ss');
-let sucheZustand = { reiter: 'zuletzt', wort: '', offErgebnis: null, offFehler: null };
+const LISTEN = [['haeufig', 'Häufig'], ['verlauf', 'Verlauf'], ['favoriten', 'Favoriten'], ['eigene', 'Eigene'], ['rezepte', 'Rezepte']];
+let sucheZustand = { reiter: 'haeufig', wort: '', offErgebnis: null, offFehler: null };
+
+/** Einträge der letzten Wochen (Grundlage für Vorschläge und Verlauf) */
+const tagebuchSeit = (tage) => db.bereich('tagebuch', 'datum', plusTage(heute(), -tage), plusTage(heute(), 1));
+
+/** Lebensmittel aus einer Gruppe des Tagebuchs: aktuelle Werte der Quelle, falls vorhanden, sonst die gespeicherten des letzten Eintrags */
+function lmAusGruppe(g, alle) {
+  const e = g.letzter;
+  const quelle = e.ref && alle.find((x) => x._store === e.ref.store && x.id === e.ref.id);
+  const basis = e.basis || { kcal100: e.menge ? (e.kcal / e.menge) * 100 : 0 };
+  const lm = quelle ? { ...quelle } : { ...basis, name: e.name, marke: e.marke || '', _store: null };
+  lm.letzteEinheit = e.einheit || 'g';
+  lm.letzteAnzahl = e.anzahl ?? e.menge;
+  return { lm, ref: quelle ? { store: quelle._store, id: quelle.id } : null };
+}
+
+/** Schnell eintragen: gleiche Menge wie beim letzten Mal */
+async function schnellEintragen(g, datum, mahlzeit, danach) {
+  const vorlage = g.letzter;
+  const neu = { ...vorlage, id: db.neueId('t'), datum, mahlzeit, erstellt: new Date().toISOString() };
+  await db.speichere('tagebuch', neu);
+  if (vorlage.ref && vorlage.ref.store && vorlage.ref.store !== 'eintrag') {
+    const obj = await db.hole(vorlage.ref.store, vorlage.ref.id);
+    if (obj) { obj.zuletzt = neu.erstellt; await db.speichere(vorlage.ref.store, obj); }
+  }
+  meldung(`${neu.name}, ${neu.einheitText || dez(neu.menge, 1) + ' g'}: ${zahl(neu.kcal)} kcal bei ${mahlzeitName(mahlzeit)} eingetragen.`, 'ok',
+    { text: 'Rückgängig', fn: async () => { await db.loesche('tagebuch', neu.id); if (danach) danach(); } });
+  if (danach) danach();
+}
+
+function gruppenZeile(g, { schnell, mitDatum } = {}) {
+  const e = g.letzter;
+  const menge = e.einheitText || `${dez(e.menge, 1)} g`;
+  const info = mitDatum ? `zuletzt ${kurz(e.datum)} | ${menge}` : `${g.anzahl}x in 6 Wochen | zuletzt ${menge}`;
+  return `<li class="lm-zeile"><button type="button" class="lm" data-gruppe="${esc(g.key)}">
+<span class="lm-name"><span>${esc(g.name)}</span><span class="lm-marke">${g.marke ? esc(g.marke) + ' | ' : ''}${esc(info)}</span></span>
+<span class="lm-kcal mono">${zahl(e.kcal)}<small> kcal</small></span></button>
+${schnell ? `<button type="button" class="symbol-knopf schnell-knopf" data-schnell="${esc(g.key)}" aria-label="${esc(g.name)}, ${esc(menge)}, sofort eintragen">${icon('plus', 22)}</button>` : ''}</li>`;
+}
 
 async function lokaleLebensmittel() {
   const [eigen, cache, rz] = await Promise.all([db.alle('lebensmittel'), db.alle('off_cache'), db.alle('rezepte')]);
@@ -443,7 +494,8 @@ async function suche(q) {
     datum: q.datum || heute(), mahlzeit: q.mahlzeit || mahlzeitJetzt(), rezeptId: q.rezept || null,
   };
   const rezept = kontext.rezeptId ? await db.hole('rezepte', kontext.rezeptId) : null;
-  if (q.neu === '1') sucheZustand = { reiter: 'zuletzt', wort: '', offErgebnis: null, offFehler: null };
+  if (q.neu === '1') sucheZustand = { reiter: 'haeufig', wort: '', offErgebnis: null, offFehler: null };
+  if (!LISTEN.some(([k]) => k === sucheZustand.reiter)) sucheZustand.reiter = 'haeufig';
   const offline = off.nurOffline();
   $('#ansicht').innerHTML = `<div class="huelle">
 <h1 class="seiten-titel">${rezept ? 'Zutat hinzufügen' : 'Lebensmittel'}</h1>
@@ -457,7 +509,7 @@ async function suche(q) {
 <p class="datenhinweis">${icon('schloss', 16)}<span>${offline ? '"Nur offline" ist an: Es wird nur auf diesem Gerät gesucht.' : 'Beim Suchen und Scannen wird nur das Suchwort bzw. der Barcode an Open Food Facts übertragen.'} <a href="#/daten">Ihre Daten</a></span></p>
 <div id="such-ergebnis"></div>
 <div class="reiter" role="group" aria-label="Liste wählen">
-${[['zuletzt', 'Zuletzt'], ['favoriten', 'Favoriten'], ['eigene', 'Eigene'], ['rezepte', 'Rezepte']].map(([k, n]) => `<button type="button" class="reiter-knopf" data-reiter="${k}" aria-pressed="${sucheZustand.reiter === k}">${n}</button>`).join('')}
+${LISTEN.map(([k, n]) => `<button type="button" class="reiter-knopf" data-liste="${k}" aria-pressed="${sucheZustand.reiter === k}">${n}</button>`).join('')}
 </div>
 <div id="liste"></div>
 <div class="knopfzeile"><a class="knopf knopf-zwei" href="#/lebensmittel/neu">${icon('plus', 20)}Eigenes Lebensmittel</a><a class="knopf knopf-zwei" href="#/rezepte">${icon('topf', 20)}Rezepte</a></div>
@@ -475,25 +527,52 @@ ${[['zuletzt', 'Zuletzt'], ['favoriten', 'Favoriten'], ['eigene', 'Eigene'], ['r
     });
   };
 
-  const zeigeListe = () => {
+  const zielVon = () => (kontext.rezeptId ? { art: 'rezept', rezeptId: kontext.rezeptId } : { art: 'tagebuch', ...kontext });
+  let gruppen = [];
+  const zeigeListe = async () => {
     let l = [];
     const r = sucheZustand.reiter;
-    if (r === 'zuletzt') l = alle.filter((x) => x.zuletzt).sort((a, b) => b.zuletzt.localeCompare(a.zuletzt)).slice(0, 40);
+    const box = $('#liste');
+    if (r === 'haeufig' || r === 'verlauf') {
+      const tb = await tagebuchSeit(r === 'haeufig' ? 42 : 120);
+      gruppen = r === 'haeufig'
+        ? aw.vorschlaege(tb, { mahlzeit: kontext.mahlzeit, datum: kontext.datum, max: 12 })
+        : aw.verlauf(tb, 40);
+      if (!gruppen.length) {
+        box.innerHTML = r === 'haeufig'
+          ? leer('lupe', 'Noch keine Vorschläge.', 'Was Sie in sechs Wochen mindestens zweimal essen, erscheint hier, passend zur Mahlzeit. Bis dahin: oben suchen oder scannen.')
+          : leer('lupe', 'Noch nichts gegessen.', 'Zumindest nichts eingetragen. Der Verlauf füllt sich mit jedem Eintrag.');
+        return;
+      }
+      const schnell = !kontext.rezeptId;
+      box.innerHTML = `${r === 'haeufig' ? `<p class="klein">Passend zu ${mahlzeitName(kontext.mahlzeit)}, nach Häufigkeit.${schnell ? ` ${icon('plus', 14)} trägt die gleiche Menge wie beim letzten Mal ein.` : ''}</p>` : ''}
+<ul class="lm-liste">${gruppen.map((g) => gruppenZeile(g, { schnell, mitDatum: r === 'verlauf' })).join('')}</ul>`;
+      $$('[data-gruppe]', box).forEach((b) => {
+        b.onclick = () => {
+          const g = gruppen.find((x) => x.key === b.dataset.gruppe);
+          const { lm, ref } = lmAusGruppe(g, alle);
+          mengenDialog(lm, ref, zielVon());
+        };
+      });
+      $$('[data-schnell]', box).forEach((b) => {
+        b.onclick = () => schnellEintragen(gruppen.find((x) => x.key === b.dataset.schnell), kontext.datum, kontext.mahlzeit, zeigeListe);
+      });
+      return;
+    }
     if (r === 'favoriten') l = alle.filter((x) => x.favorit).sort((a, b) => a.name.localeCompare(b.name, 'de'));
     if (r === 'eigene') l = alle.filter((x) => x._store === 'lebensmittel').sort((a, b) => a.name.localeCompare(b.name, 'de'));
     if (r === 'rezepte') l = alle.filter((x) => x._store === 'rezepte').sort((a, b) => a.name.localeCompare(b.name, 'de'));
     const leerTexte = {
-      zuletzt: ['Noch nichts verwendet.', 'Suchen Sie oben ein Lebensmittel oder scannen Sie einen Barcode.'],
       favoriten: ['Keine Favoriten.', 'Im Mengen-Dialog markieren Sie Lebensmittel mit "Als Favorit".'],
       eigene: ['Keine eigenen Lebensmittel.', 'Legen Sie mit "Eigenes Lebensmittel" etwas ohne Barcode an, z. B. Omas Apfelkuchen.'],
       rezepte: ['Noch keine Rezepte.', 'Die Küche ist kalt. <a href="#/rezepte">Rezept anlegen</a>'],
     };
-    $('#liste').innerHTML = l.length ? `<ul class="lm-liste">${l.map((x) => zeile(x, r === 'eigene' || r === 'rezepte')).join('')}</ul>`
+    box.innerHTML = l.length ? `<ul class="lm-liste">${l.map((x) => zeile(x, r === 'eigene' || r === 'rezepte')).join('')}</ul>`
       : leer('lupe', leerTexte[r][0], leerTexte[r][1]);
-    verknuepfe($('#liste'));
+    verknuepfe(box);
   };
-  $$('[data-reiter]').forEach((b) => {
-    b.onclick = () => { sucheZustand.reiter = b.dataset.reiter; $$('[data-reiter]').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); zeigeListe(); };
+  $$('[data-liste]').forEach((b) => {
+    b.onclick = () => { sucheZustand.reiter = b.dataset.liste; $$('[data-liste]').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); zeigeListe(); };
   });
   zeigeListe();
 
@@ -884,6 +963,71 @@ ${gewichte.length ? `<details class="aufklapp karte"><summary>Alle Messungen (${
       verlauf();
     };
   });
+}
+
+/* ====================================================================== Auswertung */
+let auswertungZeitraum = 'woche';
+function zeitraum(art) {
+  const h = heute();
+  const montag = plusTage(h, -((alsDatum(h).getDay() + 6) % 7));
+  if (art === 'woche') return { von: montag, bis: h, name: 'Diese Woche' };
+  if (art === 'vorwoche') return { von: plusTage(montag, -7), bis: plusTage(montag, -1), name: 'Letzte Woche' };
+  if (art === 'monat') return { von: plusTage(h, -29), bis: h, name: '30 Tage' };
+  return { von: plusTage(h, -6), bis: h, name: '7 Tage' };
+}
+
+/** Rangliste als waagrechte Balken: Wert steht als Text daneben, Farbe trägt keine eigene Information */
+function rangliste(eintraege, { wert, max, text, klasse, titel, nummern = true }) {
+  return `<ol class="rang${nummern ? '' : ' rang-ohne-nr'}" aria-label="${esc(titel)}">${eintraege.map((x, i) => `<li class="rang-zeile">
+${nummern ? `<span class="rang-nr mono" aria-hidden="true">${i + 1}</span>` : ''}
+<span class="rang-inhalt"><span class="rang-kopf"><span class="rang-name">${esc(x.name)}${x.marke ? `<span class="rang-marke">${esc(x.marke)}</span>` : ''}</span><span class="rang-wert mono">${text(x)}</span></span>
+<span class="rang-balken" title="${esc(x.name)}: ${esc(text(x).replace(/<[^>]+>/g, ''))}"><span class="rang-fuell ${klasse}" style="width:${max && wert(x) > 0 ? Math.max(2, (wert(x) / max) * 100) : 0}%"></span></span></span></li>`).join('')}</ol>`;
+}
+
+async function auswertung() {
+  const z = zeitraum(auswertungZeitraum);
+  const tb = await db.bereich('tagebuch', 'datum', z.von, z.bis);
+  const s = aw.statistik(tb, z.von, z.bis);
+  const ziel = (await zielDaten()).kcal;
+  const maxMz = Math.max(1, ...MAHLZEITEN.map((m) => s.proMahlzeit[m.k] || 0));
+  $('#ansicht').innerHTML = `<div class="huelle">
+<h1 class="seiten-titel">Auswertung</h1>
+<div class="reiter" role="group" aria-label="Zeitraum">
+${[['woche', 'Diese Woche'], ['vorwoche', 'Letzte Woche'], ['tage7', '7 Tage'], ['monat', '30 Tage']].map(([k, n]) => `<button type="button" class="reiter-knopf" data-zeitraum="${k}" aria-pressed="${auswertungZeitraum === k}">${n}</button>`).join('')}
+</div>
+<p class="kontext mono">${kurz(z.von)} - ${kurz(z.bis)}</p>
+${!s.eintraege ? leer('teller', 'In diesem Zeitraum: nichts.', 'Keine Einträge, keine Statistik. Wählen Sie einen anderen Zeitraum oder tragen Sie im Tagebuch etwas ein.') : `
+<section class="karte" aria-label="Kennzahlen">
+<div class="drei">
+<div><span class="etikett">Gesamt</span><span class="gross mono">${zahl(s.summe)}</span><span class="klein">kcal</span></div>
+<div><span class="etikett">Schnitt/Tag</span><span class="gross mono">${zahl(s.schnittProTag)}</span><span class="klein">${ziel ? `Ziel ${zahl(ziel)}` : 'kcal'}</span></div>
+<div><span class="etikett">Tage</span><span class="gross mono">${s.tageMit}/${s.tageGesamt}</span><span class="klein">mit Einträgen</span></div>
+</div>
+<p class="klein zentriert abstand-oben">${s.eintraege} Einträge | ${s.verschiedene} verschiedene Lebensmittel. Der Schnitt zählt nur Tage mit Einträgen.</p>
+</section>
+
+<section class="karte" aria-labelledby="haeufig-titel">
+<h2 id="haeufig-titel" class="h3">Am häufigsten gegessen</h2>
+<p class="klein">Wie oft ein Lebensmittel eingetragen wurde, an wie vielen Tagen und wie viel insgesamt.</p>
+${rangliste(s.haeufig, { wert: (x) => x.anzahl, max: s.haeufig[0].anzahl, klasse: 'rang-anzahl', titel: 'Lebensmittel nach Häufigkeit',
+    text: (x) => `${x.anzahl}x <span class="rang-neben">| ${x.tage} ${x.tage === 1 ? 'Tag' : 'Tage'} | ${dez(x.gramm, 0)} g</span>` })}
+</section>
+
+<section class="karte" aria-labelledby="top-titel">
+<h2 id="top-titel" class="h3">Top 10 nach Kalorien</h2>
+<p class="klein">Welche Lebensmittel zusammen die meisten kcal geliefert haben, mit Anteil an allen kcal im Zeitraum.</p>
+${rangliste(s.topKcal, { wert: (x) => x.kcal, max: s.topKcal[0].kcal, klasse: 'rang-kcal', titel: 'Top 10 Lebensmittel nach Kalorien',
+    text: (x) => `${zahl(x.kcal)} kcal <span class="rang-neben">| ${dez(x.anteil, 1)} %</span>` })}
+<p class="klein abstand-oben">Die Top 10 liefern zusammen <b class="mono">${dez(s.topKcal.reduce((a, x) => a + x.anteil, 0), 1)} %</b> Ihrer kcal.</p>
+</section>
+
+<section class="karte" aria-labelledby="mz-titel">
+<h2 id="mz-titel" class="h3">Nach Mahlzeit</h2>
+${rangliste(MAHLZEITEN.map((m) => ({ name: m.n, kcal: s.proMahlzeit[m.k] || 0 })), { wert: (x) => x.kcal, max: maxMz, klasse: 'rang-mahlzeit', titel: 'Kalorien nach Mahlzeit', nummern: false,
+    text: (x) => `${zahl(x.kcal)} kcal <span class="rang-neben">| ${s.summe ? dez((x.kcal / s.summe) * 100, 0) : 0} %</span>` })}
+</section>`}
+</div>`;
+  $$('[data-zeitraum]').forEach((b) => { b.onclick = () => { auswertungZeitraum = b.dataset.zeitraum; auswertung(); }; });
 }
 
 /* ====================================================================== Ziele */

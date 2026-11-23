@@ -1,10 +1,10 @@
 /* BaseBite | Service Worker: App-Dateien offline bereithalten.
    Speichert nur Programmdateien (Cache Storage), keine persönlichen Daten.
    Anfragen an Open Food Facts gehen immer direkt ins Netz und werden hier nicht zwischengespeichert. */
-const VERSION = 'basebite-v1';
+const VERSION = 'basebite-v2';
 const DATEIEN = [
   './', './index.html', './app.css', './manifest.webmanifest',
-  './js/app.js', './js/db.js', './js/rechner.js', './js/off.js', './js/scanner.js', './js/diagramme.js', './js/export.js', './js/erinnerung.js',
+  './js/app.js', './js/db.js', './js/rechner.js', './js/off.js', './js/scanner.js', './js/diagramme.js', './js/export.js', './js/erinnerung.js', './js/auswertung.js',
   './vendor/zxing.min.js',
   './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-192.png', './icons/icon-maskable-512.png',
   '/assets/css/tokens.css', '/assets/css/base.css', '/assets/fonts/lexend.woff', '/assets/fonts/jetbrains-mono.woff',

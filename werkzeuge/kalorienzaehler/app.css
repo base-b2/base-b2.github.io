@@ -40,13 +40,14 @@ input.eingabe.eingabe-text { font-family: var(--bb-font-text); }
 
 /* ---------- Navigation unten ---------- */
 .app-navi {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(4, 1fr);
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(5, 1fr);
   background: var(--bb-grund); border-top: 1px solid var(--bb-linie); padding-bottom: env(safe-area-inset-bottom);
 }
 .app-navi a {
   min-height: var(--navi-hoehe); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  color: var(--bb-nebentext); text-decoration: none; font-size: 12px;
+  color: var(--bb-nebentext); text-decoration: none; font-size: 11px; min-width: 0;
 }
+.app-navi a span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .app-navi a[aria-current="page"] { color: var(--bb-akzent); font-weight: 600; }
 .app-navi a[aria-current="page"] svg { stroke-width: 2.25; }
 
@@ -100,6 +101,34 @@ input.eingabe.eingabe-text { font-family: var(--bb-font-text); }
 .eintrag-kcal { font-weight: 700; min-width: 44px; text-align: right; }
 .hinzu { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-weight: 600; text-decoration: none; }
 .verpasst { margin-bottom: 16px; }
+.tipps { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 2px; }
+.tipp {
+  min-height: 44px; max-width: 100%; display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px 4px 8px;
+  border: 1px dashed var(--bb-feld-rand); border-radius: 22px; background: transparent; color: var(--bb-text); cursor: pointer; font-size: 14px;
+}
+.tipp:hover { background: var(--bb-eisblau); border-style: solid; }
+.tipp svg { flex: none; color: var(--bb-akzent); }
+.tipp-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.tipp-menge { font-size: 12px; color: var(--bb-nebentext); white-space: nowrap; }
+.schnell-knopf { color: var(--bb-akzent); border-color: var(--bb-akzent); }
+
+/* ---------- Auswertung ---------- */
+.abstand-oben { margin-top: 12px; }
+.rang { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.rang-zeile { display: grid; grid-template-columns: 24px 1fr; gap: 8px; align-items: start; }
+.rang-ohne-nr .rang-zeile { grid-template-columns: 1fr; }
+.rang-nr { font-size: 13px; color: var(--bb-nebentext); text-align: right; padding-top: 2px; }
+.rang-inhalt { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.rang-kopf { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.rang-name { min-width: 0; overflow-wrap: anywhere; font-size: 15px; }
+.rang-marke { display: block; font-size: 13px; color: var(--bb-nebentext); }
+.rang-wert { white-space: nowrap; font-weight: 700; font-size: 14px; }
+.rang-neben { font-weight: 400; color: var(--bb-nebentext); }
+.rang-balken { display: block; height: 10px; background: var(--bb-eisblau); border-radius: 0 5px 5px 0; }
+.rang-fuell { display: block; height: 100%; border-radius: 0 4px 4px 0; }
+.rang-anzahl { background: var(--bb-text); }
+.rang-kcal { background: var(--bb-akzent); }
+.rang-mahlzeit { background: var(--bb-nebentext); }
 
 /* ---------- Leere Zustände mit Bit ---------- */
 .leer { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 20px; padding: 16px; margin: 8px 0 16px; background: var(--bb-aprikose); border-radius: var(--bb-radius-m); }
@@ -162,7 +191,7 @@ input.eingabe.eingabe-text { font-family: var(--bb-font-text); }
 .such-form .knopf { padding: 0 14px; flex: none; }
 .datenhinweis { font-size: 13px; color: var(--bb-nebentext); margin: 8px 0 12px; display: flex; gap: 6px; align-items: flex-start; }
 .datenhinweis svg { flex: none; margin-top: 2px; }
-.reiter { display: flex; gap: 4px; margin: 16px 0 8px; overflow-x: auto; scrollbar-width: none; }
+.reiter { display: flex; flex-wrap: wrap; gap: 4px; margin: 16px 0 8px; }
 .reiter::-webkit-scrollbar { display: none; }
 .reiter-knopf { min-height: 44px; padding: 0 12px; flex: 1 0 auto; border: 1px solid var(--bb-linie); border-radius: 22px; background: transparent; cursor: pointer; white-space: nowrap; }
 .reiter-knopf[aria-pressed="true"] { background: var(--bb-text); color: var(--bb-grund); border-color: var(--bb-text); font-weight: 600; }

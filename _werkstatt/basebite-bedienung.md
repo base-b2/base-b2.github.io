@@ -25,11 +25,18 @@ Jetzt sehen Sie Grundumsatz, Gesamtumsatz und den Vorschlag für Ihr Tagesziel. 
 2. Lebensmittel finden:
    - Name eintippen: Eigene und gespeicherte Lebensmittel erscheinen sofort. Für Treffer aus Open Food Facts auf die **Lupe** tippen.
    - Oder **Barcode-Symbol** antippen und den Strichcode in den Rahmen halten. Klappt das nicht, die Nummer unter dem Strichcode eintippen.
-   - Oder unten **Zuletzt**, **Favoriten**, **Eigene** oder **Rezepte** wählen.
+   - Oder unten eine Liste wählen: **Häufig** (Vorschläge, siehe unten), **Verlauf** (zuletzt gegessen, neueste zuerst), **Favoriten**, **Eigene** oder **Rezepte**.
 3. Menge eingeben und Einheit wählen (Gramm, Packung oder Portion). Das Feld **Ergibt** rechnet sofort, z. B. 150 g x 380 / 100 = 570 kcal.
 4. **Eintragen** antippen.
 
 Eintrag ändern, löschen oder auf einen anderen Tag kopieren: im Tagebuch auf den Eintrag tippen.
+
+### Schneller: Vorschläge
+
+Was Sie in den letzten sechs Wochen mindestens zweimal gegessen haben, schlägt BaseBite vor, passend zur Mahlzeit (Müsli zum Frühstück, Apfel am Abend).
+- **Im Tagebuch** stehen unter jeder Mahlzeit bis zu drei gestrichelte Knöpfe, z. B. "+ Apfel 220 g". Ein Tipp trägt sofort die gleiche Menge ein wie beim letzten Mal bei dieser Mahlzeit.
+- **Unter Lebensmittel → Häufig** stehen bis zu zwölf Vorschläge. Das **+** rechts trägt sofort ein, ein Tipp auf den Namen öffnet den Mengen-Dialog.
+- Versehentlich eingetragen? In der Meldung unten **Rückgängig** antippen.
 
 ## 3. Unbekannter Barcode, eigene Lebensmittel
 
@@ -61,13 +68,21 @@ Im Tagebuch für jedes Glas auf ein Glas-Symbol tippen. Nochmals auf das letzte 
 
 Die Kurve zeigt Messungen und den 7-Tage-Schnitt (glättet Wasserschwankungen), dazu Prognose, kcal pro Tag und Wochenschnitt. Am besten jeden Morgen zur gleichen Zeit wiegen.
 
-## 7. Erinnerungen
+## 7. Auswertung
+
+Unten **Auswertung** antippen und den Zeitraum wählen (Diese Woche, Letzte Woche, 7 Tage, 30 Tage).
+- **Kennzahlen:** kcal gesamt, Schnitt pro Tag (nur Tage mit Einträgen) und an wie vielen Tagen Sie eingetragen haben.
+- **Am häufigsten gegessen:** wie oft, an wie vielen Tagen und wie viel Gramm insgesamt.
+- **Top 10 nach Kalorien:** welche Lebensmittel die meisten kcal geliefert haben, mit Anteil in Prozent.
+- **Nach Mahlzeit:** wie sich die kcal auf Frühstück, Mittag, Abend und Snacks verteilen.
+
+## 8. Erinnerungen
 
 Menü → **Erinnerungen** → einschalten, Uhrzeit(en) eintragen → **Speichern** → Benachrichtigungen erlauben.
 
 In der **APK** kommen die Erinnerungen zuverlässig. In der **PWA** nur, solange BaseBite geöffnet ist; Verpasstes zeigt das Tagebuch beim nächsten Öffnen an.
 
-## 8. Ihre Daten und Backup
+## 9. Ihre Daten und Backup
 
 Menü → **Ihre Daten**:
 - Tabelle, was wo gespeichert ist.
