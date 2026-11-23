@@ -102,13 +102,21 @@ export async function suche(wort) {
   return zusammen;
 }
 
-export function fehlerText(e) {
+/* Bei der Namenssuche antwortet Open Food Facts auf manche Suchwörter (oft solche ohne Treffer) und bei Überlastung
+   mit einem Serverfehler ohne CORS-Freigabe. Der Browser sieht dann nur "keine Antwort" und kann die Fälle nicht
+   unterscheiden. Die Meldung nennt deshalb beide Möglichkeiten. */
+const TIPP_SUCHWORT = 'Vielleicht heißt das Produkt dort anders (kürzer suchen, Tippfehler prüfen oder Barcode scannen),';
+
+export function fehlerText(e, art = 'suche') {
   const m = (e && e.message) || '';
+  const tipp = art === 'suche' ? ` ${TIPP_SUCHWORT}` : '';
   if (m === 'offline-modus') return '"Nur offline" ist eingeschaltet. Es wurde nur in Ihren eigenen und gespeicherten Lebensmitteln gesucht.';
   if (m === 'kein-netz') return 'Keine Internetverbindung. Gesucht wurde nur auf diesem Gerät.';
-  if (m === 'zu-viele') return 'Open Food Facts bittet um eine kurze Pause (zu viele Anfragen). Bitte in einer Minute erneut versuchen.';
-  if (m === 'bremse') return `Open Food Facts erlaubt nur wenige Suchen pro Minute. Bitte ${e.sekunden} Sekunden warten. Gesucht wurde nur auf diesem Gerät.`;
-  if (e instanceof TypeError) return 'Open Food Facts hat nicht geantwortet, vermutlich zu viele Suchen in kurzer Zeit oder keine Verbindung. Bitte in einer Minute erneut versuchen. Gesucht wurde nur auf diesem Gerät.';
-  if (m === 'zeit') return 'Open Food Facts antwortet gerade nicht. Vermutlich Mittagspause. Bitte später erneut versuchen.';
-  return 'Open Food Facts ist gerade nicht erreichbar. Gesucht wurde nur auf diesem Gerät.';
+  if (m === 'bremse') return `Open Food Facts erlaubt nur wenige Suchen pro Minute. Bitte ${e.sekunden} Sekunden warten.`;
+  if (m === 'zu-viele' || m === 'zeit' || m.startsWith('http-') || e instanceof TypeError) {
+    return art === 'suche'
+      ? `Keine Treffer von Open Food Facts.${tipp} oder der Dienst ist kurz überlastet (in einer Minute erneut versuchen).`
+      : 'Open Food Facts hat nicht geantwortet, vermutlich kurz überlastet. In einer Minute erneut versuchen oder das Produkt selbst anlegen.';
+  }
+  return art === 'suche' ? `Keine Treffer von Open Food Facts.${tipp} oder der Dienst ist nicht erreichbar.` : 'Open Food Facts ist gerade nicht erreichbar.';
 }

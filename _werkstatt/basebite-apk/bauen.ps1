@@ -25,9 +25,9 @@ New-Item -ItemType Directory -Force (Join-Path $www 'assets\css'), (Join-Path $w
 Copy-Item (Join-Path $wurzel 'assets\css\tokens.css'), (Join-Path $wurzel 'assets\css\base.css') (Join-Path $www 'assets\css')
 Copy-Item (Join-Path $wurzel 'assets\fonts\*') (Join-Path $www 'assets\fonts')
 Copy-Item (Join-Path $wurzel 'favicon.ico'), (Join-Path $wurzel 'favicon.svg'), (Join-Path $wurzel 'apple-touch-icon.png') $www
-Copy-Item (Join-Path $wurzel 'werkzeuge\kalorienzaehler') (Join-Path $www 'werkzeuge') -Recurse
-Remove-Item (Join-Path $www 'werkzeuge\kalorienzaehler\sw.js')   # in der App nicht nötig, Dateien liegen in der APK
-$start = '<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>BaseBite</title><script>location.replace("werkzeuge/kalorienzaehler/index.html")</script></head><body></body></html>'
+Copy-Item (Join-Path $wurzel 'werkzeuge\basebite') (Join-Path $www 'werkzeuge') -Recurse
+Remove-Item (Join-Path $www 'werkzeuge\basebite\sw.js')   # in der App nicht nötig, Dateien liegen in der APK
+$start = '<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>BaseBite</title><script>location.replace("werkzeuge/basebite/index.html")</script></head><body></body></html>'
 [IO.File]::WriteAllText((Join-Path $www 'index.html'), $start, (New-Object Text.UTF8Encoding $false))
 
 # ---------- 2. Pakete ----------

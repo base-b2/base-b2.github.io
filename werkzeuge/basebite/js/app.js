@@ -622,7 +622,8 @@ ${LISTEN.map(([k, n]) => `<button type="button" class="reiter-knopf" data-liste=
     const offListe = (sucheZustand.offErgebnis || []).filter((x) => !lokal.some((l) => l.id === x.id)).map((x) => ({ ...x, _store: 'off_cache' }));
     let html = `<h2 class="etikett abschnitt">Auf diesem Gerät</h2>`;
     html += lokal.length ? `<ul class="lm-liste">${lokal.map((x) => zeile(x)).join('')}</ul>` : '<p class="klein">Nichts gespeichert, das passt.</p>';
-    if (sucheZustand.offFehler) html += `<p class="fehlermeldung">✗ ${esc(sucheZustand.offFehler)}</p>`;
+    if (sucheZustand.offFehler) html += `<p class="fehlermeldung">✗ ${esc(sucheZustand.offFehler)}</p>
+<p class="klein">Nicht dabei? <a href="#/lebensmittel/neu?name=${encodeURIComponent(sucheZustand.wort)}">"${esc(sucheZustand.wort)}" selbst anlegen</a></p>`;
     else if (sucheZustand.offErgebnis && sucheZustand.wort === feld.value.trim()) {
       html += `<h2 class="etikett abschnitt">Open Food Facts</h2>`;
       html += offListe.length ? `<ul class="lm-liste">${offListe.map((x) => zeile(x)).join('')}</ul>`
@@ -689,7 +690,7 @@ async function barcodeGefunden(code, kontext) {
   meldung(`Barcode ${code} wird gesucht ...`, 'info');
   let r;
   try { r = await off.produktPerBarcode(code); } catch (e) {
-    meldung(off.fehlerText(e), 'fehler');
+    meldung(off.fehlerText(e, 'barcode'), 'fehler');
     geheZu(`#/lebensmittel/neu?barcode=${code}&grund=fehler`);
     return;
   }
@@ -1509,6 +1510,11 @@ function startPwa() {
   if (!('serviceWorker' in navigator)) return;
   // Der Service Worker lädt mit Internet immer frisch ("Netz zuerst"), ein Neuladen nach Updates ist daher nicht nötig.
   navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => { /* ohne Service Worker kein Offline-Betrieb */ });
+  // Aufräumen: BaseBite lag früher unter /werkzeuge/kalorienzaehler/. Dessen Service Worker abmelden.
+  // (Die Daten in IndexedDB gelten für die ganze Domain und bleiben erhalten.)
+  navigator.serviceWorker.getRegistrations()
+    .then((liste) => liste.filter((r) => r.scope.endsWith('/werkzeuge/kalorienzaehler/')).forEach((r) => r.unregister()))
+    .catch(() => {});
   erin.starteBrowserTakt(verpasst);
 }
 

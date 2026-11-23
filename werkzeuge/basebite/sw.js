@@ -3,7 +3,7 @@
    keine gemischten alten und neuen Dateien). Nur ohne Netz oder bei sehr langsamer Verbindung kommt die gespeicherte Kopie.
    Speichert nur Programmdateien (Cache Storage), keine persönlichen Daten.
    Anfragen an Open Food Facts gehen immer direkt ins Netz und werden hier nicht zwischengespeichert. */
-const VERSION = 'basebite-v4';
+const VERSION = 'basebite-v5';
 const DATEIEN = [
   './', './index.html', './app.css', './manifest.webmanifest',
   './js/app.js', './js/db.js', './js/rechner.js', './js/off.js', './js/scanner.js', './js/diagramme.js', './js/export.js', './js/erinnerung.js', './js/auswertung.js',
@@ -58,7 +58,7 @@ self.addEventListener('notificationclick', (e) => {
   const ziel = (e.notification.data && e.notification.data.ziel) || '#/';
   e.waitUntil((async () => {
     const fenster = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    for (const f of fenster) if (f.url.includes('/kalorienzaehler/')) { await f.focus(); f.navigate(new URL('./' + ziel, self.registration.scope).href); return; }
+    for (const f of fenster) if (f.url.includes('/basebite/')) { await f.focus(); f.navigate(new URL('./' + ziel, self.registration.scope).href); return; }
     await self.clients.openWindow(new URL('./' + ziel, self.registration.scope).href);
   })());
 });

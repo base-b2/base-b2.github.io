@@ -12,8 +12,8 @@ from pathlib import Path
 
 WURZEL = Path(__file__).resolve().parent.parent
 
-# BaseBite (Kalorienzähler, /werkzeuge/kalorienzaehler/): vorerst nicht verlinkt.
-# Zum Veröffentlichen auf True setzen, in werkzeuge/kalorienzaehler/index.html die robots-Zeile löschen
+# BaseBite (Kalorienzähler, /werkzeuge/basebite/): vorerst nicht verlinkt.
+# Zum Veröffentlichen auf True setzen, in werkzeuge/basebite/index.html die robots-Zeile löschen
 # und dieses Skript ausführen (siehe _werkstatt/basebite-veroeffentlichen.md).
 BASEBITE_OEFFENTLICH = False
 
@@ -23,7 +23,7 @@ MENUE = [
         ("Alle Werkzeuge", "/werkzeuge/", "liste"),
         ("Zufallsgenerator", "/werkzeuge/zufallsgenerator/", "wuerfel"),
         ("Fotobox", "/werkzeuge/fotobox/", "kamera"),
-    ] + ([("BaseBite", "/werkzeuge/kalorienzaehler/", "teller")] if BASEBITE_OEFFENTLICH else [])),
+    ] + ([("BaseBite", "/werkzeuge/basebite/", "teller")] if BASEBITE_OEFFENTLICH else [])),
     ("Leitfäden", "leitfaeden", [
         ("Alle Leitfäden", "/leitfaeden/", "buch"),
     ]),
@@ -207,7 +207,7 @@ KACHEL_ZUFALL = kachel("/werkzeuge/zufallsgenerator/", "WERKZEUG", "Zufallsgener
 KACHEL_FOTOBOX = kachel("/werkzeuge/fotobox/", "WERKZEUG", "Fotobox",
                         "Greenscreen weg, neuer Hintergrund. Gemacht für Kinder ab 10.", icon("kamera", 32),
                         suche="fotobox foto kamera greenscreen hintergrund bild")
-KACHEL_BASEBITE = kachel("/werkzeuge/kalorienzaehler/", "WERKZEUG", "BaseBite",
+KACHEL_BASEBITE = kachel("/werkzeuge/basebite/", "WERKZEUG", "BaseBite",
                          "Kalorien zählen, auch offline. Tagebuch, Gewicht und Ziele bleiben auf Ihrem Gerät.", icon("teller", 32),
                          suche="basebite kalorien kalorienzaehler kalorienzähler kcal abnehmen ernaehrung ernährung gewicht diaet diät barcode") if BASEBITE_OEFFENTLICH else ""
 KACHEL_LEITFAEDEN = kachel("/leitfaeden/", "LEITFADEN", "Leitfäden",

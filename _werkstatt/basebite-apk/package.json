@@ -2,7 +2,7 @@
   "name": "basebite-apk",
   "version": "1.0.0",
   "private": true,
-  "description": "BaseBite (Kalorienzähler von Base B) als Android-App. Die Webdateien kommen aus werkzeuge/kalorienzaehler/.",
+  "description": "BaseBite (Kalorienzähler von Base B) als Android-App. Die Webdateien kommen aus werkzeuge/basebite/.",
   "scripts": {
     "bauen": "pwsh -File bauen.ps1",
     "bauen-release": "pwsh -File bauen.ps1 -Release"

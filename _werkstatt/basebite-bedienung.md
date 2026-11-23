@@ -4,7 +4,7 @@ BaseBite zählt Kalorien, läuft offline und speichert alles nur auf Ihrem Handy
 
 ## Starten
 
-- **PWA:** base-b.de/werkzeuge/kalorienzaehler/ in Chrome öffnen → Menü (drei Punkte) → **Zum Startbildschirm hinzufügen** bzw. **App installieren**. Danach startet BaseBite wie eine App, auch ohne Internet.
+- **PWA:** base-b.de/werkzeuge/basebite/ in Chrome öffnen → Menü (drei Punkte) → **Zum Startbildschirm hinzufügen** bzw. **App installieren**. Danach startet BaseBite wie eine App, auch ohne Internet.
 - **APK:** siehe `_werkstatt/basebite-apk/LIESMICH.md`.
 - Beim ersten Start erklärt ein Hinweis, was gespeichert wird. **Verstanden** antippen.
 

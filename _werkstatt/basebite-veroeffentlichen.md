@@ -1,11 +1,13 @@
 # BaseBite veröffentlichen
 
-BaseBite liegt unter `werkzeuge/kalorienzaehler/` und ist schon jetzt unter base-b.de/werkzeuge/kalorienzaehler/ erreichbar, aber **nirgends verlinkt** und mit `noindex` für Suchmaschinen gesperrt.
+BaseBite liegt unter `werkzeuge/basebite/` und ist schon jetzt unter base-b.de/werkzeuge/basebite/ erreichbar, aber **nirgends verlinkt** und mit `noindex` für Suchmaschinen gesperrt.
+
+> Früher lag BaseBite unter `werkzeuge/kalorienzaehler/`. Diese Adresse gibt es nicht mehr (Fehlerseite 404). Die gespeicherten Einträge bleiben beim Umzug erhalten, weil der Browser sie für die ganze Domain base-b.de speichert. Eine früher installierte PWA (Symbol am Startbildschirm) zeigt auf die alte Adresse: entfernen und unter der neuen Adresse neu installieren.
 
 ## Der kleine Schritt zum Veröffentlichen
 
 1. In `_werkstatt/seiten.py` ganz oben `BASEBITE_OEFFENTLICH = False` auf `True` ändern.
-2. In `werkzeuge/kalorienzaehler/index.html` die Zeile `<meta name="robots" content="noindex, nofollow">` (und den Kommentar darüber) löschen.
+2. In `werkzeuge/basebite/index.html` die Zeile `<meta name="robots" content="noindex, nofollow">` (und den Kommentar darüber) löschen.
 3. Im Hauptordner ausführen:
 
 ```powershell

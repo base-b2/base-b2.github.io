@@ -1,6 +1,6 @@
 # BaseBite als APK bauen und installieren
 
-Die APK nutzt **dieselben Dateien** wie die PWA (`werkzeuge/kalorienzaehler/`). Verpackt wird mit **Capacitor**: Die App-Dateien stecken in der APK, BaseBite läuft damit vollständig offline und kann echte, vom System geplante Erinnerungen schicken. Kosten: keine. Play Store: nicht nötig.
+Die APK nutzt **dieselben Dateien** wie die PWA (`werkzeuge/basebite/`). Verpackt wird mit **Capacitor**: Die App-Dateien stecken in der APK, BaseBite läuft damit vollständig offline und kann echte, vom System geplante Erinnerungen schicken. Kosten: keine. Play Store: nicht nötig.
 
 Ordner: `_werkstatt/basebite-apk/` (wird von GitHub Pages nicht veröffentlicht).
 
@@ -72,7 +72,7 @@ Alternativ mit USB-Debugging (für Fortgeschrittene, `adb` liegt im Android SDK)
 
 ## Update einspielen
 
-1. Änderungen an `werkzeuge/kalorienzaehler/` machen (wie bei der PWA).
+1. Änderungen an `werkzeuge/basebite/` machen (wie bei der PWA).
 2. `.\bauen.ps1 -Release` erneut ausführen.
 3. Neue `BaseBite.apk` aufs Handy kopieren und antippen → **Aktualisieren**. Ihre Einträge bleiben erhalten.
 
