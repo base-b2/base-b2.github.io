@@ -72,7 +72,14 @@ function starteLevel(info) {
     boni: {}, zahl: {}, ep: 0, stufe: 1, aufstiege: 0, pad: null, bauWahl: null, schiebe: null, kills: 0, t: 0, frierT: 0, wackel: 0,
     beute: { bits: 0, items: [] }, kaffee: 1, schaden: false, faehigGenutzt: false, maxTuerme: 0, tempo3: true, turmBonus: 1 + b.kopfhoerer / 100,
     held: { id: SP.held, atk: hw.atk, rate: hw.rate, krit: hw.krit, cdMax: h.f.cd, cd: 5, schild: 0, turbo: 0, sudo: 0, frost: 0, feuer: 0, schuss: 0 } };
-  S.aufstiege = kontoWert('aufstieg'); S.boni = ausrBoni(); S.ausr = { ...S.boni }; S.set = aktivesSet();
+  S.aufstiege = kontoWert('aufstieg'); S.boni = ausrBoni(); S.buch = {}; for (const art of ['off', 'def']) { const id = SP.buchAn[art]; if (id && SP.buchR[id] != null && buchFrei(id)) S.buch[id] = SP.buchR[id]; }
+  const bw = (id, k) => BUECHER[id].v[k][S.buch[id]];
+  S.kaffeeHeil = KAFFEE_HEIL;
+  if ('katalog' in S.buch) S.boni.rabatt = B('rabatt') + bw('katalog', 'rabatt');
+  if ('bollwerk' in S.buch) S.boni.hpmax = B('hpmax') + bw('bollwerk', 'hp');
+  if ('wartung' in S.buch) S.boni.regen = B('regen') + bw('wartung', 'regen');
+  if ('startkapital' in S.buch) S.gold += bw('startkapital', 'gold');
+  if ('kochbuch' in S.buch) { S.kaffeeMax += bw('kochbuch', 'tasse'); S.kaffeeHeil = bw('kochbuch', 'heil') / 100; } S.ausr = { ...S.boni }; S.set = aktivesSet();
   if (B('hpmax')) { S.hpMax = Math.round(S.hpBasis * (1 + B('hpmax') / 100)); S.hp = S.hpMax; }
   $('menue').hidden = true; $('spiel').hidden = false;
   const fb = $('faehig-bild').getContext('2d'); fb.clearRect(0, 0, 56, 56); bild(fb, h.bild, 0, 0, 56); $('faehig-name').textContent = h.f.n;
@@ -93,7 +100,7 @@ $('tempo').onclick = () => { SP.opt.tempo = SP.opt.tempo % 3 + 1; if (SP.opt.tem
 /* ---------- Wellen ---------- */
 function bossFuer(w) { if (w === 20) return 'kernel'; if (w % 10 === 0) return 'bluescreen'; return (S.info.L + w / 5) % 2 ? 'speicherleck' : 'schleife'; }
 function starteWelle() {
-  if (S.laeuft || S.ende) return; S.laeuft = true; blattZu();
+  if (S.laeuft || S.ende) return; S.laeuft = true; if (!S.tuerme.has(S.pad)) blattZu();
   const w = S.welle, L = S.info.L, boss = w % 5 === 0, hf = S.info.hf != null;
   const pool = ['bug']; for (const id of ['motte', 'wurm', 'kaefer', 'virus', 'schild']) if (hf || L >= GEGNER[id].ab) pool.push(id);
   let n = Math.min(28, 6 + w + Math.floor(L / 3)); if (boss) n = Math.ceil(n / 2);
@@ -118,10 +125,19 @@ function erzeuge(id, x, y) {
 }
 
 /* ---------- Kampf ---------- */
+const buchFuer = (turm) => S && S.buch && Object.keys(S.buch).find((b) => BUECHER[b].turm === turm);
+const hatBuch = (id) => !!(S && S.buch && id in S.buch);
+const bv = (id, k) => BUECHER[id].v[k][S.buch[id]];
 function turmWerte(t) { const a = TUERME[t.a], l = t.lv, s = S.held.sudo > 0 ? 2 : 1;
   let rw = a.rw ? a.rw + B('rw') + 0.15 * (l - 1) : 0; if (t.a === 'flak') rw += B('t_flak_extra');
-  return { atk: a.atk * S.turmBonus * (1 + B('tatk') / 100) * (1 + B('t_' + t.a + '_atk') / 100) * Math.pow(WACHS.turm, l - 1) * s,
-    rate: a.rate * (1 + B('trate') / 100) * (1 + 0.1 * (l - 1)) * s, rw }; }
+  let atk = a.atk * S.turmBonus * (1 + B('tatk') / 100) * (1 + B('t_' + t.a + '_atk') / 100) * Math.pow(WACHS.turm, l - 1) * s;
+  let rate = a.rate * (1 + B('trate') / 100) * (1 + 0.1 * (l - 1)) * s;
+  if (t.a === 'pfeil' && hatBuch('scharf')) { rw = GANZE_KARTE; rate *= 1 + bv('scharf', 'rate') / 100; atk *= 1 + bv('scharf', 'atk') / 100; }
+  if (t.a === 'flak' && hatBuch('radar')) { rw = GANZE_KARTE; atk *= 1 + bv('radar', 'atk') / 100; }
+  if (t.a === 'laser' && hatBuch('orbital')) { rw = GANZE_KARTE; atk *= 1 + bv('orbital', 'atk') / 100; }
+  if (t.a === 'kanone' && hatBuch('artillerie')) { rw += bv('artillerie', 'rw'); rate *= 1 + bv('artillerie', 'rate') / 100; }
+  if (t.a === 'frost' && hatBuch('eiszeit')) rw += bv('eiszeit', 'rw');
+  return { atk, rate, rw }; }
 function schaden(b, d, quelle) {
   if (b.hp <= 0) return;
   if (b.schild > 0) { const ab = Math.min(b.schild, d); b.schild -= ab; d -= ab; }
@@ -131,9 +147,9 @@ function ziel(x, y, rw, ziele, aus) { let z = null, best = -9;
   for (const b of S.bugs) { if (b.hp <= 0 || b.unten || (aus && aus.has(b)) || !ziele.includes(gruppe(b))) continue;
     if (Math.hypot(b.x - x, b.y - y) <= rw && b.y > best) { best = b.y; z = b; } }
   return z; }
-function kette(von, z, atk, n, ziele, quelle) { const ge = new Set(); let akt = z;
+function kette(von, z, atk, n, ziele, quelle, weite = 1.8) { const ge = new Set(); let akt = z;
   for (let i = 0; i < n && akt; i++) { ge.add(akt); schaden(akt, atk, quelle); S.effekte.push({ x: von.x, y: von.y, x2: akt.x, y2: akt.y, t: 0.18, art: 'blitz' }); von = akt;
-    let nx = null, nb = 1.8; for (const b of S.bugs) { if (b.hp > 0 && !b.unten && !ge.has(b) && ziele.includes(gruppe(b))) { const d = Math.hypot(b.x - akt.x, b.y - akt.y); if (d < nb) { nb = d; nx = b; } } } akt = nx; } }
+    let nx = null, nb = weite; for (const b of S.bugs) { if (b.hp > 0 && !b.unten && !ge.has(b) && ziele.includes(gruppe(b))) { const d = Math.hypot(b.x - akt.x, b.y - akt.y); if (d < nb) { nb = d; nx = b; } } } akt = nx; } }
 function partikel(x, y, n, f, v = 2) { if (reduziert) return; for (let i = 0; i < n; i++) { const a = Math.random() * 6.3, s = v * (0.4 + Math.random());
   S.partikel.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, t: 0.5 + Math.random() * 0.3, f, gr: 0.05 + Math.random() * 0.06 }); } }
 
@@ -188,9 +204,9 @@ function schritt(dt) {
           if (Math.abs((b.x - tx) * dy - (b.y - ty) * dx) / l < 0.4) { schaden(b, w.atk * w.rate * dt, 'turm'); if (brand) { b.gift = Math.max(b.gift, w.atk * brand / 100); b.giftT = 3; } } } }
       else { schaden(z, w.atk * w.rate * dt, 'turm'); if (brand) { z.gift = Math.max(z.gift, w.atk * brand / 100); z.giftT = 3; } } continue; }
     if (t.cd > 0) continue; const z = ziel(tx, ty, w.rw, a.ziele); if (!z) continue; t.cd = 1 / w.rate; t.rueck = 0.12;
-    if (t.a === 'blitz') { kette({ x: tx, y: ty }, z, w.atk, (sp ? 5 : 3) + B('t_blitz_extra'), a.ziele, 'turm'); continue; }
-    const fl = t.a === 'kanone' ? a.fl + B('t_kanone_extra') : (t.a === 'flak' && sp ? 0.8 : 0);
-    S.schuesse.push({ x: tx, y: ty - 0.2, z, atk: w.atk, fl, flZiele: a.ziele, frost: t.a === 'frost', eis: t.a === 'frost' && sp, gift: t.a === 'pfeil' ? B('t_pfeil_extra') : 0,
+    if (t.a === 'blitz') { kette({ x: tx, y: ty }, z, w.atk, (sp ? 5 : 3) + B('t_blitz_extra') + (hatBuch('tesla') ? bv('tesla', 'spr') : 0), a.ziele, 'turm', hatBuch('tesla') ? bv('tesla', 'weite') : 1.8); continue; }
+    const fl = t.a === 'kanone' ? a.fl + B('t_kanone_extra') + (hatBuch('artillerie') ? bv('artillerie', 'fl') : 0) : (t.a === 'flak' && sp ? 0.8 : 0);
+    S.schuesse.push({ x: tx, y: ty - 0.2, z, atk: w.atk, fl, flZiele: a.ziele, frost: t.a === 'frost', eiszeit: t.a === 'frost' && hatBuch('eiszeit'), eis: t.a === 'frost' && sp, gift: t.a === 'pfeil' ? B('t_pfeil_extra') : 0,
       brand: t.a === 'kanone' && sp, v: t.a === 'kanone' ? 6 : 10, a: t.a, spur: [] });
     if (t.a === 'pfeil' && sp) { const z2 = ziel(tx, ty, w.rw, a.ziele, new Set([z])); if (z2) S.schuesse.push({ x: tx, y: ty - 0.2, z: z2, atk: w.atk, v: 10, a: 'pfeil', gift: B('t_pfeil_extra'), spur: [] }); }
   }
@@ -202,7 +218,8 @@ function schritt(dt) {
         S.effekte.push({ x: s.z.x, y: s.z.y, t: 0.4, art: 'boom', r: s.fl }); partikel(s.z.x, s.z.y, 6, F.akzent, 2.5);
         if (s.brand) S.feuer.push({ x: s.z.x, y: s.z.y, t: 2, atk: s.atk * 0.4 }); }
       else { schaden(s.z, s.atk, q); partikel(s.z.x, s.z.y, 2, s.frost ? F.eisblau : F.akzent, 1.2);
-        if (s.frost) { s.z.lahm = 1.6; if (s.eis && Math.random() < 0.2) s.z.stop = 1; }
+        if (s.frost) { s.z.lahm = 1.6; if (s.eis && Math.random() < 0.2) s.z.stop = 1;
+          if (s.eiszeit) { for (const b of S.bugs) if (Math.hypot(b.x - s.z.x, b.y - s.z.y) < bv('eiszeit', 'fl')) b.lahm = 1.6; S.effekte.push({ x: s.z.x, y: s.z.y, t: 0.35, art: 'boom', r: bv('eiszeit', 'fl') }); } }
         if (s.gift) { s.z.gift = Math.max(s.z.gift, s.atk * s.gift / 100); s.z.giftT = 3; } }
       if (s.krit) S.effekte.push({ x: s.z.x, y: s.z.y - 0.3, t: 0.6, art: 'text', text: 'Krit!' });
       continue; }
@@ -270,7 +287,7 @@ function angebote() {
   const typen = [...new Set([...S.tuerme.values()].map((t) => t.a))], out = [], ids = new Set(), anzahl = 3 + kontoWert('karten');
   for (let g2 = 0; out.length < anzahl && g2 < 200; g2++) {
     const r = rollSelten(), pool = [];
-    for (const u of UPGRADES) if (r >= (u.minR || 0) && !(u.max && B(u.id) >= u.max)) pool.push({ ...u, key: u.id, w: 1 });
+    for (const u of UPGRADES) if (r >= (u.minR || 0) && !(u.max && B(u.id) >= u.max) && !((u.id === 'heal' || u.id === 'regen') && S.hp >= S.hpMax * 0.9 && u.id === 'heal')) pool.push({ ...u, key: u.id, w: 1 });
     for (const a of typen) { const tn = TUERME[a].n;
       pool.push({ ...TURM_ATK, n: TURM_ATK.n.replace('{t}', tn), z: TURM_ATK.z.replace('{t}', tn), key: 't_' + a + '_atk', turm: a, w: 1.4 });
       if (r >= 1 && !B('t_' + a + '_spez')) pool.push({ n: tn + ': Geheimtechnik', z: 'Spezialfähigkeit sofort: ' + TUERME[a].spez, v: [1, 1, 1, 1], key: 't_' + a + '_spez', turm: a, einmal: true, spez: true, w: 1.2 });
@@ -312,7 +329,13 @@ function boniZeigen() { if (!S) return;
   const set = S.set ? `<span class="chip set" title="${SETS[S.set].t}"><b>Set ${SETS[S.set].n}</b><i>${SETS[S.set].t}</i></span>` : '';
   const html = set + l.map(chip).join('');
   $('boni').innerHTML = html || '<span class="leer">Noch keine Boni. Aufstiege bringen Verbesserungen.</span>';
-  $('boni-seite').innerHTML = html || '<p class="leer">Noch keine Boni.</p>'; }
+  const gruppen = { HELD: [], 'TÜRME': [], FESTUNG: [], 'GOLD UND ERFAHRUNG': [] };
+  for (const [k, w] of l) { const f = /^t_/.test(k) ? 'TÜRME' : FUER[k] === 'HELD' ? 'HELD' : FUER[k] === 'FESTUNG' ? 'FESTUNG' : /TÜRME/.test(FUER[k] || '') ? 'TÜRME' : 'GOLD UND ERFAHRUNG';
+    const m = k.match(/^t_(\w+)_(atk|spez|extra)$/), wert = m ? (m[2] === 'spez' ? 'aktiv' : m[2] === 'atk' ? '+' + w + ' %' : (TURM_EXTRA[m[1]].e ? '+' + w + ' %' : '+' + w)) : bonusText(k, w).replace(/^.*? ([+-][^ ]+( %)?)$/, '$1');
+    const n = S.zahl[k] || 0, tip = m ? boniName(k) : bonusText(k, w);
+    gruppen[f].push(`<span class="mini-chip" title="${tip}">${m ? svg('turm_' + m[1], 16) : ''}<b>${boniName(k).replace(/^.*?: /, m ? '' : '')}</b> <i>${wert}</i>${n > 1 ? `<em>${n}x</em>` : ''}</span>`); }
+  $('boni-seite').innerHTML = (S.set ? `<span class="mini-chip set" title="${SETS[S.set].t}"><b>Set ${SETS[S.set].n}</b> <i>aktiv</i></span>` : '') +
+    (Object.entries(gruppen).filter(([, a]) => a.length).map(([n, a]) => `<div class="bgruppe"><span class="etikett">${n}</span><div class="mini-chips">${a.join('')}</div></div>`).join('') || '<p class="leer">Noch keine Boni. Aufstiege bringen Verbesserungen.</p>'); }
 function waehle(k) {
   S.zahl[k.key] = (S.zahl[k.key] || 0) + 1;
   if (k.key === 'heal') { S.hp = Math.min(S.hpMax, S.hp + S.hpMax * k.wert / 100); return; }
@@ -326,7 +349,7 @@ function welleFertig() {
   if (S.info.hf != null && S.welle >= 11) erfolg('b11');
   if (S.welle >= S.info.wellen) { S.ende = true; levelEnde(true); return; }
   let bonus = 15 + S.welle * 3, z = 0;
-  for (const t of S.tuerme.values()) if (t.a === 'mine') { bonus += TUERME.mine.gold * (1 + 0.6 * (t.lv - 1)) + B('t_mine_extra'); if (spezAktiv(t)) z += 0.05; }
+  for (const t of S.tuerme.values()) if (t.a === 'mine') { bonus += (TUERME.mine.gold * (1 + 0.6 * (t.lv - 1)) + B('t_mine_extra')) * (hatBuch('zinseszins') ? 1 + bv('zinseszins', 'gold') / 100 : 1); if (spezAktiv(t)) z += 0.05; }
   bonus += Math.floor(S.gold * z); bonus = Math.round(bonus); S.gold += bonus; stat('gold', bonus); S.welle++;
   if (Math.floor(S.gold) === 42) erfolg('g42');
   S.effekte.push({ t: 1.6, art: 'ansage', text: 'Welle ' + (S.welle - 1) + ' geschafft | +' + bonus + ' Gold', hell: true });
@@ -369,7 +392,7 @@ function levelEnde(sieg) {
 function levelVerlassen() { if (S && S.beute.bits) bitsDazu(S.beute.bits); stat('niederlagen'); S = null; speichern(); menueZeigen(); }
 
 /* ---------- Bedienung im Level ---------- */
-function blattZu() { $('blatt-bau').hidden = true; $('blatt-turm').hidden = true; if (S) { S.pad = null; S.bauWahl = null; S.schiebe = null; } }
+function blattZu() { $('blatt-bau').hidden = true; $('blatt-turm').hidden = true; $('schnell').hidden = true; infoAuf = false; if (S) { S.pad = null; S.bauWahl = null; S.schiebe = null; } }
 for (const b of document.querySelectorAll('[data-zu]')) b.onclick = blattZu;
 cv.addEventListener('pointerdown', (e) => {
   if (!S || S.ende) return; const r = cv.getBoundingClientRect(), x = (e.clientX - r.left) / Z, y = (e.clientY - r.top) / Z;
@@ -381,7 +404,7 @@ cv.addEventListener('pointerdown', (e) => {
 });
 function kaffeeTrinken() {
   if (!S.kaffee || S.hp >= S.hpMax) { S.effekte.push({ x: 1, y: 13.3, t: 0.9, art: 'text', text: S.kaffee ? 'Festung ist voll' : 'Kein Kaffee' }); return; }
-  S.kaffee--; const plus = Math.round(S.hpMax * KAFFEE_HEIL); S.hp = Math.min(S.hpMax, S.hp + plus);
+  S.kaffee--; const plus = Math.round(S.hpMax * S.kaffeeHeil); S.hp = Math.min(S.hpMax, S.hp + plus);
   S.effekte.push({ x: 1, y: 13.3, t: 1, art: 'text', text: '+' + plus + ' HP' }); partikel(1, 13.9, 10, F.erfolg, 2); ton('faehig'); anzeige();
 }
 function verschieben(von, nach) {
@@ -394,7 +417,7 @@ function verschieben(von, nach) {
 function turmDaten(id) { const t = TUERME[id];
   if (id === 'mine') return `<b>${t.n}</b> ${t.info}<br>Ertrag ${t.gold} Gold je Welle | Stufe 4: ${t.spez}`;
   const w = turmWerte({ a: id, lv: 1 });
-  return `<b>${t.n}</b> ${t.info}<br>Atk. ${w.atk.toFixed(0)}${id === 'laser' ? '/s' : ''} | ${id === 'laser' ? 'Dauerstrahl' : 'Rate ' + w.rate.toFixed(1) + '/s'} | Reichw. ${w.rw.toFixed(1)} | Ziele: ${t.ziele.map((z) => z === 'luft' ? 'Luft' : 'Boden').join(' + ')}<br>Stufe 4: ${t.spez}`; }
+  return `<b>${t.n}</b> ${t.info}<br>Atk. ${w.atk.toFixed(0)}${id === 'laser' ? '/s' : ''} | ${id === 'laser' ? 'Dauerstrahl' : 'Rate ' + w.rate.toFixed(1) + '/s'} | Reichw. ${w.rw >= GANZE_KARTE ? 'ganze Karte' : w.rw.toFixed(1)} | Ziele: ${t.ziele.map((z) => z === 'luft' ? 'Luft' : 'Boden').join(' + ')}<br>Stufe 4: ${t.spez}${buchFuer(id) ? '<br><b>Skill-Buch:</b> ' + buchText(buchFuer(id), S.buch[buchFuer(id)]) : ''}`; }
 function bauBlatt() { $('blatt-turm').hidden = true; const n = $('bauwahl'); n.innerHTML = '';
   for (const id in TUERME) { const t = TUERME[id], k = preis(t.k), b = document.createElement('button');
     if (!turmFrei(id)) { b.disabled = true; b.className = 'gesperrt-turm'; b.innerHTML = `<span class="ico blur">${svg('turm_' + id, 38)}</span><span class="n">${t.n}</span><span class="k">ab St. ${turmAb(id)}</span>`;
@@ -411,20 +434,33 @@ function bauBlatt() { $('blatt-turm').hidden = true; const n = $('bauwahl'); n.i
   $('blatt-bau').hidden = false; }
 $('bau-ok').onclick = () => { const id = S.bauWahl; if (!id || S.pad == null) return; const k = preis(TUERME[id].k); if (S.gold < k) return;
   S.gold -= k; S.tuerme.set(S.pad, { a: id, p: S.pad, lv: 1, cd: 0, wert: k }); S.maxTuerme = Math.max(S.maxTuerme, S.tuerme.size); SP.gesehen.tuerme[id] = 1; stat('gebaut');
-  S.effekte.push({ x: PADS[S.pad].x + 0.5, y: PADS[S.pad].y + 0.5, t: 0.3, art: 'bau' }); partikel(PADS[S.pad].x + 0.5, PADS[S.pad].y + 0.5, 8, F.erfolg, 2); ton('bau'); blattZu(); anzeige(); };
+  S.effekte.push({ x: PADS[S.pad].x + 0.5, y: PADS[S.pad].y + 0.5, t: 0.3, art: 'bau' }); partikel(PADS[S.pad].x + 0.5, PADS[S.pad].y + 0.5, 8, F.erfolg, 2); ton('bau'); S.bauWahl = null; turmBlatt(); anzeige(); };
 const aufKosten = (t) => preis(Math.round(TUERME[t.a].k * 0.75 * t.lv));
-function turmBlatt() { const t = S.tuerme.get(S.pad); if (!t) return blattZu(); $('blatt-bau').hidden = true; const a = TUERME[t.a], w = turmWerte(t);
+let infoAuf = false;
+function schnellZeigen(t) {
+  const q = $('schnell'); if (!t || S.schiebe != null) { q.hidden = true; return; }
+  const p = PADS[t.p], k = aufKosten(t);
+  q.style.left = (cv.offsetLeft + (p.x + 0.5) * Z) + 'px';
+  const oben = p.y > 1.5; q.style.top = (cv.offsetTop + (oben ? p.y * Z - 6 : (p.y + 1) * Z + 6)) + 'px'; q.classList.toggle('unter', !oben);
+  $('q-auf-k').textContent = t.lv >= TURM_MAX ? 'Max' : k; $('q-auf').disabled = t.lv >= TURM_MAX || S.gold < k;
+  $('q-weg-k').textContent = '+' + Math.floor(t.wert * 0.6); $('q-info').setAttribute('aria-pressed', infoAuf);
+  q.hidden = false; }
+function turmBlatt() { const t = S.tuerme.get(S.pad); if (!t) return blattZu(); $('blatt-bau').hidden = true; schnellZeigen(t); const a = TUERME[t.a], w = turmWerte(t);
   $('t-name').textContent = a.n + ' | Stufe ' + t.lv;
   const nx = t.lv < TURM_MAX ? turmWerte({ a: t.a, lv: t.lv + 1 }) : null;
   $('t-info').innerHTML = (t.a === 'mine' ? `+${Math.round(a.gold * (1 + 0.6 * (t.lv - 1)) + B('t_mine_extra'))} Gold je Welle.` :
-    `Atk. ${w.atk.toFixed(0)}${nx ? ' <span class="plus">-> ' + nx.atk.toFixed(0) + '</span>' : ''} | Rate ${w.rate.toFixed(1)}/s | Reichw. ${w.rw.toFixed(1)}`) +
-    `<br>${spezAktiv(t) ? '<b>Aktiv:</b>' : '<b>Stufe 4:</b>'} ${a.spez}` ;
+    `Atk. ${w.atk.toFixed(0)}${nx ? ' <span class="plus">-> ' + nx.atk.toFixed(0) + '</span>' : ''} | Rate ${w.rate.toFixed(1)}/s | Reichw. ${w.rw >= GANZE_KARTE ? 'ganze Karte' : w.rw.toFixed(1)}`) +
+    `<br>${spezAktiv(t) ? '<b>Aktiv:</b>' : '<b>Stufe 4:</b>'} ${a.spez}` + (buchFuer(t.a) ? '<br><b>Skill-Buch:</b> ' + buchText(buchFuer(t.a), S.buch[buchFuer(t.a)]) : '') ;
   const k = aufKosten(t); $('t-auf').textContent = t.lv >= TURM_MAX ? 'Maximum' : 'Ausbauen ' + k; $('t-auf').disabled = t.lv >= TURM_MAX || S.gold < k;
   $('t-schieb').setAttribute('aria-pressed', S.schiebe != null);
-  $('t-weg').textContent = 'Verkaufen ' + Math.floor(t.wert * 0.6); $('blatt-turm').hidden = false; }
+  $('t-weg').textContent = 'Verkaufen ' + Math.floor(t.wert * 0.6); $('blatt-turm').hidden = !(BREIT.matches || infoAuf); }
+$('q-auf').onclick = () => $('t-auf').click();
+$('q-schieb').onclick = () => $('t-schieb').click();
+$('q-weg').onclick = () => $('t-weg').click();
+$('q-info').onclick = () => { infoAuf = !infoAuf; turmBlatt(); };
 $('t-auf').onclick = () => { const t = S.tuerme.get(S.pad); if (!t) return; const k = aufKosten(t); if (t.lv >= TURM_MAX || S.gold < k) return; S.gold -= k; t.wert += k; t.lv++;
   stat('ausgebaut'); if (t.lv >= 5) erfolg('stufe5'); S.effekte.push({ x: PADS[t.p].x + 0.5, y: PADS[t.p].y + 0.5, t: 0.3, art: 'bau' }); partikel(PADS[t.p].x + 0.5, PADS[t.p].y + 0.5, 10, F.akzent, 2); ton('bau'); turmBlatt(); anzeige(); };
-$('t-schieb').onclick = () => { if (S.pad == null) return; S.schiebe = S.pad; ton('klick'); $('blatt-turm').hidden = true;
+$('t-schieb').onclick = () => { if (S.pad == null) return; S.schiebe = S.pad; ton('klick'); $('blatt-turm').hidden = true; $('schnell').hidden = true;
   S.effekte.push({ t: 1.8, art: 'ansage', text: 'Ziel-Bauplatz antippen', hell: true }); };
 $('t-weg').onclick = () => { const t = S.tuerme.get(S.pad); if (!t) return; S.gold += Math.floor(t.wert * 0.6); S.tuerme.delete(S.pad); stat('verkauft'); blattZu(); anzeige(); };
 $('start').onclick = starteWelle;
@@ -491,11 +527,13 @@ function zeichnen() {
   /* Reichweite: ausgewählter Turm oder Bauvorschau */
   let rwT = S.pad != null && S.tuerme.get(S.pad); let rwP = rwT ? PADS[rwT.p] : null, rw = rwT && TUERME[rwT.a].rw ? turmWerte(rwT).rw : 0;
   if (!rwT && S.bauWahl && S.pad != null) { rwP = PADS[S.pad]; rw = turmWerte({ a: S.bauWahl, lv: 1 }).rw; }
-  if (rwP && rw) { g.globalAlpha = 0.12; kreis(g, (rwP.x + 0.5) * Z, (rwP.y + 0.5) * Z, rw * Z, F.akzent); g.globalAlpha = 1;
+  if (rwP && rw >= GANZE_KARTE) { g.globalAlpha = 0.07; g.fillStyle = F.akzent; g.fillRect(0, 0, W * Z, WAND * Z); g.globalAlpha = 1; }
+  else if (rwP && rw) { g.globalAlpha = 0.12; kreis(g, (rwP.x + 0.5) * Z, (rwP.y + 0.5) * Z, rw * Z, F.akzent); g.globalAlpha = 1;
     g.strokeStyle = F.akzent; g.setLineDash([5, 5]); g.lineWidth = 1.5; g.beginPath(); g.arc((rwP.x + 0.5) * Z, (rwP.y + 0.5) * Z, rw * Z, 0, 7); g.stroke(); g.setLineDash([]); }
   for (const f of S.feuer) { g.globalAlpha = Math.min(0.8, f.t * 0.5); kreis(g, f.x * Z, f.y * Z, 0.65 * Z, F.aprikose); g.globalAlpha = 1; }
   for (const t of S.tuerme.values()) { const p = PADS[t.p], ts = Z * 0.9;
     zeichneTurm(g, t.a, (p.x + 0.5) * Z, (p.y + 0.5) * Z, ts, t.lv, { eis: S.frierT > 0, rueck: t.rueck > 0, spez: B('t_' + t.a + '_spez') > 0 && t.lv < 4 });
+    if (buchFuer(t.a) && svgFertig('sym_buch')) g.drawImage(IMG.sym_buch, p.x * Z + Z * 0.66, p.y * Z - Z * 0.02, Z * 0.34, Z * 0.34);
     if (S.pad === t.p || S.schiebe === t.p) rr(g, p.x * Z + 1, p.y * Z + 1, Z - 2, Z - 2, Z * 0.25, null, F.akzent, 2.5);
     if (t.strahl && t.strahl.hp > 0) { g.strokeStyle = F.akzent; g.lineCap = 'round'; g.lineWidth = spezAktiv(t) ? 5 : 3; g.globalAlpha = 0.85; g.beginPath(); g.moveTo((p.x + 0.5) * Z, (p.y + 0.2) * Z); g.lineTo(t.strahl.x * Z, t.strahl.y * Z); g.stroke(); g.globalAlpha = 1; g.lineCap = 'butt'; } }
   for (const b of S.bugs) if (b.art !== 'luft') zeichneBug(b);
@@ -527,6 +565,7 @@ document.addEventListener('keydown', (e) => {
   if (!S || $('spiel').hidden || e.ctrlKey || e.metaKey || e.altKey) return;
   const k = e.key.toLowerCase();
   if (!$('ov-wahl').hidden) { const n = +k; if (n >= 1 && n <= 3) { const b = $('wahl').children[n - 1]; if (b) { e.preventDefault(); b.click(); } } return; }
+  if (!$('ov-hilfe').hidden) { if (k === 'escape' || k === '?' || k === 'h' || k === 'enter') { e.preventDefault(); $('hilfe-zu').click(); } return; }
   if (!$('ov-pause').hidden) { if (k === 'escape' || k === 'p') { e.preventDefault(); $('weiter').click(); } return; }
   if (!$('ov-ende').hidden || !$('ov-meldung').hidden) return;
   if (k === ' ') { e.preventDefault(); starteWelle(); }
@@ -535,5 +574,12 @@ document.addEventListener('keydown', (e) => {
   else if (k === 'a') $('auto').click();
   else if (k === '1' || k === '2' || k === '3') { SP.opt.tempo = +k; if (k !== '3') S.tempo3 = false; tempoZeigen(); speichern(); }
   else if (k === 'p') $('pause').click();
+  else if (k === 'u' && S.tuerme.has(S.pad)) $('t-auf').click();
+  else if (k === 'v' && S.tuerme.has(S.pad)) $('t-schieb').click();
+  else if ((k === 'delete' || k === 'backspace') && S.tuerme.has(S.pad)) $('t-weg').click();
+  else if (k === 'h' || k === '?') $('hilfe').click();
   else if (k === 'escape') { if (!$('blatt-bau').hidden || !$('blatt-turm').hidden || S.schiebe != null) blattZu(); else $('pause').click(); }
 });
+
+$('hilfe').onclick = () => { if (S) S.pause = true; $('ov-hilfe').hidden = false; };
+$('hilfe-zu').onclick = () => { $('ov-hilfe').hidden = true; if (S && $('ov-pause').hidden) S.pause = false; };

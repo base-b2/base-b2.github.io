@@ -253,3 +253,37 @@ const KONTO = {
   15: { item: 2 }, 16: { festung: 10 }, 17: { bitsPlus: 10 }, 18: { startgold: 30 }, 19: { item: 2 }, 20: { kaffee: 1, item: 3 },
   22: { festung: 10 }, 24: { reroll: 1 }, 25: { item: 3 }, 27: { bitsPlus: 15 }, 30: { aufstieg: 1, item: 3 }, 35: { festung: 15 }, 40: { item: 3, bitsPlus: 15 },
 };
+
+/* Skill-Bücher: je ein offensives und ein defensives Buch pro Level. Werte je Seltenheit [Gewöhnlich, Selten, Episch, Legendär].
+   Reichweite 20 = ganze Karte. Aufwerten kostet Bits: Preis x BUCH_AUF[r]. */
+const bp = (v) => (v > 0 ? '+' : '') + String(v).replace('.', ',');
+const BUECHER = {
+  scharf: { art: 'off', n: 'Scharfschützen-Handbuch', turm: 'pfeil', preis: 300, v: { rate: [-25, -15, -5, 0], atk: [0, 0, 10, 25] },
+    t: (r, v) => `Schütze: Reichweite über die ganze Karte${v.rate[r] ? ', Feuerrate ' + bp(v.rate[r]) + ' %' : ''}${v.atk[r] ? ', Angriff ' + bp(v.atk[r]) + ' %' : ''}.` },
+  radar: { art: 'off', n: 'Radar-Lehrbuch', turm: 'flak', preis: 400, v: { atk: [0, 10, 25, 50] },
+    t: (r, v) => `Flak: Reichweite über die ganze Karte${v.atk[r] ? ', Angriff ' + bp(v.atk[r]) + ' %' : ''}.` },
+  orbital: { art: 'off', n: 'Orbit-Laser für Anfänger', turm: 'laser', preis: 800, v: { atk: [-20, -10, 0, 15] },
+    t: (r, v) => `Laser: Reichweite über die ganze Karte${v.atk[r] ? ', Angriff ' + bp(v.atk[r]) + ' %' : ''}.` },
+  artillerie: { art: 'off', n: 'Artillerie-Fibel', turm: 'kanone', preis: 450, v: { rw: [2, 3, 4, 5], fl: [0.2, 0.3, 0.4, 0.6], rate: [-20, -15, -10, 0] },
+    t: (r, v) => `Kanone: Reichweite ${bp(v.rw[r])}, Explosionsradius ${bp(v.fl[r])}${v.rate[r] ? ', Feuerrate ' + bp(v.rate[r]) + ' %' : ''}.` },
+  eiszeit: { art: 'off', n: 'Eiszeit-Almanach', turm: 'frost', preis: 350, v: { rw: [0.5, 1, 1.5, 2], fl: [0.7, 1, 1.3, 1.6] },
+    t: (r, v) => `Frost: Reichweite ${bp(v.rw[r])}, Treffer verlangsamen alle Bugs im Umkreis von ${bp(v.fl[r]).slice(1)}.` },
+  tesla: { art: 'off', n: 'Tesla-Tagebuch', turm: 'blitz', preis: 600, v: { spr: [1, 2, 3, 4], weite: [2.3, 2.8, 3.2, 3.6] },
+    t: (r, v) => `Blitz: ${bp(v.spr[r])} Sprünge, Sprungweite ${String(v.weite[r]).replace('.', ',')}.` },
+  zinseszins: { art: 'def', n: 'Zinseszins für Dummies', turm: 'mine', preis: 500, v: { gold: [30, 50, 75, 100] },
+    t: (r, v) => `Goldmine: ${bp(v.gold[r])} % Gold je Welle.` },
+  katalog: { art: 'def', n: 'Großhändler-Katalog', preis: 350, sym: 'sym_gold', v: { rabatt: [5, 10, 15, 20] },
+    t: (r, v) => `Türme bauen und ausbauen ${v.rabatt[r]} % günstiger.` },
+  bollwerk: { art: 'def', n: 'Bauplan Bollwerk', preis: 400, sym: 'sym_hp', v: { hp: [10, 20, 30, 45] },
+    t: (r, v) => `Festung ${bp(v.hp[r])} % max. HP.` },
+  kochbuch: { art: 'def', n: 'Kaffee-Kochbuch', preis: 300, sym: 'sym_kaffee', v: { tasse: [1, 1, 2, 2], heil: [25, 30, 35, 45] },
+    t: (r, v) => `Kaffee-Vorrat ${bp(v.tasse[r])}, eine Tasse heilt ${v.heil[r]} %.` },
+  startkapital: { art: 'def', n: 'Startkapital-Ratgeber', preis: 300, sym: 'sym_gold', v: { gold: [40, 70, 100, 150] },
+    t: (r, v) => `Start-Gold ${bp(v.gold[r])}.` },
+  wartung: { art: 'def', n: 'Wartungsheft', preis: 450, sym: 'sym_hp', v: { regen: [0.5, 1, 1.5, 2.5] },
+    t: (r, v) => `Festung heilt ${String(v.regen[r]).replace('.', ',')} HP pro Sekunde.` },
+};
+const BUCH_AUF = [1.5, 3, 6];
+const buchText = (id, r) => BUECHER[id].t(r, BUECHER[id].v);
+const GANZE_KARTE = 20;
+const ARTN = { off: 'Offensiv', def: 'Defensiv' };

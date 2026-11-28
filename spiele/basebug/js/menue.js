@@ -54,6 +54,7 @@ function tabSpielen() {
    <div class="etikett">10 WELLEN | BOSS BEI WELLE 5 UND 10</div>
    <div class="belohnung-zeile">${erst ? 'Erstbelohnung' : 'Belohnung'}: ca. ${Math.round((25 + gewLv * 6 + 20) * (erst ? 1 : 0.35))} Bits${garant ? ' + garantiert Ausrüstung (' + RAR[gewLv >= 25 ? 3 : gewLv >= 15 ? 2 : 1].n + ')' : ''}</div>
   </div>
+  ${buchLeiste()}
   <button class="knopf" data-akt="spielen">Spielen</button>${(() => { const n = naechsteFreischaltung(); return n ? `<p class="leer" style="text-align:center">Nächste Freischaltung bei Spielerstufe ${n.st}: ${n.t}</p>` : ''; })()}
   <div class="etikett" style="margin-top:24px">HÄRTETESTS | 20 WELLEN, 4 BOSSE</div><div class="liste">`;
   const kk = kampfkraft();
@@ -227,6 +228,7 @@ const AKTION = {
       const erg = []; if (w === 'alle') { let gr; let n = 0; while ((gr = fusionsGruppen()[0]) && n++ < 50) erg.push(fusioniere(gr)); } else erg.push(fusioniere(fg[+w]));
       erfolg('fusion'); ton('drop'); $('ov-item').hidden = true; menueZeigen();
       melde('Fusioniert', erg.map((e) => RAR[e.neu.r].n + ': ' + itemName(e.neu)).join(' | ')); }; },
+  buecher: (art) => buecherZeigen(art),
   zuaufgaben: () => { tab = 'aufgaben'; menueZeigen(); },
   abholen: (key, btn) => abholen(key, btn),
   alleab: (_, btn) => { const r = btn.getBoundingClientRect(); let bits = 0, items = 0;
@@ -326,7 +328,7 @@ function schleife(n) {
   if (S) { if (!S.pause && !S.ende && $('ov-wahl').hidden && $('ov-meldung').hidden) {
       SP.stat.zeit = (SP.stat.zeit || 0) + roh;
       let rest = roh * SP.opt.tempo; while (rest > 0) { const d = Math.min(0.033, rest); schritt(d); rest -= d; if (!S || S.ende) break; }
-      anz += roh; if (anz > 0.1 && S) { anz = 0; anzeige(); if (!$('blatt-turm').hidden) turmBlatt(); } }
+      anz += roh; if (anz > 0.1 && S) { anz = 0; anzeige(); if (S && S.pad != null && S.tuerme.has(S.pad)) turmBlatt(); } }
     if (S) zeichnen(); }
   else if (!$('menue').hidden && tab === 'spielen') vorschau();
   sicher += roh; if (sicher > 15) { sicher = 0; speichern(); }
@@ -344,7 +346,38 @@ $('konto').onclick = () => { const k = SP.konto, z = kontoZiel(k.st); let h = `<
   <p class="leer">EP gibt es für Bugs (1), Wellen (5), Bosse (25), Gummienten (20), geschaffte Level (40 + 5 je Levelnummer), Tagesaufgaben (30), Fusionen (10) und Erfolge (25).</p>
   <div class="liste konto-liste">`;
   for (let st = 2; st <= 40; st++) { const b = KONTO[st] || {}, erreicht = k.st >= st, txt = [kontoBits(st) + ' Bits'].concat(kontoText(b));
-    h += `<div class="zeile ${erreicht ? 'k1' : ''} ${b.turm ? 'r2' : ''}"><span class="orden">${erreicht ? '✓' : st}</span><div style="flex:1;text-align:left"><b>Stufe ${st}${RAENGE.find(([a]) => a === st) ? ' | ' + rang(st) : ''}</b><p>${txt.join(' | ')}</p></div></div>`; }
+    h += `<div class="zeile ${erreicht ? 'k1' : 'offen'} ${b.turm ? 'r2' : ''}"><span class="orden">${erreicht ? '✓' : st}</span><div style="flex:1;text-align:left"><b>Stufe ${st}${RAENGE.find(([a]) => a === st) ? ' | ' + rang(st) : ''}</b><p>${txt.join(' | ')}</p></div></div>`; }
   h += '</div><button class="knopf" id="konto-zu">Schließen</button>';
   $('ov-item-inhalt').innerHTML = h; $('ov-item').hidden = false; $('konto-zu').onclick = () => { $('ov-item').hidden = true; };
   const ziel = $('ov-item-inhalt').querySelectorAll('.konto-liste .zeile')[Math.max(0, k.st - 3)]; if (ziel) ziel.scrollIntoView({ block: 'center' }); };
+
+/* ---------- Skill-Bücher ---------- */
+const buchSym = (id, px) => BUECHER[id].turm ? svg('turm_' + BUECHER[id].turm, px) : svg(BUECHER[id].sym, px);
+function buchLeiste() { let h = '<div class="buch-leiste"><span class="etikett">SKILL-BÜCHER</span><div class="buch-slots">';
+  for (const art of ['off', 'def']) { const id = SP.buchAn[art], b = id && BUECHER[id];
+    h += `<button class="buch-slot ${b ? 'voll r' + SP.buchR[id] : ''}" data-akt="buecher" data-wert="${art}">${b ? buchSym(id, 28) : svg('sym_buch', 28)}<span><small>${ARTN[art].toUpperCase()}</small>${b ? b.n : 'Buch wählen'}</span></button>`; }
+  return h + '</div></div>'; }
+var buchTab = 'off';
+function buecherZeigen(art) { if (art) buchTab = art; const o = $('ov-item-inhalt');
+  let h = `<div class="etikett">SKILL-BÜCHER</div><h2>Bibliothek</h2><p>Pro Level ein offensives und ein defensives Buch. Einmal gekauft, gehört es dir. Mit Bits zu höherer Seltenheit aufwerten.</p>
+   <div class="segment">${['off', 'def'].map((a) => `<button data-buch="tab:${a}" aria-selected="${buchTab === a}">${ARTN[a]}</button>`).join('')}</div><div class="liste">`;
+  for (const id in BUECHER) { const b = BUECHER[id]; if (b.art !== buchTab) continue;
+    const r = SP.buchR[id], hat = r != null, an = SP.buchAn[b.art] === id, frei = buchFrei(id);
+    let knoepfe = '';
+    if (!frei) knoepfe = `<span class="etikett">ab St. ${turmAb(b.turm)}</span>`;
+    else if (!hat) knoepfe = `<button class="knopf-klein" data-buch="kauf:${id}" ${SP.bits < b.preis ? 'disabled' : ''}>${b.preis} Bits</button>`;
+    else { knoepfe = `<button class="knopf-klein ${an ? 'an' : ''}" data-buch="an:${id}">${an ? 'Ablegen' : 'Anlegen'}</button>`;
+      if (r < 3) knoepfe += `<button class="knopf-klein auf" data-buch="auf:${id}" ${SP.bits < buchAufKosten(id) ? 'disabled' : ''}>${RAR[r + 1].n}<br>${buchAufKosten(id)}</button>`; }
+    h += `<div class="zeile buch ${hat ? 'r' + r : ''} ${an ? 'buch-an' : ''} ${frei ? '' : 'gesperrt-zeile'}"><span class="buch-ico">${svg('sym_buch', 34)}<i>${buchSym(id, 20)}</i></span>
+      <div style="flex:1;text-align:left"><b>${b.n}</b> <span class="etikett">${hat ? RAR[r].n.toUpperCase() : ''}</span><p>${buchText(id, hat ? r : 0)}</p>
+      ${hat && r < 3 ? `<p class="naechst">${RAR[r + 1].n}: ${buchText(id, r + 1)}</p>` : ''}</div><div class="buch-knoepfe">${knoepfe}</div></div>`; }
+  h += '</div><button class="knopf" data-buch="zu">Fertig</button>';
+  o.innerHTML = h; $('ov-item').hidden = false;
+  for (const btn of o.querySelectorAll('[data-buch]')) btn.onclick = () => { const [a, id] = btn.dataset.buch.split(':'); ton('klick');
+    if (a === 'zu') { $('ov-item').hidden = true; menueZeigen(); return; }
+    if (a === 'tab') { buchTab = id; buecherZeigen(); return; }
+    const b = BUECHER[id];
+    if (a === 'kauf') { if (!bitsWeg(b.preis)) return; SP.buchR[id] = 0; ton('drop'); if (!SP.buchAn[b.art]) SP.buchAn[b.art] = id; }
+    if (a === 'an') SP.buchAn[b.art] = SP.buchAn[b.art] === id ? null : id;
+    if (a === 'auf') { if (SP.buchR[id] >= 3 || !bitsWeg(buchAufKosten(id))) return; SP.buchR[id]++; ton('drop'); }
+    speichern(); buecherZeigen(); }; }

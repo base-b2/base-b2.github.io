@@ -1,5 +1,5 @@
 /* BaseBug | Service Worker: Netz zuerst, ohne Netz die gespeicherte Kopie (wie BaseDays). */
-const VERSION = 'basebug-v2';
+const VERSION = 'basebug-v6';
 const DATEIEN = ['./', './index.html', './manifest.webmanifest', './app.css', './js/daten.js', './js/grafik.js', './js/stand.js', './js/ton.js', './js/spiel.js', './js/menue.js', '/assets/css/tokens.css',
   '/assets/fonts/lexend.woff', '/assets/fonts/jetbrains-mono.woff', '/favicon.ico', '/favicon.svg', '/favicon-192.png', '/favicon-512.png'];
 self.addEventListener('install', (e) => { e.waitUntil((async () => {

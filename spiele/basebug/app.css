@@ -252,3 +252,61 @@ canvas.feld{border-radius:16px}
 .konto-liste .orden{border-radius:50%}
 .gesperrt-turm{opacity:.55}
 @media (max-width:420px){.konto-balken{display:none}.kopf .marke span{display:none}}
+.konto-liste .zeile.offen{opacity:.7;background:var(--bb-flaeche)}
+
+/* Farben der Aufstiegskarten: Gewöhnlich immer neutral */
+.wahl .karte-wahl.s0{background:var(--bb-flaeche);border:1px solid var(--bb-linie)}
+.karte-wahl.s0 .seltenheit{color:var(--bb-nebentext)}
+/* Schnellmenü über dem gewählten Turm */
+.schnell{position:absolute;transform:translate(-50%,-100%);display:flex;gap:4px;padding:4px;background:var(--bb-text);border-radius:12px;z-index:4}
+.schnell.unter{transform:translate(-50%,0)}
+.schnell[hidden]{display:none}
+.schnell::after{content:"";position:absolute;left:50%;top:100%;margin-left:-6px;border:6px solid transparent;border-top-color:var(--bb-text)}
+.schnell.unter::after{top:auto;bottom:100%;border-top-color:transparent;border-bottom-color:var(--bb-text)}
+.schnell button{min-width:48px;min-height:44px;border:0;border-radius:8px;background:transparent;color:var(--bb-grund);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:2px 6px;font-family:var(--bb-font-mono);font-size:11px;font-weight:700}
+.schnell button:hover:not(:disabled){background:rgba(255,255,255,.15)}
+.schnell #q-auf:not(:disabled){background:var(--bb-akzent);color:var(--bb-akzent-text)}
+.schnell button:disabled{opacity:.4}
+.schnell button[aria-pressed="true"]{background:rgba(255,255,255,.2)}
+@media (min-width:1000px){.nur-schmal{display:none!important}}
+/* Tastenhinweise nur am Desktop mit Maus */
+.kbd,kbd{font-family:var(--bb-font-mono);font-size:10px;border:1px solid var(--bb-linie);border-bottom-width:2px;border-radius:4px;padding:0 4px;background:var(--bb-flaeche);color:var(--bb-text)}
+.faehigkeit .kbd,.auto .kbd{position:absolute;top:3px;right:3px}
+.auto{position:relative}
+.kbd{display:none}
+@media (hover:hover) and (min-width:1000px){.kbd{display:inline-block}}
+#hilfe{font-weight:700;font-size:18px}
+@media not ((hover:hover) and (min-width:1000px)){#hilfe{display:none}}
+.tasten kbd{font-size:12px}
+/* Boni in der Seitenleiste: gruppiert und kompakt */
+.bgruppe{margin-top:8px}
+.mini-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.mini-chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;border:1px solid var(--bb-linie);border-radius:999px;padding:3px 8px;background:var(--bb-flaeche)}
+.mini-chip i{font-style:normal;font-family:var(--bb-font-mono);color:#2A9D5C;font-weight:700}
+.mini-chip em{font-style:normal;font-family:var(--bb-font-mono);font-size:10px;background:var(--bb-text);color:var(--bb-grund);border-radius:999px;padding:0 5px}
+.mini-chip.set{border-color:#F29E4C;background:rgba(242,158,76,.18)}
+.mini-chip svg{width:16px;height:16px}
+.tipp-tasten{margin-top:16px;font-size:13px}
+.seite .blatt-kopf b{font-size:18px}
+
+/* Skill-Bücher */
+.buch-leiste{margin-top:16px}
+.buch-slots{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.buch-slot{display:flex;align-items:center;gap:8px;min-height:56px;border:2px dashed var(--bb-linie);border-radius:14px;background:var(--bb-flaeche);padding:6px 10px;text-align:left;font-size:13px;font-weight:600}
+.buch-slot.voll{border:2px solid #8E6CF2;background:rgba(142,108,242,.14)}
+.buch-slot.gesperrt{opacity:.55;justify-content:center}
+.buch-ico{position:relative;flex:none}
+.buch-ico i{position:absolute;right:-6px;bottom:-4px}
+.zeile.buch-an{border:2px solid #8E6CF2;background:rgba(142,108,242,.14)}
+.knopf-klein.an{background:var(--bb-flaeche);color:var(--bb-text);border:1px solid var(--bb-text)}
+
+.buch-slot span{display:flex;flex-direction:column}
+.buch-slot small{font-family:var(--bb-font-mono);font-size:10px;letter-spacing:1px;color:var(--bb-nebentext);font-weight:400}
+.buch-slot.voll.r0{border-color:#A9AEBB;background:rgba(169,174,187,.14)}
+.buch-slot.voll.r1{border-color:#4C8DF2;background:rgba(76,141,242,.14)}
+.buch-slot.voll.r3{border-color:#F29E4C;background:rgba(242,158,76,.18)}
+.zeile.buch{border-width:2px}
+.zeile.buch.buch-an{outline:3px solid var(--bb-text);outline-offset:-1px}
+.buch-knoepfe{display:grid;gap:4px}
+.knopf-klein.auf{font-size:11px;line-height:1.2;background:var(--bb-flaeche);color:var(--bb-text);border:1px solid var(--bb-linie)}
+.naechst{font-size:12px!important;opacity:.75}

@@ -153,6 +153,7 @@ function kontoText(b, ohneItem) { const t = [];
   if (b.reroll) t.push('Karten neu ziehen: +1 pro Level');
   if (b.bitsPlus) t.push('Bits aus Leveln +' + b.bitsPlus + ' %');
   if (b.festung) t.push('Festung +' + b.festung + ' % HP');
+  if (b.buch) t.push('Zweiter Platz für Skill-Bücher');
   if (b.aufstieg) t.push('Level startet mit einem Aufstieg');
   if (b.item != null && !ohneItem) t.push('Ausrüstung (' + RAR[b.item].n + ')');
   return t; }
@@ -160,3 +161,9 @@ function kontoText(b, ohneItem) { const t = [];
 if (!SP.konto) { SP.konto = { st: 1, ep: 0 }; let ep = 0;
   for (const k in KONTO_EP) ep += (SP.stat[k] || 0) * KONTO_EP[k];
   ep += Object.keys(SP.erfolge).length * 25; kontoEP(ep, true); speichern(); }
+
+/* Skill-Bücher: SP.buchR[id] = Seltenheit (gekauft), SP.buchAn = { off, def } */
+if (!SP.buchR) { SP.buchR = {}; for (const id in (SP.buecher || {})) if (BUECHER[id]) SP.buchR[id] = 0; }
+if (!SP.buchAn) { SP.buchAn = { off: null, def: null }; for (const id of (SP.buchAktiv || [])) if (BUECHER[id] && !SP.buchAn[BUECHER[id].art]) SP.buchAn[BUECHER[id].art] = id; }
+const buchFrei = (id) => !BUECHER[id].turm || turmFrei(BUECHER[id].turm);
+const buchAufKosten = (id) => Math.round(BUECHER[id].preis * BUCH_AUF[SP.buchR[id]]);
