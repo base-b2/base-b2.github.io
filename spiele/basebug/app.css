@@ -10,7 +10,7 @@ button:disabled{cursor:default}
 button:focus-visible{outline:2px solid var(--bb-text);outline-offset:2px}
 :root[data-theme="dunkel"] button:focus-visible{outline-color:var(--bb-akzent)}
 .screen{position:fixed;inset:0;display:flex;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);max-width:520px;margin:0 auto}
-.screen[hidden]{display:none}
+.screen[hidden]{display:none!important}
 .kopf{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--bb-linie);min-height:60px}
 .marke{display:flex;align-items:center;gap:8px;font-weight:700;font-size:18px;text-decoration:none;color:var(--bb-text)}
 .bm-q{fill:var(--bb-text)} .bm-c{fill:var(--bb-akzent)}
@@ -171,3 +171,84 @@ canvas.feld{border-radius:16px}
 .flug.item{width:36px;height:36px;background:var(--bb-aprikose);border:2px solid var(--bb-akzent);border-radius:8px}
 .pille.puls{animation:puls .4s}
 @keyframes puls{50%{transform:scale(1.18)}}
+
+.auto{width:64px;min-height:60px;border:1px solid var(--bb-linie);border-radius:8px;background:var(--bb-flaeche);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;font-weight:700;flex:none}
+.auto[aria-pressed="true"]{border:2px solid var(--bb-akzent);background:var(--bb-aprikose)}
+#opt-meldung:empty{display:none}
+.wahl .karte-wahl{background:var(--bb-flaeche)}
+.wahl .karte-wahl.s1{background:var(--bb-eisblau)} .wahl .karte-wahl.s2{background:var(--bb-lavendel)} .wahl .karte-wahl.s3{background:var(--bb-aprikose)}
+
+/* Level als kompakter, zentrierter Block: Kopf, Erfahrung, Feld und Bedienung hängen zusammen */
+#spiel{max-width:none;justify-content:center;align-items:center;--fb:400px}
+#spiel>.kopf,#spiel>.xp,#spiel>.unten{width:var(--fb);max-width:100%}
+#spiel>.kopf{border-bottom:0;padding:8px 0 0}
+#spiel>.xp{padding:6px 0}
+#spiel>.buehne{flex:none;padding:0;width:var(--fb);max-width:100%}
+#spiel>.unten{border-top:0;padding:8px 0 0}
+
+/* Boni-Leiste */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chip{display:inline-flex;align-items:baseline;gap:4px;font-size:12px;border:1px solid var(--bb-linie);border-radius:999px;padding:4px 10px;background:var(--bb-flaeche);white-space:nowrap}
+.chip i{font-style:normal;color:var(--bb-nebentext)}
+.chip.set{border-color:var(--bb-akzent);background:var(--bb-aprikose)}
+#spiel>.boni{width:var(--fb);max-width:100%;display:flex;gap:6px;overflow-x:auto;padding:8px 0 4px;min-height:38px;scrollbar-width:thin}
+#spiel>.boni .chip i{display:none}
+#spiel>.boni .leer{font-size:12px;margin:0}
+.boni-liste{display:grid;gap:6px;margin-top:6px}
+.boni-liste .chip{display:flex;flex-direction:column;align-items:flex-start;border-radius:8px;white-space:normal;gap:0}
+.seite{display:none}
+.set-mark{position:absolute;bottom:2px;left:0;right:0;font-style:normal;font-size:9px;font-family:var(--bb-font-mono);text-transform:uppercase;color:var(--bb-nebentext)}
+.item{padding-bottom:14px}
+.sets{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+.set-zeile{border:1px solid var(--bb-linie);border-radius:8px;padding:8px 10px}
+.set-zeile.aktiv{border:2px solid var(--bb-akzent);background:var(--bb-aprikose)}
+.set-zeile p{margin:2px 0 0;font-size:12px;color:var(--bb-nebentext);line-height:1.4}
+.neben{list-style:none;padding:0;margin:6px 0 8px;text-align:left;font-size:14px;line-height:1.6;color:var(--bb-nebentext)}
+.neben li.an{color:var(--bb-text);font-weight:600}
+.set-info{text-align:left;font-size:14px}
+.zeile.r1{background:var(--bb-eisblau)} .zeile.r2{background:var(--bb-lavendel)}
+/* Desktop: Seitenleiste rechts neben dem Spielfeld */
+@media (min-width:1000px){
+  #spiel{display:grid;grid-template-columns:var(--fb) 340px;grid-template-rows:auto auto auto auto;column-gap:24px;justify-content:center;align-content:center}
+  #spiel>.kopf,#spiel>.xp,#spiel>.buehne,#spiel>.unten{grid-column:1;width:var(--fb)}
+  #spiel>.boni{display:none}
+  .seite{display:block;grid-column:2;grid-row:1 / span 4;align-self:stretch;overflow-y:auto;border:1px solid var(--bb-linie);border-radius:16px;padding:16px;max-height:calc(100dvh - 32px)}
+  .seite .blatt{position:static;border:0;padding:0;margin-bottom:8px}
+  #seite-blatt:has(.blatt:not([hidden])) .platzhalter{display:none}
+  .platzhalter p{font-size:14px;color:var(--bb-nebentext);line-height:1.5}
+  .tasten th{width:40%;font-family:var(--bb-font-mono);font-weight:700}
+}
+
+/* Moderne Symbole und Seltenheitsfarben */
+.sym{display:inline-flex;width:18px;height:18px} .sym svg{width:18px;height:18px}
+.pille{background:var(--bb-flaeche);border:1px solid var(--bb-linie);border-radius:999px;padding:4px 12px 4px 6px}
+.pille.gold,.pille.hp{background:var(--bb-flaeche)}
+.ico{display:inline-flex;align-items:center;justify-content:center;flex:none}
+.ico svg{display:block}
+.slot,.item,.item-gross{border-radius:14px;border-width:2px}
+.r0{background:rgba(169,174,187,.14);border-color:#A9AEBB!important}
+.r1{background:rgba(76,141,242,.14);border-color:#4C8DF2!important}
+.r2{background:rgba(142,108,242,.16);border-color:#8E6CF2!important}
+.r3{background:rgba(242,158,76,.18);border-color:#F29E4C!important}
+.zeile.r1,.zeile.r2,.zeile.r0{border-width:2px}
+.wahl .karte-wahl.s1{background:rgba(76,141,242,.14);border:2px solid #4C8DF2}
+.wahl .karte-wahl.s2{background:rgba(142,108,242,.16);border:2px solid #8E6CF2}
+.wahl .karte-wahl.s3{background:rgba(242,158,76,.2);border:2px solid #F29E4C}
+.karte-wahl.s1 .seltenheit{color:#2F6FD6} .karte-wahl.s2 .seltenheit{color:#6F4FD6} .karte-wahl.s3 .seltenheit{color:#C46A16}
+:root[data-theme="dunkel"] .karte-wahl.s1 .seltenheit{color:#8FB6F8} :root[data-theme="dunkel"] .karte-wahl.s2 .seltenheit{color:#B7A2F7} :root[data-theme="dunkel"] .karte-wahl.s3 .seltenheit{color:#F6BE85}
+.karte-turm{position:absolute;right:12px;top:10px}
+.bauwahl button{border-radius:14px}
+.bauwahl button.gewaehlt{background:rgba(242,158,76,.18);border-color:#F29E4C}
+.slot{width:88px;height:88px}
+
+/* Spielerstufe */
+.konto{display:flex;align-items:center;gap:6px;height:44px;border:1px solid var(--bb-linie);border-radius:999px;background:var(--bb-flaeche);padding:0 10px 0 4px}
+.konto-st{display:grid;place-items:center;min-width:34px;height:34px;border-radius:50%;background:#8E6CF2;color:#fff;font-family:var(--bb-font-mono);font-weight:700;font-size:15px}
+.konto-balken{width:44px;height:6px;border-radius:3px;background:var(--bb-linie);overflow:hidden}
+.konto-balken i{display:block;height:100%;background:#8E6CF2}
+.konto-gross{display:grid;place-items:center;margin:8px auto}
+.konto-gross span{display:grid;place-items:center;width:72px;height:72px;border-radius:50%;background:#8E6CF2;color:#fff;font-family:var(--bb-font-mono);font-weight:700;font-size:30px}
+.konto-liste{max-height:40vh;overflow-y:auto;margin:8px 0}
+.konto-liste .orden{border-radius:50%}
+.gesperrt-turm{opacity:.55}
+@media (max-width:420px){.konto-balken{display:none}.kopf .marke span{display:none}}

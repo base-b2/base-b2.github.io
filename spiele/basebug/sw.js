@@ -1,6 +1,6 @@
 /* BaseBug | Service Worker: Netz zuerst, ohne Netz die gespeicherte Kopie (wie BaseDays). */
-const VERSION = 'basebug-v1';
-const DATEIEN = ['./', './index.html', './manifest.webmanifest', './app.css', './js/daten.js', './js/stand.js', './js/ton.js', './js/spiel.js', './js/menue.js', '/assets/css/tokens.css',
+const VERSION = 'basebug-v2';
+const DATEIEN = ['./', './index.html', './manifest.webmanifest', './app.css', './js/daten.js', './js/grafik.js', './js/stand.js', './js/ton.js', './js/spiel.js', './js/menue.js', '/assets/css/tokens.css',
   '/assets/fonts/lexend.woff', '/assets/fonts/jetbrains-mono.woff', '/favicon.ico', '/favicon.svg', '/favicon-192.png', '/favicon-512.png'];
 self.addEventListener('install', (e) => { e.waitUntil((async () => {
   const c = await caches.open(VERSION); await c.addAll(DATEIEN.map((u) => new Request(u, { cache: 'reload' }))); await self.skipWaiting(); })()); });

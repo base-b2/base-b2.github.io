@@ -16,6 +16,8 @@ const WACHS = {
   item: 0.12,        // +12 % vom Grundwert je Ausrüstungsstufe
 };
 const BOSSMULT = { 5: 0.7, 10: 1.0, 15: 1.25, 20: 1.6 };
+const FESTUNG_HP = 250;          // Grund-HP der Mauer
+const KAFFEE_MAX = 3, KAFFEE_HEIL = 0.25;  // Kaffee: Tasse antippen heilt 25 %
 const HAERTE = { mult: 1.5, empfohlen: [550, 1300, 2800] };
 
 /* Bilder: 9x9 bzw. 7x7, T Text, A Akzent, G Grund, E Eisblau, L Lavendel, P Aprikose */
@@ -118,6 +120,21 @@ const SLOTS = {
     bild: ['.TTTTT.', '.T...T.', '.T.A.T.', '.T.A.T.', '.TTTTT.', '...T...', '..TTT..'],
     namen: ['Steckdosenleiste', 'Netzteil 300 W', 'Netzteil 850 W', 'USV mit Notstrom'] },
 };
+/* Sets: alle vier Plätze mit demselben Set = Set-Bonus (Schlüssel wie bei den Verbesserungen) */
+const SETS = {
+  buero: { n: 'Büro', t: 'Gold pro Bug +25 % und Erfahrung +15 %', boni: { gold: 25, xp: 15 } },
+  gaming: { n: 'Gaming', t: 'Helden-Angriff +25 % und Helden-Feuerrate +15 %', boni: { hatk: 25, hrate: 15 } },
+  server: { n: 'Server', t: 'Angriff aller Türme +20 % und Feuerrate aller Türme +10 %', boni: { tatk: 20, trate: 10 } },
+  retro: { n: 'Retro', t: 'Max. HP der Festung +30 % und Selbstheilung 1 HP/s', boni: { hpmax: 30, regen: 1 } },
+};
+/* Zusatzbonus je Seltenheit: Selten bekommt den ersten, Episch die ersten zwei, Legendär alle drei */
+const NEBEN = {
+  tastatur: [{ k: 'krit', w: 3 }, { k: 'kritx', w: 30 }, { k: 'xp', w: 15 }],
+  maus: [{ k: 'cd', w: 5 }, { k: 'krit', w: 4 }, { k: 'hrate', w: 10 }],
+  kopfhoerer: [{ k: 'rw', w: 0.2 }, { k: 'trate', w: 8 }, { k: 'rabatt', w: 10 }],
+  netzteil: [{ k: 'regen', w: 0.5 }, { k: 'dorn', w: 4 }, { k: 'hpmax', w: 10 }],
+};
+const FUSION_ANZAHL = 3;
 const RAR = [
   { n: 'Gewöhnlich', m: 1, max: 10 },
   { n: 'Selten', m: 1.8, max: 20 },
@@ -136,7 +153,7 @@ const SELTEN = [
 const UPGRADES = [
   { id: 'hatk', n: 'Heldenmut', z: 'Helden-Angriff', v: [10, 18, 30, 50], e: '%' },
   { id: 'hrate', n: 'Schnellfeuer', z: 'Helden-Feuerrate', v: [8, 14, 24, 40], e: '%' },
-  { id: 'krit', n: 'Glückstreffer', z: 'Krit.-Chance des Helden', v: [3, 6, 10, 16], e: '%', max: 60 },
+  { id: 'krit', n: 'Glückstreffer', z: 'Krit.-Chance', v: [3, 6, 10, 16], e: '%', max: 60 },
   { id: 'kritx', n: 'Volltreffer', z: 'Krit.-Schaden (Basis 200 %)', v: [20, 40, 70, 120], e: '%' },
   { id: 'multi', n: 'Zweiter Lauf', z: 'Extra-Geschosse des Helden', v: [0, 0, 1, 1], e: '', minR: 2, max: 3 },
   { id: 'cd', n: 'Kurzer Draht', z: 'Abklingzeit der Spezialfähigkeit', v: [8, 14, 22, 35], e: '%', neg: true, max: 70 },
@@ -152,6 +169,10 @@ const UPGRADES = [
   { id: 'heal', n: 'Reparatur', z: 'Festung sofort heilen (% der max. HP)', v: [20, 35, 55, 100], e: '%', einmal: true },
   { id: 'spende', n: 'Spende', z: 'Gold sofort', v: [40, 80, 140, 250], e: '', einmal: true },
 ];
+/* Für wen gilt eine Verbesserung (Etikett auf der Karte) */
+const FUER = { hatk: 'HELD', hrate: 'HELD', krit: 'HELD', kritx: 'HELD', multi: 'HELD', cd: 'HELD',
+  tatk: 'ALLE TÜRME', trate: 'ALLE TÜRME', rw: 'ALLE TÜRME', rabatt: 'TÜRME',
+  gold: 'GOLD', xp: 'ERFAHRUNG', spende: 'GOLD', hpmax: 'FESTUNG', regen: 'FESTUNG', dorn: 'FESTUNG', heal: 'FESTUNG' };
 /* Karten für Turmarten, die im Level gebaut wurden ({t} = Turmname) */
 const TURM_ATK = { n: '{t}-Training', z: 'Angriff aller {t}-Türme', v: [15, 25, 40, 65], e: '%' };
 const TURM_EXTRA = {
@@ -200,10 +221,13 @@ const ERFOLGE = [
   { id: 'zeitraffer', n: 'Zeitraffer', t: 'Ein Level auf dreifacher Geschwindigkeit schaffen.', b: 40 },
   { id: 'g42', n: 'Die Antwort', t: 'Eine Welle mit genau 42 Gold beenden.', b: 42 },
   { id: 'voll', n: 'Gut gerüstet', t: 'Alle vier Ausrüstungsplätze belegen.', b: 60 },
+  { id: 'fusion', n: 'Verschmolzen', t: 'Zum ersten Mal Ausrüstung fusionieren.', b: 40 },
+  { id: 'set', n: 'Komplett im Set', t: 'Vier Teile desselben Sets anlegen.', b: 120 },
   { id: 'legendaer', n: 'Legendär', t: 'Ein legendäres Ausrüstungsteil finden.', b: 150 },
   { id: 'alleh', n: 'Vollzählig', t: 'Alle Helden freischalten.', b: 300 },
   { id: 'b11', n: '1011₂', t: 'Im Härtetest Welle 11 erreichen.', b: 110 },
   { id: 'haerte', n: 'Härtetest bestanden', t: 'Einen Härtetest schaffen.', b: 200 },
+  { id: 'befoerdert', n: 'Befördert', t: 'Spielerstufe 10 erreichen.', b: 150 },
   { id: 'kapitel', n: 'Durchgespielt', t: 'Level 30 schaffen.', b: 500 },
 ];
 
@@ -214,5 +238,18 @@ const STATS = [
   ['gebaut', 'Türme gebaut'], ['ausgebaut', 'Türme ausgebaut'], ['verkauft', 'Türme verkauft'], ['gold', 'Gold verdient'],
   ['dmg_held', 'Schaden durch Helden'], ['dmg_turm', 'Schaden durch Türme'], ['krit', 'Kritische Treffer'], ['faehig', 'Fähigkeiten eingesetzt'],
   ['bits_ein', 'Bits verdient'], ['bits_aus', 'Bits ausgegeben'], ['items', 'Ausrüstung gefunden'], ['itemauf', 'Ausrüstung verbessert'],
-  ['zerlegt', 'Ausrüstung zerlegt'], ['aufgaben', 'Tägliche Aufgaben erledigt'], ['zeit', 'Spielzeit'],
+  ['zerlegt', 'Ausrüstung zerlegt'], ['fusionen', 'Fusionen'], ['aufgaben', 'Tägliche Aufgaben erledigt'], ['zeit', 'Spielzeit'],
 ];
+
+/* Spielerstufe (Konto): Erfahrung aus allem, was man tut. Jede Stufe bringt Bits, manche schalten etwas frei. */
+const KONTO_EP = { kills: 1, wellen: 5, bosse: 25, siege: 40, aufgaben: 30, fusionen: 10, enten: 20 };
+const kontoZiel = (st) => Math.round(150 * Math.pow(1.15, st - 1));
+const kontoBits = (st) => 40 + st * 10;
+const RAENGE = [[1, 'Praktikant:in'], [5, 'Junior-Dev'], [10, 'Entwickler:in'], [15, 'Senior-Dev'], [20, 'Architekt:in'], [30, 'CTO'], [40, 'Legende']];
+const TURM_START = ['pfeil', 'kanone'];
+const KONTO = {
+  2: { turm: 'frost' }, 3: { turm: 'flak' }, 4: { turm: 'mine' }, 5: { startgold: 20 }, 6: { turm: 'blitz' }, 7: { kaffee: 1 },
+  8: { turm: 'laser' }, 9: { item: 1 }, 10: { karten: 1 }, 11: { bitsPlus: 10 }, 12: { reroll: 1 }, 13: { item: 1 }, 14: { startgold: 30 },
+  15: { item: 2 }, 16: { festung: 10 }, 17: { bitsPlus: 10 }, 18: { startgold: 30 }, 19: { item: 2 }, 20: { kaffee: 1, item: 3 },
+  22: { festung: 10 }, 24: { reroll: 1 }, 25: { item: 3 }, 27: { bitsPlus: 15 }, 30: { aufstieg: 1, item: 3 }, 35: { festung: 15 }, 40: { item: 3, bitsPlus: 15 },
+};

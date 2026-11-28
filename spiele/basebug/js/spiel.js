@@ -11,8 +11,8 @@ function rr(c, x, y, w, h, r, fill, stroke, lw) {
   c.beginPath(); if (c.roundRect) c.roundRect(x, y, w, h, r); else c.rect(x, y, w, h);
   if (fill) { c.fillStyle = fill; c.fill(); } if (stroke) { c.strokeStyle = stroke; c.lineWidth = lw || 1; c.stroke(); } }
 function kreis(c, x, y, r, fill) { c.beginPath(); c.arc(x, y, r, 0, 7); c.fillStyle = fill; c.fill(); }
-function bild(c, b, x, y, s, blink, farbe) {
-  const n = b.length, u = s / n, m = { T: F.text, A: F.akzent, G: F.grund, P: F.aprikose, E: F.eisblau, L: F.lavendel };
+function bild(c, b, x, y, s, blink, farbe, tFarbe) {
+  const n = b.length, u = s / n, m = { T: tFarbe || F.text, A: F.akzent, G: F.grund, P: F.aprikose, E: F.eisblau, L: F.lavendel };
   for (let r = 0; r < n; r++) for (let k = 0; k < b[r].length; k++) {
     const ch = b[r][k]; if (ch === '.' || (ch === 'A' && blink)) continue;
     c.fillStyle = farbe && ch !== 'G' ? farbe : m[ch]; c.fillRect(x + k * u, y + r * u, u + 0.5, u + 0.5);
@@ -30,12 +30,12 @@ function turmSymbol(c, a, cx, cy, s) {
   if (a === 'mine') { o(2, 5, t, 5, 2); o(3, 3, ak, 1, 2); o(5, 3, ak, 1, 2); o(4, 2, ak, 1, 1); }
 }
 function zeichneTurm(c, a, cx, cy, s, lv, opt = {}) {
-  const r = s * 0.22, x = cx - s / 2, y = cy - s / 2;
-  rr(c, x, y, s, s, r, opt.eis ? F.eisblau : F[TUERME[a].farbe], F.text, Math.max(1.5, s * 0.04));
-  const k = opt.rueck ? s * 0.06 : 0;
-  turmSymbol(c, a, cx, cy - k, s * 0.78);
-  for (let i = 0; i < lv; i++) kreis(c, x + s * 0.2 + i * s * 0.15, y + s * 0.88, s * 0.045, i >= 3 || opt.spez ? F.akzent : F.text);
-  if (opt.spez) { kreis(c, x + s * 0.86, y + s * 0.14, s * 0.1, F.akzent); }
+  const k = 'turm_' + a, y = cy - (opt.rueck ? s * 0.06 : 0);
+  if (svgFertig(k)) c.drawImage(IMG[k], cx - s / 2, y - s / 2, s, s); else rr(c, cx - s / 2, cy - s / 2, s, s, s * 0.3, F[TUERME[a].farbe]);
+  if (opt.eis) { c.globalAlpha = 0.55; kreis(c, cx, cy + s * 0.03, s * 0.4, GP.tuerkis); c.globalAlpha = 1; }
+  if (lv) { const pw = s * 0.11, gap = s * 0.04, gesamt = lv * pw + (lv - 1) * gap; rr(c, cx - gesamt / 2 - 4, cy + s * 0.42, gesamt + 8, s * 0.13, s * 0.065, F.flaeche, F.linie, 1);
+    for (let i = 0; i < lv; i++) rr(c, cx - gesamt / 2 + i * (pw + gap), cy + s * 0.445, pw, s * 0.08, s * 0.04, i >= 3 || opt.spez ? GP.orange : GP.tinte); }
+  if (opt.spez) { kreis(c, cx + s * 0.36, cy - s * 0.36, s * 0.11, GP.orange); }
 }
 
 /* ---------- Spielfeld ---------- */
@@ -44,7 +44,14 @@ const PADS = []; for (const y of [2.6, 4.6, 6.6, 8.6, 10.6]) for (const x of [1,
 const BAHNEN = [0.5, 2.5, 4.5, 6.5, 8.5];
 const HELD_X = 4.5, HELD_Y = 13.55;
 const cv = $('feld'), g = cv.getContext('2d'); let Z = 40;
-function groesse() { const b = $('buehne').getBoundingClientRect(); Z = Math.max(10, Math.floor(Math.min((b.width - 14) / W, (b.height - 14) / H))); const d = devicePixelRatio || 1;
+const BREIT = matchMedia('(min-width: 1000px)');
+function groesse() {
+  const h = (id) => $(id).getBoundingClientRect().height, sp = $('spiel'), weit = BREIT.matches;
+  const ziel = weit ? $('seite-blatt') : $('buehne');
+  for (const id of ['blatt-bau', 'blatt-turm']) if ($(id).parentElement !== ziel) ziel.appendChild($(id));
+  const frei = sp.clientHeight - h('s-kopf') - h('s-xp') - h('s-unten') - (weit ? 0 : h('boni')) - 32, breit = Math.min(sp.clientWidth - (weit ? 380 : 0), 560) - 16;
+  Z = Math.max(10, Math.floor(Math.min(breit / W, frei / H))); const d = devicePixelRatio || 1;
+  sp.style.setProperty('--fb', (W * Z + 2) + 'px');
   cv.width = W * Z * d; cv.height = H * Z * d; cv.style.width = W * Z + 'px'; cv.style.height = H * Z + 'px'; g.setTransform(d, 0, 0, d, 0, 0); }
 addEventListener('resize', () => { if (!$('spiel').hidden) groesse(); });
 
@@ -60,21 +67,23 @@ function levelInfo(L, hf) {
 }
 function starteLevel(info) {
   const hw = heldWerte(), h = HELDEN[SP.held], b = ausrBonus();
-  const hp = Math.round(100 + b.netzteil);
-  S = { info, welle: 1, gold: 120, hp, hpMax: hp, hpBasis: hp, tuerme: new Map(), bugs: [], schuesse: [], effekte: [], partikel: [], feuer: [], laeuft: false, spawn: [], pause: false, ende: false,
+  const hp = Math.round((FESTUNG_HP + b.netzteil) * (1 + kontoWert('festung') / 100));
+  S = { info, welle: 1, gold: 120 + kontoWert('startgold'), kaffeeMax: KAFFEE_MAX + kontoWert('kaffee'), reroll: kontoWert('reroll'), hp, hpMax: hp, hpBasis: hp, tuerme: new Map(), bugs: [], schuesse: [], effekte: [], partikel: [], feuer: [], laeuft: false, spawn: [], pause: false, ende: false,
     boni: {}, zahl: {}, ep: 0, stufe: 1, aufstiege: 0, pad: null, bauWahl: null, schiebe: null, kills: 0, t: 0, frierT: 0, wackel: 0,
-    beute: { bits: 0, items: [] }, schaden: false, faehigGenutzt: false, maxTuerme: 0, tempo3: true, turmBonus: 1 + b.kopfhoerer / 100,
+    beute: { bits: 0, items: [] }, kaffee: 1, schaden: false, faehigGenutzt: false, maxTuerme: 0, tempo3: true, turmBonus: 1 + b.kopfhoerer / 100,
     held: { id: SP.held, atk: hw.atk, rate: hw.rate, krit: hw.krit, cdMax: h.f.cd, cd: 5, schild: 0, turbo: 0, sudo: 0, frost: 0, feuer: 0, schuss: 0 } };
+  S.aufstiege = kontoWert('aufstieg'); S.boni = ausrBoni(); S.ausr = { ...S.boni }; S.set = aktivesSet();
+  if (B('hpmax')) { S.hpMax = Math.round(S.hpBasis * (1 + B('hpmax') / 100)); S.hp = S.hpMax; }
   $('menue').hidden = true; $('spiel').hidden = false;
   const fb = $('faehig-bild').getContext('2d'); fb.clearRect(0, 0, 56, 56); bild(fb, h.bild, 0, 0, 56); $('faehig-name').textContent = h.f.n;
   $('faehig-tipp').innerHTML = `<b>${h.f.n}</b>${h.f.t}<br><span>Abklingzeit ${h.f.cd} s. Lädt während der Wellen.</span>`;
   $('s-level').textContent = info.hf != null ? 'HÄRTETEST ' + (info.hf + 1) : 'LEVEL ' + info.L;
-  tempoZeigen(); groesse(); blattZu(); anzeige();
+  tempoZeigen(); autoZeigen(); groesse(); blattZu(); anzeige(); boniZeigen();
 }
 function anzeige() { if (!S) return;
   $('s-welle').textContent = 'Welle ' + Math.min(S.welle, S.info.wellen) + '/' + S.info.wellen + (S.welle % 5 === 0 ? ' | Boss' : '');
   $('s-gold').textContent = Math.floor(S.gold); $('s-hp').textContent = Math.max(0, Math.ceil(S.hp));
-  $('start').disabled = S.laeuft; $('start').textContent = S.laeuft ? 'Welle läuft ...' : (S.welle % 5 === 0 ? 'Boss-Welle ' : 'Welle ') + S.welle + ' starten';
+  $('start').disabled = S.laeuft; $('start').textContent = S.laeuft ? 'Welle läuft ...' : S.autoT > 0 && SP.opt.auto ? 'Nächste Welle in ' + Math.ceil(S.autoT) + ' s' : (S.welle % 5 === 0 ? 'Boss-Welle ' : 'Welle ') + S.welle + ' starten';
   const h = S.held, cdm = cdMax(); $('faehig-cd').style.height = (h.cd > 0 ? Math.min(1, h.cd / cdm) * 100 : 0) + '%'; $('faehig').classList.toggle('bereit', h.cd <= 0 && S.laeuft);
   const z = epZiel(S.stufe); $('xp-i').style.width = Math.min(100, S.ep / z * 100) + '%'; $('xp-t').textContent = 'Stufe ' + S.stufe + ' | ' + Math.floor(S.ep) + '/' + z + ' EP'; }
 const cdMax = () => S.held.cdMax * Math.max(0.3, 1 - B('cd') / 100);
@@ -209,6 +218,7 @@ function schritt(dt) {
   if (S.hp <= 0 && !S.ende) { S.ende = true; levelEnde(false); }
   else if (S.laeuft && !S.spawn.length && !S.bugs.length && !S.ende) welleFertig();
   if (S.aufstiege > 0 && $('ov-wahl').hidden && !S.ende) aufstiegZeigen();
+  if (S.autoT > 0 && !S.laeuft) { S.autoT -= dt; if (S.autoT <= 0 && SP.opt.auto) starteWelle(); }
 }
 function besiegt(b) {
   b.tot = true; const gg = GEGNER[b.id], L = S.info.L, w = S.welle;
@@ -229,7 +239,8 @@ function besiegt(b) {
   if (b.id === 'ente') { bits = 30 + L * 2; rar = Math.max(1, rollRar(0.6 + hfBonus)); }
   else if (gg.boss) { bits = Math.round((20 + L * 3) * (w >= 10 ? 2 : 1)); const ch = { 5: 0.3, 10: 0.65, 15: 0.5, 20: 1 }[w] || 0.3;
     if (Math.random() < ch) rar = rollRar((w >= 10 ? 1 : 0.5) + hfBonus); }
-  else { if (Math.random() < 0.03) bits = 3 + L; if (Math.random() < 0.004) rar = Math.min(1, rollRar(0)); }
+  else { if (Math.random() < 0.08) bits = 2 + Math.ceil(L / 2); if (Math.random() < 0.006) rar = Math.min(1, rollRar(0));
+    if (Math.random() < 0.04 && S.kaffee < S.kaffeeMax) { S.kaffee++; S.effekte.push({ x: b.x, y: b.y - 0.2, t: 1.2, art: 'text', text: '+1 Kaffee' }); S.effekte.push({ x: b.x, y: b.y, t: 0.7, art: 'kflug' }); } }
   if (bits) { S.beute.bits += bits; S.effekte.push({ x: b.x, y: b.y + 0.4, t: 1.1, art: 'text', text: '+' + bits + ' Bits' }); ton('muenze'); }
   if (rar != null) { const it = neuesItem(rar); S.beute.items.push(it); S.effekte.push({ x: b.x, y: b.y - 0.5, t: 1.5, art: 'text', text: RAR[rar].n + '!' }); ton('drop'); vib(60); }
 }
@@ -256,8 +267,8 @@ $('faehig').onclick = faehigkeit;
 function rollSelten() { const sum = SELTEN.reduce((a, s) => a + s.w, 0) ; let x = Math.random() * sum;
   for (let i = 0; i < SELTEN.length; i++) { x -= SELTEN[i].w; if (x < 0) return i; } return 0; }
 function angebote() {
-  const typen = [...new Set([...S.tuerme.values()].map((t) => t.a))], out = [], ids = new Set();
-  for (let g2 = 0; out.length < 3 && g2 < 200; g2++) {
+  const typen = [...new Set([...S.tuerme.values()].map((t) => t.a))], out = [], ids = new Set(), anzahl = 3 + kontoWert('karten');
+  for (let g2 = 0; out.length < anzahl && g2 < 200; g2++) {
     const r = rollSelten(), pool = [];
     for (const u of UPGRADES) if (r >= (u.minR || 0) && !(u.max && B(u.id) >= u.max)) pool.push({ ...u, key: u.id, w: 1 });
     for (const a of typen) { const tn = TUERME[a].n;
@@ -273,20 +284,35 @@ function angebote() {
   return out;
 }
 const fz = (v, e, neg) => (neg ? '-' : '+') + (Math.round(v * 100) / 100).toLocaleString('de-DE') + (e ? ' ' + e : '');
-function aufstiegZeigen() {
-  S.aufstiege--; const w = $('wahl'); w.innerHTML = '';
+function aufstiegZeigen(neuZiehen) {
+  if (!neuZiehen) S.aufstiege--; const w = $('wahl'); w.innerHTML = '';
   $('wahl-et').textContent = 'AUFSTIEG | STUFE ' + (S.stufe - S.aufstiege); $('wahl-h').textContent = 'Verbesserung wählen';
   for (const k of angebote()) {
     const vor = B(k.key), n = S.zahl[k.key] || 0, b = document.createElement('button'); b.className = 'karte-wahl s' + k.r;
     const wertZeile = k.spez ? 'Dauerhaft für dieses Level' : k.einmal ? k.z + ': ' + fz(k.wert, k.e) :
-      `${k.z}: <span class="alt">${vor ? fz(vor, k.e, k.neg) : '0'}</span> -> <b class="neu">${fz(vor + k.wert, k.e, k.neg)}</b>`;
-    b.innerHTML = `<span class="seltenheit">${SELTEN[k.r].n}</span>${k.turm ? `<canvas width="56" height="56" class="karte-turm"></canvas>` : ''}<b>${k.n}</b><span>${k.spez ? k.z : wertZeile}</span>${k.spez ? '<span>' + wertZeile + '</span>' : ''}${n ? `<span class="stapel">${n}x gewählt</span>` : ''}`;
-    if (k.turm) zeichneTurm(b.querySelector('canvas').getContext('2d'), k.turm, 28, 28, 48, 0);
-    b.onclick = () => { waehle(k); $('ov-wahl').hidden = true; ton('klick'); anzeige(); };
+      `${k.z}: ${vor ? '<span class="alt">' + fz(vor, k.e, k.neg) + '</span>' : '0'} -> <b class="neu">${fz(vor + k.wert, k.e, k.neg)}</b>`;
+    const fuer = k.turm ? TUERME[k.turm].n.toUpperCase() : FUER[k.key] || '';
+    b.innerHTML = `<span class="seltenheit">${SELTEN[k.r].n}${fuer ? ' | ' + fuer : ''}</span>${k.turm ? `<span class="karte-turm">${svg('turm_' + k.turm, 30)}</span>` : ''}<b>${k.n}</b><span>${k.spez ? k.z : wertZeile}</span>${k.spez ? '<span>' + wertZeile + '</span>' : ''}${n ? `<span class="stapel">${n}x gewählt</span>` : ''}`;
+    b.onclick = () => { waehle(k); $('ov-wahl').hidden = true; ton('klick'); anzeige(); boniZeigen(); };
     w.appendChild(b);
   }
+  if (S.reroll > 0) { const r = document.createElement('button'); r.className = 'knopf2'; r.textContent = 'Neu ziehen (' + S.reroll + ' übrig)';
+    r.onclick = () => { S.reroll--; ton('klick'); aufstiegZeigen(true); }; w.appendChild(r); }
   $('ov-wahl').hidden = false; anzeige();
 }
+function boniName(k) { const m = k.match(/^t_(\w+)_(atk|spez|extra)$/);
+  if (m) return TUERME[m[1]].n + ': ' + ({ atk: 'Training', spez: 'Geheimtechnik', extra: TURM_EXTRA[m[1]].n })[m[2]];
+  const u = UPGRADES.find((x) => x.id === k); return u ? u.n : k; }
+function boniZeigen() { if (!S) return;
+  const l = Object.entries(S.boni).filter(([, w]) => w);
+  const chip = ([k, w]) => { const m = k.match(/^t_(\w+)_(atk|spez|extra)$/), u = UPGRADES.find((x) => x.id === k);
+    const txt = m ? (m[2] === 'spez' ? 'Spezialfähigkeit aktiv' : m[2] === 'atk' ? 'Angriff +' + w + ' %' : TURM_EXTRA[m[1]].z + ' ' + (TURM_EXTRA[m[1]].e ? '+' + w + ' %' : '+' + w)) : bonusText(k, w);
+    const n = S.zahl[k] || 0, a = S.ausr[k] ? ' | davon Ausrüstung ' + (Math.round(S.ausr[k] * 100) / 100).toLocaleString('de-DE') : '';
+    return `<span class="chip" title="${txt}${a}"><b>${boniName(k)}</b>${n ? ' ' + n + 'x' : ''}<i>${txt}</i></span>`; };
+  const set = S.set ? `<span class="chip set" title="${SETS[S.set].t}"><b>Set ${SETS[S.set].n}</b><i>${SETS[S.set].t}</i></span>` : '';
+  const html = set + l.map(chip).join('');
+  $('boni').innerHTML = html || '<span class="leer">Noch keine Boni. Aufstiege bringen Verbesserungen.</span>';
+  $('boni-seite').innerHTML = html || '<p class="leer">Noch keine Boni.</p>'; }
 function waehle(k) {
   S.zahl[k.key] = (S.zahl[k.key] || 0) + 1;
   if (k.key === 'heal') { S.hp = Math.min(S.hpMax, S.hp + S.hpMax * k.wert / 100); return; }
@@ -305,6 +331,7 @@ function welleFertig() {
   if (Math.floor(S.gold) === 42) erfolg('g42');
   S.effekte.push({ t: 1.6, art: 'ansage', text: 'Welle ' + (S.welle - 1) + ' geschafft | +' + bonus + ' Gold', hell: true });
   ton('muenze'); anzeige(); speichern();
+  if (SP.opt.auto) S.autoT = 2.5;
 }
 function levelEnde(sieg) {
   blattZu(); $('ov-wahl').hidden = true; const info = S.info, L = info.L, hf = info.hf; let st = 0, bits = 0, extra = [];
@@ -322,6 +349,8 @@ function levelEnde(sieg) {
     erfolg('erster'); if (!S.schaden) erfolg('fehlerfrei'); if (S.maxTuerme <= 3) erfolg('sparfuchs'); if (!S.faehigGenutzt) erfolg('handbetrieb'); if (S.tempo3 && SP.opt.tempo === 3) erfolg('zeitraffer');
     ton('sieg');
   } else { stat('niederlagen'); bits = (S.welle - 1) * 4 + Math.floor(S.kills / 8); ton('niederlage'); vib([100, 50, 100]); }
+  if (sieg && kontoWert('bitsPlus')) bits = Math.round(bits * (1 + kontoWert('bitsPlus') / 100));
+  if (sieg) kontoEP(L * 5);
   bitsDazu(bits); speichern();
   $('ende-et').textContent = (hf != null ? 'HÄRTETEST ' + (hf + 1) : 'LEVEL ' + L) + (sieg ? ' GESCHAFFT' : ' VERLOREN');
   $('ende-t').textContent = sieg ? (st === 3 ? 'Fehlerfrei kompiliert.' : 'Geschafft.') : 'Bluescreen.';
@@ -334,7 +363,8 @@ function levelEnde(sieg) {
   $('ende-weiter').textContent = naechst ? 'Nächstes Level' : 'Zum Menü';
   $('ende-weiter').onclick = () => { $('ov-ende').hidden = true; if (naechst) { gewLv = L + 1; starteLevel(levelInfo(L + 1)); } else { S = null; menueZeigen(); } };
   $('ende-nochmal').onclick = () => { $('ov-ende').hidden = true; starteLevel(levelInfo(L, hf)); };
-  $('ov-ende').hidden = false;
+  $('ende-menue').hidden = !naechst; $('ende-menue').onclick = () => { $('ov-ende').hidden = true; S = null; gewLv = Math.min(L + (sieg ? 1 : 0), SP.frei, MAXLV); menueZeigen(); };
+  $('ov-ende').hidden = false; meldungZeigen();
 }
 function levelVerlassen() { if (S && S.beute.bits) bitsDazu(S.beute.bits); stat('niederlagen'); S = null; speichern(); menueZeigen(); }
 
@@ -344,10 +374,16 @@ for (const b of document.querySelectorAll('[data-zu]')) b.onclick = blattZu;
 cv.addEventListener('pointerdown', (e) => {
   if (!S || S.ende) return; const r = cv.getBoundingClientRect(), x = (e.clientX - r.left) / Z, y = (e.clientY - r.top) / Z;
   const i = PADS.findIndex((p) => x >= p.x - 0.1 && x <= p.x + 1.1 && y >= p.y - 0.1 && y <= p.y + 1.1);
+  if (x > 0.3 && x < 1.6 && y > 13.4 && y < 14.7) { kaffeeTrinken(); return; }
   if (S.schiebe != null) { if (i >= 0 && i !== S.schiebe) verschieben(S.schiebe, i); else blattZu(); return; }
   if (i < 0) { blattZu(); return; } S.pad = i; S.bauWahl = null; ton('klick');
   if (S.tuerme.has(i)) turmBlatt(); else bauBlatt();
 });
+function kaffeeTrinken() {
+  if (!S.kaffee || S.hp >= S.hpMax) { S.effekte.push({ x: 1, y: 13.3, t: 0.9, art: 'text', text: S.kaffee ? 'Festung ist voll' : 'Kein Kaffee' }); return; }
+  S.kaffee--; const plus = Math.round(S.hpMax * KAFFEE_HEIL); S.hp = Math.min(S.hpMax, S.hp + plus);
+  S.effekte.push({ x: 1, y: 13.3, t: 1, art: 'text', text: '+' + plus + ' HP' }); partikel(1, 13.9, 10, F.erfolg, 2); ton('faehig'); anzeige();
+}
 function verschieben(von, nach) {
   const t = S.tuerme.get(von), u = S.tuerme.get(nach);
   S.tuerme.delete(von); t.p = nach; S.tuerme.set(nach, t);
@@ -361,9 +397,10 @@ function turmDaten(id) { const t = TUERME[id];
   return `<b>${t.n}</b> ${t.info}<br>Atk. ${w.atk.toFixed(0)}${id === 'laser' ? '/s' : ''} | ${id === 'laser' ? 'Dauerstrahl' : 'Rate ' + w.rate.toFixed(1) + '/s'} | Reichw. ${w.rw.toFixed(1)} | Ziele: ${t.ziele.map((z) => z === 'luft' ? 'Luft' : 'Boden').join(' + ')}<br>Stufe 4: ${t.spez}`; }
 function bauBlatt() { $('blatt-turm').hidden = true; const n = $('bauwahl'); n.innerHTML = '';
   for (const id in TUERME) { const t = TUERME[id], k = preis(t.k), b = document.createElement('button');
+    if (!turmFrei(id)) { b.disabled = true; b.className = 'gesperrt-turm'; b.innerHTML = `<span class="ico blur">${svg('turm_' + id, 38)}</span><span class="n">${t.n}</span><span class="k">ab St. ${turmAb(id)}</span>`;
+      b.title = 'Wird ab Spielerstufe ' + turmAb(id) + ' freigeschaltet.'; n.appendChild(b); continue; }
     b.className = S.bauWahl === id ? 'gewaehlt' : ''; b.disabled = S.gold < k;
-    b.innerHTML = `<canvas width="72" height="72" style="width:36px;height:36px"></canvas><span class="n">${t.n}</span><span class="k">${k}</span>`;
-    zeichneTurm(b.querySelector('canvas').getContext('2d'), id, 36, 36, 60, 0);
+    b.innerHTML = `${svg('turm_' + id, 38)}<span class="n">${t.n}</span><span class="k">${k}</span>`;
     b.onclick = () => { S.bauWahl = id; ton('klick'); bauBlatt(); };
     b.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') $('bau-info').innerHTML = turmDaten(id); });
     b.addEventListener('pointerleave', () => { $('bau-info').innerHTML = S.bauWahl ? turmDaten(S.bauWahl) : 'Turm antippen, um zu sehen, was er kann.'; });
@@ -391,6 +428,9 @@ $('t-schieb').onclick = () => { if (S.pad == null) return; S.schiebe = S.pad; to
   S.effekte.push({ t: 1.8, art: 'ansage', text: 'Ziel-Bauplatz antippen', hell: true }); };
 $('t-weg').onclick = () => { const t = S.tuerme.get(S.pad); if (!t) return; S.gold += Math.floor(t.wert * 0.6); S.tuerme.delete(S.pad); stat('verkauft'); blattZu(); anzeige(); };
 $('start').onclick = starteWelle;
+function autoZeigen() { $('auto').setAttribute('aria-pressed', !!SP.opt.auto); }
+$('auto').onclick = () => { SP.opt.auto = !SP.opt.auto; autoZeigen(); speichern(); ton('klick'); if (SP.opt.auto && S && !S.laeuft && S.welle > 1) S.autoT = 1; };
+autoZeigen();
 $('pause').onclick = () => { S.pause = true; $('ov-pause').hidden = false; };
 $('weiter').onclick = () => { S.pause = false; $('ov-pause').hidden = true; };
 $('aufgeben').onclick = () => { $('ov-pause').hidden = true; levelVerlassen(); };
@@ -403,7 +443,7 @@ function zeichneBug(b) {
   if (b.unten) { g.globalAlpha = 0.55; for (let i = 0; i < 3; i++) kreis(g, x0 + s * (0.25 + i * 0.25), y0 + s * 0.75, s * 0.12, F.nebentext); g.globalAlpha = 1; return; }
   if (b.lahm > 0 || b.stop > 0 || S.held.frost > 0) rr(g, x0 - 3, y0 - 3, s + 6, s + 6, s * 0.3, F.eisblau);
   if (b.giftT > 0) rr(g, x0 - 3, y0 - 3, s + 6, s + 6, s * 0.3, null, F.erfolg, 2);
-  bild(g, gg.bild, x0, y0, s, false, b.treffT > 0 ? F.nebentext : null);
+  bild(g, gg.bild, x0, y0, s, false, b.treffT > 0 ? F.linie : null, GEGNER_FARBE[b.id]);
   if (b.schild > 0) rr(g, x0 - 4, y0 - 4, s + 8, s + 8, s * 0.3, null, F.text, 2);
   if (b.hp < b.max) { const bw = Math.max(s, Z * 0.5), bx = b.x * Z - bw / 2;
     rr(g, bx, y0 - 8, bw, 4, 2, F.linie); rr(g, bx, y0 - 8, bw * Math.max(0, b.hpAnz / b.max), 4, 2, gg.boss ? F.akzent : F.fehler); }
@@ -425,8 +465,10 @@ function zeichneFestung() {
   if (!reduziert && S.t % 1 < 0.55) g.fillStyle = F.akzent, g.fillRect(mx + Z * 2.3, my + Z * 1.1, Z * 0.25, Z * 0.1);
   rr(g, mx + mw / 2 - Z * 0.15, my + mh, Z * 0.3, Z * 0.2, 2, F.text); rr(g, mx + mw / 2 - Z * 0.6, my + mh + Z * 0.18, Z * 1.2, Z * 0.12, 3, F.text);
   /* Kaffeetasse links */
-  const kx = 0.55 * Z, ky = 13.75 * Z; rr(g, kx, ky, Z * 0.6, Z * 0.65, 6, F.flaeche, F.text, 2); g.strokeStyle = F.text; g.lineWidth = 2; g.beginPath(); g.arc(kx + Z * 0.68, ky + Z * 0.3, Z * 0.14, -1.4, 1.4); g.stroke();
+  const kx = 0.5 * Z, ky = 13.6 * Z; if (svgFertig('sym_kaffee')) g.drawImage(IMG.sym_kaffee, kx - Z * 0.05, ky - Z * 0.05, Z * 0.85, Z * 0.85);
   if (!reduziert) { g.globalAlpha = 0.5; for (let i = 0; i < 2; i++) { const d = (S.t * 0.6 + i * 0.5) % 1; kreis(g, kx + Z * (0.2 + i * 0.2) + Math.sin(d * 6) * 2, ky - d * Z * 0.6, 2.5 * (1 - d), F.nebentext); } g.globalAlpha = 1; }
+  for (let i = 0; i < S.kaffeeMax; i++) kreis(g, kx + Z * (0.1 + i * 0.22), ky + Z * 0.85, Z * 0.07, i < S.kaffee ? F.akzent : F.linie);
+  if (S.kaffee && S.hp < S.hpMax * 0.6 && !reduziert) { g.globalAlpha = 0.5 + 0.5 * Math.sin(S.t * 6); rr(g, kx - 5, ky - 5, Z * 0.95, Z * 0.75, 8, null, F.akzent, 2); g.globalAlpha = 1; }
   /* Held groß vor der Tastatur */
   const hs = 1.45 * Z, hx = HELD_X * Z - hs / 2, hy = 12.85 * Z + (reduziert ? 0 : Math.sin(S.t * 3) * 1.5) - (h.schuss > 0 ? 2 : 0);
   if (h.turbo > 0 || h.sudo > 0 || h.frost > 0) { g.globalAlpha = 0.35 + 0.2 * Math.sin(S.t * 10); kreis(g, HELD_X * Z, hy + hs / 2, hs * 0.72, F.akzent); g.globalAlpha = 1; }
@@ -476,6 +518,22 @@ function zeichnen() {
     if (e.art === 'ansage') { const a = Math.min(1, e.t * 2, (1.8 - e.t) * 4); g.globalAlpha = a; rr(g, Z * 0.5, H * Z * 0.36, W * Z - Z, Z * 1.1, Z * 0.55, e.hell ? F.flaeche : F.text, e.hell ? F.akzent : null, 2);
       text(e.text, W * Z / 2, H * Z * 0.36 + Z * 0.7, Math.round(Z * (e.text.length > 24 ? 0.32 : 0.42)), e.hell ? F.text : F.grund, true); g.globalAlpha = 1; }
   }
-  if (!S.laeuft && !S.ende && !S.tuerme.size) text('Bauplatz antippen, Turm bauen.', W * Z / 2, Z * 1.6, Math.round(Z * 0.34), F.nebentext, false, 600);
+  if (!S.laeuft && !S.ende && !S.tuerme.size) { text('Bauplatz antippen, Turm bauen.', W * Z / 2, Z * 1.5, Math.round(Z * 0.34), F.nebentext, false, 600); text('Kaffeetasse antippen: heilt die Festung.', W * Z / 2, Z * 2.05, Math.round(Z * 0.26), F.nebentext, false, 400); }
   g.restore();
 }
+
+/* ---------- Tastenkürzel (Desktop) ---------- */
+document.addEventListener('keydown', (e) => {
+  if (!S || $('spiel').hidden || e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  if (!$('ov-wahl').hidden) { const n = +k; if (n >= 1 && n <= 3) { const b = $('wahl').children[n - 1]; if (b) { e.preventDefault(); b.click(); } } return; }
+  if (!$('ov-pause').hidden) { if (k === 'escape' || k === 'p') { e.preventDefault(); $('weiter').click(); } return; }
+  if (!$('ov-ende').hidden || !$('ov-meldung').hidden) return;
+  if (k === ' ') { e.preventDefault(); starteWelle(); }
+  else if (k === 'f') faehigkeit();
+  else if (k === 'k') kaffeeTrinken();
+  else if (k === 'a') $('auto').click();
+  else if (k === '1' || k === '2' || k === '3') { SP.opt.tempo = +k; if (k !== '3') S.tempo3 = false; tempoZeigen(); speichern(); }
+  else if (k === 'p') $('pause').click();
+  else if (k === 'escape') { if (!$('blatt-bau').hidden || !$('blatt-turm').hidden || S.schiebe != null) blattZu(); else $('pause').click(); }
+});

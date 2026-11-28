@@ -11,23 +11,23 @@ function malen(root) {
     const [art, id] = c.dataset.b.split(':'), x = c.getContext('2d'), s = c.width; x.clearRect(0, 0, s, s);
     if (art === 'held') bild(x, HELDEN[id].bild, 0, 0, s);
     if (art === 'turm') zeichneTurm(x, id, s / 2, s / 2, s * 0.95, 0);
-    if (art === 'gegner') bild(x, GEGNER[id].bild, s * 0.1, s * 0.1, s * 0.8);
+    if (art === 'gegner') bild(x, GEGNER[id].bild, s * 0.1, s * 0.1, s * 0.8, false, null, GEGNER_FARBE[id]);
     if (art === 'item') bild(x, SLOTS[id].bild, s * 0.15, s * 0.15, s * 0.7);
   }
 }
-const cvs = (b, px, gesperrt) => `<canvas data-b="${b}" width="${px * 2}" height="${px * 2}" style="width:${px}px;height:${px}px" class="${gesperrt ? 'blur' : ''}"></canvas>`;
+const cvs = (b, px, gesperrt) => /^(item|turm):/.test(b) ? `<span class="ico ${gesperrt ? 'blur' : ''}">${svg(b.replace(':', '_'), px)}</span>` : `<canvas data-b="${b}" width="${px * 2}" height="${px * 2}" style="width:${px}px;height:${px}px" class="${gesperrt ? 'blur' : ''}"></canvas>`;
 const sterneHtml = (st) => [1, 2, 3].map((i) => `<span class="${i <= st ? 'an' : 'aus'}">■</span>`).join('');
 const balken = (a, z) => `<div class="balken"><i style="width:${Math.min(100, a / z * 100)}%"></i></div>`;
 const seg = (id, opts) => `<div class="segment" role="tablist">${opts.map(([k, n]) => `<button role="tab" data-seg="${id}:${k}" aria-selected="${unter[id] === k}">${n}</button>`).join('')}</div>`;
 
 function menueZeigen() {
-  tagPruefen(); erfolgePruefen();
+  tagPruefen(); erfolgePruefen(); kontoZeigen();
   $('menue').hidden = false; $('spiel').hidden = true;
   if (!bitsAnim) { $('m-bits').textContent = zahl(SP.bits); bitsAnz = SP.bits; }
   for (const b of document.querySelectorAll('.tabs button')) b.setAttribute('aria-selected', b.dataset.tab === tab);
   const n = offeneBelohnungen(); $('punkt-aufgaben').hidden = !n;
   const inh = $('inhalt'); inh.innerHTML = ({ spielen: tabSpielen, helden: tabHelden, ausruestung: tabAusruestung, aufgaben: tabAufgaben, archiv: tabArchiv })[tab]();
-  malen(inh);
+  malen(inh); meldungZeigen();
   for (const b of inh.querySelectorAll('[data-seg]')) b.onclick = () => { const [i, k] = b.dataset.seg.split(':'); unter[i] = k; ton('klick'); menueZeigen(); };
   for (const b of inh.querySelectorAll('[data-akt]')) b.onclick = () => { ton('klick'); AKTION[b.dataset.akt](b.dataset.wert, b); };
   speichern();
@@ -35,6 +35,7 @@ function menueZeigen() {
 function erfolgePruefen() {
   if (Object.keys(HELDEN).every((h) => SP.helden[h])) erfolg('alleh');
   if (Object.values(SP.angelegt).every((v) => v != null && itemById(v))) erfolg('voll');
+  if (aktivesSet()) erfolg('set');
 }
 
 /* ---------- Spielen ---------- */
@@ -53,7 +54,7 @@ function tabSpielen() {
    <div class="etikett">10 WELLEN | BOSS BEI WELLE 5 UND 10</div>
    <div class="belohnung-zeile">${erst ? 'Erstbelohnung' : 'Belohnung'}: ca. ${Math.round((25 + gewLv * 6 + 20) * (erst ? 1 : 0.35))} Bits${garant ? ' + garantiert Ausrüstung (' + RAR[gewLv >= 25 ? 3 : gewLv >= 15 ? 2 : 1].n + ')' : ''}</div>
   </div>
-  <button class="knopf" data-akt="spielen">Spielen</button>
+  <button class="knopf" data-akt="spielen">Spielen</button>${(() => { const n = naechsteFreischaltung(); return n ? `<p class="leer" style="text-align:center">Nächste Freischaltung bei Spielerstufe ${n.st}: ${n.t}</p>` : ''; })()}
   <div class="etikett" style="margin-top:24px">HÄRTETESTS | 20 WELLEN, 4 BOSSE</div><div class="liste">`;
   const kk = kampfkraft();
   for (let i = 0; i < 3; i++) {
@@ -93,21 +94,34 @@ function tabAusruestung() {
     return `<button class="slot ${it ? 'r' + it.r : ''}" data-akt="${it ? 'item' : 'slotleer'}" data-wert="${it ? it.id : sl}">${cvs('item:' + sl, 40, !it)}<span>${it ? 'St. ' + it.lv : SLOTS[sl].n}</span></button>`; };
   s += `<div class="ausr-spalte">${slotKnopf('tastatur')}${slotKnopf('maus')}</div>${cvs('held:' + SP.held, 110)}<div class="ausr-spalte">${slotKnopf('kopfhoerer')}${slotKnopf('netzteil')}</div></div>
   <table class="werte">${Object.keys(SLOTS).map((sl) => `<tr><th>${SLOTS[sl].stat}</th><td>+${fmt(b[sl])}${SLOTS[sl].einh ? ' ' + SLOTS[sl].einh : ''}</td></tr>`).join('')}</table>
-  <div class="etikett" style="margin-top:16px">INVENTAR | ${SP.items.length} TEILE</div>`;
+  `;
+  const ab = ausrBoni(), akt = aktivesSet(), l = angelegteItems();
+  s += `<div class="etikett" style="margin-top:12px">ZUSATZBONI IM LEVEL</div>` + (Object.keys(ab).length ? '<div class="chips">' + Object.entries(ab).map(([k, w]) => `<span class="chip">${bonusText(k, w)}</span>`).join('') + '</div>'
+    : '<p class="leer">Seltene, epische und legendäre Teile bringen Zusatzboni. Vier Teile desselben Sets bringen einen Set-Bonus.</p>');
+  s += `<div class="etikett" style="margin-top:12px">SETS</div><div class="sets">` + Object.entries(SETS).map(([id, st]) => { const n = l.filter((i) => i.set === id).length;
+    return `<div class="set-zeile ${akt === id ? 'aktiv' : ''}"><b>${st.n}</b> <span class="etikett">${n} / 4${akt === id ? ' | AKTIV' : ''}</span><p>${st.t}</p></div>`; }).join('') + '</div>';
+  const fg = fusionsGruppen();
+  if (fg.length) s += `<button class="knopf" data-akt="fusionliste">${IK.fusion}Fusionieren möglich | ${fg.length}</button>`;
+  s += `<div class="etikett" style="margin-top:16px">INVENTAR | ${SP.items.length} TEILE</div><p class="leer">${FUSION_ANZAHL} gleiche Teile (gleicher Platz, gleiche Seltenheit) lassen sich zur nächsten Seltenheit fusionieren.</p>`;
   if (!SP.items.length) return s + '<p class="leer">Noch leer. Bosse, Gummienten und jedes fünfte Level lassen Ausrüstung fallen.</p>';
   const angelegt = new Set(Object.values(SP.angelegt));
   s += '<div class="inventar">';
   for (const it of [...SP.items].sort((a, c) => c.r - a.r || c.lv - a.lv))
-    s += `<button class="item r${it.r}" data-akt="item" data-wert="${it.id}" aria-label="${esc(itemName(it))}">${cvs('item:' + it.slot, 36)}<span>St. ${it.lv}</span>${angelegt.has(it.id) ? '<i class="an-mark">✓</i>' : ''}</button>`;
+    s += `<button class="item r${it.r}" data-akt="item" data-wert="${it.id}" aria-label="${esc(itemName(it))}">${cvs('item:' + it.slot, 36)}<span>St. ${it.lv}</span><i class="set-mark">${SETS[it.set].n}</i>${angelegt.has(it.id) ? '<i class="an-mark">✓</i>' : ''}</button>`;
   return s + '</div>';
 }
 function itemZeigen(id) {
   const it = itemById(id); if (!it) return; const sl = SLOTS[it.slot], an = SP.angelegt[it.slot] === it.id, k = itemKosten(it), max = RAR[it.r].max;
+  const fusGr = fusionsGruppen().find((gr) => gr.includes(it));
   const nachher = it.lv < max ? Math.round(sl.basis * RAR[it.r].m * (1 + WACHS.item * it.lv) * 10) / 10 : null;
   $('ov-item-inhalt').innerHTML = `<div class="item-gross r${it.r}">${cvs('item:' + it.slot, 72)}</div>
    <div class="etikett">${RAR[it.r].n.toUpperCase()} | ${sl.n.toUpperCase()}</div><h2>${esc(itemName(it))}</h2>
    <table class="werte"><tr><th>${sl.stat}</th><td>+${fmt(itemWert(it))}${sl.einh ? ' ' + sl.einh : ''}${nachher ? ' <span class="plus">-> ' + fmt(nachher) + '</span>' : ''}</td></tr>
-   <tr><th>Stufe</th><td>${it.lv} / ${max}</td></tr></table>
+   <tr><th>Stufe</th><td>${it.lv} / ${max}</td></tr><tr><th>Set</th><td>${SETS[it.set].n}</td></tr></table>
+   <div class="etikett" style="text-align:left">SELTENHEITS-BONI</div>
+   <ul class="neben">${NEBEN[it.slot].map((n, i) => `<li class="${i < it.r ? 'an' : ''}">${i < it.r ? '✓' : RAR[i + 1].n + ':'} ${bonusText(n.k, n.w)}</li>`).join('')}</ul>
+   <p class="set-info"><b>Set ${SETS[it.set].n} (4 Teile):</b> ${SETS[it.set].t}</p>
+   ${fusGr ? `<button class="knopf2" data-iakt="fusion">${IK.fusion}Fusionieren (${fusGr.length}/${FUSION_ANZAHL}) -> ${RAR[it.r + 1].n}</button>` : it.r < 3 ? `<p class="leer">Fusion: ${SP.items.filter((x) => x.slot === it.slot && x.r === it.r).length} / ${FUSION_ANZAHL} gleiche Teile</p>` : ''}
    <button class="knopf" data-iakt="${an ? 'ab' : 'an'}">${an ? 'Ablegen' : 'Anlegen'}</button>
    <button class="knopf2" data-iakt="auf" ${it.lv >= max || SP.bits < k ? 'disabled' : ''}>${it.lv >= max ? 'Höchste Stufe' : 'Verbessern | ' + k + ' Bits'}</button>
    <button class="knopf2" data-iakt="zerlegen">Zerlegen | +${itemZerlegen(it)} Bits</button>
@@ -117,6 +131,8 @@ function itemZeigen(id) {
     const a = b.dataset.iakt; ton('klick');
     if (a === 'an') SP.angelegt[it.slot] = it.id;
     if (a === 'ab') SP.angelegt[it.slot] = null;
+    if (a === 'fusion') { const { neu, rueck } = fusioniere(fusGr, it); erfolg('fusion'); ton('drop'); itemZeigen(neu.id); menueZeigen();
+      melde('Fusioniert', RAR[neu.r].n + ': ' + itemName(neu) + ' (Set ' + SETS[neu.set].n + ')' + (rueck ? ' | +' + rueck + ' Bits zurück' : '')); return; }
     if (a === 'auf') { if (!bitsWeg(k)) return; it.inv += k; it.lv++; stat('itemauf'); ton('bau'); itemZeigen(id); menueZeigen(); return; }
     if (a === 'zerlegen') { if (b.dataset.sicher !== '1') { b.dataset.sicher = '1'; b.textContent = 'Wirklich zerlegen?'; return; }
       bitsDazu(itemZerlegen(it)); stat('zerlegt'); if (an) SP.angelegt[it.slot] = null; SP.items = SP.items.filter((x) => x.id !== it.id); ton('muenze'); }
@@ -170,10 +186,10 @@ function tabArchiv() {
     s += eintrag('held:' + k, !SP.helden[k], h.n, 'HELD', SP.helden[k] ? h.info : 'Noch nicht freigeschaltet.',
       [['Atk.', fmt(h.atk) + ' (+10 % je Stufe)'], ['Feuerrate', fmt(h.rate, 2) + '/s'], ['Krit.', Math.round(h.krit * 100) + ' %'], ['Angriff', h.artT], [h.f.n, h.f.t + ' (' + h.f.cd + ' s)'], ['Freischalten', h.preis ? h.preis + ' Bits' : 'von Anfang an']]); }
   if (unter.archiv === 'tuerme') for (const k in TUERME) { const t = TUERME[k], ges = !SP.gesehen.tuerme[k];
-    s += eintrag('turm:' + k, ges, t.n, 'TURM', ges ? 'Noch nie gebaut.' : t.info,
+    s += eintrag('turm:' + k, ges, t.n, 'TURM', ges ? (turmFrei(k) ? 'Noch nie gebaut.' : 'Ab Spielerstufe ' + turmAb(k) + '.') : t.info,
       k === 'mine' ? [['Kosten', t.k + ' Gold'], ['Ertrag', t.gold + ' Gold je Welle (+60 % je Stufe)'], ['Stufe 4', t.spez]]
         : [['Atk.', t.atk + (k === 'laser' ? '/s' : '') + ' (+35 % je Stufe)'], ['Feuerrate', k === 'laser' ? 'Dauerstrahl' : fmt(t.rate, 2) + '/s'], ['Reichweite', fmt(t.rw)], ['Kosten', t.k + ' Gold'],
-          ['Ziele', t.ziele.map((z) => z === 'luft' ? 'Luft' : 'Boden').join(' und ')], ['Stufe 4', t.spez]]); }
+          ['Freigeschaltet', 'ab Spielerstufe ' + turmAb(k)], ['Ziele', t.ziele.map((z) => z === 'luft' ? 'Luft' : 'Boden').join(' und ')], ['Stufe 4', t.spez]]); }
   if (unter.archiv === 'gegner') { const artN = { boden: 'BODEN', luft: 'LUFT', tunnel: 'UNTERGRUND', spezial: 'SPEZIAL', boss: 'BOSS', ei: 'EASTER EGG' };
     for (const k in GEGNER) { const e = GEGNER[k], ges = !SP.gesehen.gegner[k];
       s += eintrag('gegner:' + k, ges, e.n, ges ? '' : (e.boss ? 'BOSS | ' : '') + artN[e.art], ges ? 'Noch nicht besiegt.' : e.info,
@@ -201,6 +217,16 @@ const AKTION = {
   item: (id) => itemZeigen(+id),
   slotleer: (sl) => { const best = SP.items.filter((i) => i.slot === sl).sort((a, b) => itemWert(b) - itemWert(a))[0];
     if (best) { SP.angelegt[sl] = best.id; menueZeigen(); } else melde('Kein Teil', 'Für ' + SLOTS[sl].n + ' hast du noch nichts gefunden.'); },
+  fusionliste: () => { const fg = fusionsGruppen(); const o = $('ov-item-inhalt');
+    o.innerHTML = `<div class="etikett">FUSION</div><h2>Fusionieren</h2><p>Je ${FUSION_ANZAHL} gleiche Teile werden zu einem Teil der nächsten Seltenheit (Stufe 1). Die schwächsten Teile werden zuerst verwendet, 50 % der investierten Bits gibt es zurück.</p>
+      <div class="liste">${fg.map((gr, i) => `<div class="zeile r${gr[0].r}">${cvs('item:' + gr[0].slot, 36)}<div style="flex:1;text-align:left"><b>${itemName(gr[0])}</b><p>${gr.length} Stück | ${RAR[gr[0].r].n} -> ${RAR[gr[0].r + 1].n}</p></div><button class="knopf-klein" data-fus="${i}">Fusion</button></div>`).join('')}</div>
+      <button class="knopf" data-fus="alle">Alle fusionieren</button><button class="knopf2" data-fus="zu">Schließen</button>`;
+    malen(o); $('ov-item').hidden = false;
+    for (const b of o.querySelectorAll('[data-fus]')) b.onclick = () => { const w = b.dataset.fus;
+      if (w === 'zu') { $('ov-item').hidden = true; return; }
+      const erg = []; if (w === 'alle') { let gr; let n = 0; while ((gr = fusionsGruppen()[0]) && n++ < 50) erg.push(fusioniere(gr)); } else erg.push(fusioniere(fg[+w]));
+      erfolg('fusion'); ton('drop'); $('ov-item').hidden = true; menueZeigen();
+      melde('Fusioniert', erg.map((e) => RAR[e.neu.r].n + ': ' + itemName(e.neu)).join(' | ')); }; },
   zuaufgaben: () => { tab = 'aufgaben'; menueZeigen(); },
   abholen: (key, btn) => abholen(key, btn),
   alleab: (_, btn) => { const r = btn.getBoundingClientRect(); let bits = 0, items = 0;
@@ -257,7 +283,7 @@ function flieg(von, bits, items) {
 
 /* ---------- Meldungen (Erfolge, Belohnungen) ---------- */
 function meldungZeigen() {
-  if (!$('ov-meldung').hidden || !MELDUNGEN.length) return;
+  if (!$('ov-meldung').hidden || !MELDUNGEN.length || (S && !S.ende)) return;
   const m = MELDUNGEN.shift(); $('meldung-t').textContent = m.titel; $('meldung-p').textContent = m.text; $('ov-meldung').hidden = false;
 }
 $('meldung-ok').onclick = () => { $('ov-meldung').hidden = true; if (!S && SP.bits !== bitsAnz) flieg($('meldung-ok').getBoundingClientRect(), SP.bits - bitsAnz, 0); if (S) S.pause = $('ov-pause').hidden ? false : S.pause; meldungZeigen(); if (!S) menueZeigen(); };
@@ -266,7 +292,7 @@ $('meldung-ok').onclick = () => { $('ov-meldung').hidden = true; if (!S && SP.bi
 function einstellungen() {
   const dunkel = document.documentElement.getAttribute('data-theme') === 'dunkel';
   $('opt-ton').setAttribute('aria-checked', SP.opt.ton); $('opt-vib').setAttribute('aria-checked', SP.opt.vib); $('opt-dunkel').setAttribute('aria-checked', dunkel);
-  $('ov-opt').hidden = false;
+  $('opt-meldung').textContent = ''; $('ov-opt').hidden = false;
 }
 $('einst').onclick = einstellungen;
 $('opt-ton').onclick = () => { SP.opt.ton = !SP.opt.ton; ton('klick'); speichern(); einstellungen(); };
@@ -274,6 +300,20 @@ $('opt-vib').onclick = () => { SP.opt.vib = !SP.opt.vib; vib(30); speichern(); e
 $('opt-dunkel').onclick = () => { const d = document.documentElement, dn = d.getAttribute('data-theme') !== 'dunkel';
   if (dn) d.setAttribute('data-theme', 'dunkel'); else d.removeAttribute('data-theme');
   try { localStorage.setItem('basebug.thema', dn ? 'dunkel' : 'hell'); } catch (e) {} farben(); einstellungen(); menueZeigen(); };
+$('opt-export').onclick = () => {
+  speichern(); const d = new Date(), p = (n) => String(n).padStart(2, '0');
+  const blob = new Blob([JSON.stringify({ spiel: 'BaseBug', version: 1, exportiert: d.toISOString(), stand: SP }, null, 1)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `BaseBug_Spielstand_${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}.json`; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000); $('opt-meldung').textContent = '✓ Spielstand gespeichert.'; };
+$('opt-import').onclick = () => { $('opt-datei').value = ''; $('opt-datei').click(); };
+$('opt-datei').onchange = async () => {
+  const f = $('opt-datei').files[0]; if (!f) return;
+  try { const j = JSON.parse(await f.text()); const st = j && j.spiel === 'BaseBug' ? j.stand : null;
+    if (!st || st.v !== 1 || typeof st.bits !== 'number') throw new Error();
+    SP = Object.assign(leererStand(), st); speichern(); gewLv = Math.min(SP.frei, MAXLV); bitsAnz = SP.bits;
+    $('opt-meldung').textContent = '✓ Spielstand geladen: Level ' + Math.min(SP.frei, MAXLV) + ', ' + zahl(SP.bits) + ' Bits.'; menueZeigen();
+  } catch (e) { $('opt-meldung').textContent = '✗ Diese Datei ist kein BaseBug-Spielstand.'; } };
 $('opt-zu').onclick = () => { $('ov-opt').hidden = true; };
 $('opt-reset').onclick = () => { const b = $('opt-reset');
   if (b.dataset.sicher !== '1') { b.dataset.sicher = '1'; b.textContent = 'Wirklich alles löschen?'; return; }
@@ -294,3 +334,17 @@ function schleife(n) {
 }
 farben(); menueZeigen(); requestAnimationFrame(schleife);
 if ('serviceWorker' in navigator && location.protocol !== 'file:') addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+
+/* ---------- Spielerstufe ---------- */
+function kontoZeigen() { const k = SP.konto, z = kontoZiel(k.st);
+  $('konto-st').textContent = k.st; $('konto-i').style.width = Math.min(100, k.ep / z * 100) + '%'; $('konto').title = rang(k.st) + ' | ' + zahl(k.ep) + ' / ' + zahl(z) + ' EP'; }
+function naechsteFreischaltung() { for (let st = SP.konto.st + 1; st <= 60; st++) if (KONTO[st] && kontoText(KONTO[st], true).length) return { st, t: kontoText(KONTO[st], true).join(', ') }; return null; }
+$('konto').onclick = () => { const k = SP.konto, z = kontoZiel(k.st); let h = `<div class="etikett">SPIELERSTUFE</div><h2>${rang(k.st)}</h2>
+  <div class="konto-gross"><span>${k.st}</span></div>${balken(k.ep, z)}<p>${zahl(k.ep)} / ${zahl(z)} EP bis Stufe ${k.st + 1}</p>
+  <p class="leer">EP gibt es für Bugs (1), Wellen (5), Bosse (25), Gummienten (20), geschaffte Level (40 + 5 je Levelnummer), Tagesaufgaben (30), Fusionen (10) und Erfolge (25).</p>
+  <div class="liste konto-liste">`;
+  for (let st = 2; st <= 40; st++) { const b = KONTO[st] || {}, erreicht = k.st >= st, txt = [kontoBits(st) + ' Bits'].concat(kontoText(b));
+    h += `<div class="zeile ${erreicht ? 'k1' : ''} ${b.turm ? 'r2' : ''}"><span class="orden">${erreicht ? '✓' : st}</span><div style="flex:1;text-align:left"><b>Stufe ${st}${RAENGE.find(([a]) => a === st) ? ' | ' + rang(st) : ''}</b><p>${txt.join(' | ')}</p></div></div>`; }
+  h += '</div><button class="knopf" id="konto-zu">Schließen</button>';
+  $('ov-item-inhalt').innerHTML = h; $('ov-item').hidden = false; $('konto-zu').onclick = () => { $('ov-item').hidden = true; };
+  const ziel = $('ov-item-inhalt').querySelectorAll('.konto-liste .zeile')[Math.max(0, k.st - 3)]; if (ziel) ziel.scrollIntoView({ block: 'center' }); };
