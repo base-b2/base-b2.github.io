@@ -1,0 +1,197 @@
+/* BaseBug | Spieldaten: alle Basiswerte an einer Stelle, damit sich das Balancing leicht anpassen lässt. */
+'use strict';
+const SPIEL = 'basebug';
+const MAXLV = 30;
+const KAPITEL = [
+  { n: 'Schreibtisch', k: 'k1' },
+  { n: 'Serverraum', k: 'k2' },
+  { n: 'Cloud', k: 'k3' },
+];
+/* Wachstum je Stufe (proportional, wie in vielen Spielen) */
+const WACHS = {
+  held: 1.10,        // Helden-Angriff je Heldenstufe
+  turm: 1.35,        // Turm-Angriff je Turmstufe im Level
+  gegnerHpLevel: 1.09, gegnerHpWelle: 1.07,
+  gegnerAtkLevel: 1.06, gegnerAtkWelle: 1.04,
+  item: 0.12,        // +12 % vom Grundwert je Ausrüstungsstufe
+};
+const BOSSMULT = { 5: 0.7, 10: 1.0, 15: 1.25, 20: 1.6 };
+const HAERTE = { mult: 1.5, empfohlen: [550, 1300, 2800] };
+
+/* Bilder: 9x9 bzw. 7x7, T Text, A Akzent, G Grund, E Eisblau, L Lavendel, P Aprikose */
+const HELDEN = {
+  bit: { n: 'Bit', preis: 0, atk: 8, rate: 1.5, krit: 0.05, art: 'einzel', artT: 'Einzelschuss',
+    f: { n: 'Strg + Z', t: 'Repariert 30 % der Festung und blockt 3 s jeden Schaden.', cd: 25 },
+    info: 'Das Original. Solide, zuverlässig, etwas stur.',
+    bild: ['.TT..AAA.', '.TT......', '.TT......', '.TTTTTTT.', '.TTGTTGT.', '.TTTTTTT.', '.TTTTTTT.', '..T...T..', '..T...T..'] },
+  pixel: { n: 'Pixel', preis: 150, atk: 3.5, rate: 4.5, krit: 0.08, art: 'einzel', artT: 'Schnellfeuer',
+    f: { n: 'Turbo', t: 'Feuert 5 s lang viermal so schnell.', cd: 20 },
+    info: 'Klein, schnell, hat zu viel Kaffee getrunken.',
+    bild: ['....A....', '....T....', '..TTTTT..', '..TGTGT..', '..TTTTT..', '..TTATT..', '..TTTTT..', '...T.T...', '...T.T...'] },
+  byte: { n: 'Byte', preis: 300, atk: 14, rate: 0.75, krit: 0.05, art: 'flaeche', fl: 0.8, artT: 'Flächenschaden',
+    f: { n: 'Bombe', t: 'Zehnfacher Schaden mitten in der dichtesten Gruppe.', cd: 18 },
+    info: 'Acht Bits, ein Gedanke: Bumm.',
+    bild: ['.........', '.TTTTTTT.', 'TTGTTTGTT', 'TTTTTTTTT', 'TATATATAT', 'TTTTTTTTT', '.TTTTTTT.', '.T.....T.', '.T.....T.'] },
+  cache: { n: 'Cache', preis: 500, atk: 6, rate: 1.4, krit: 0.05, art: 'frost', artT: 'Verlangsamt',
+    f: { n: 'Einfrieren', t: 'Alle Bugs stehen 3 s still.', cd: 24 },
+    info: 'Merkt sich alles. Vor allem, wo die Bugs sind.',
+    bild: ['.LLLLLLL.', '.LTTTTTL.', '..TTTTT..', '..TGTGT..', '..TTTTT..', '.TTTTTTT.', '.TTTTTTT.', '..T...T..', '..T...T..'] },
+  root: { n: 'Root', preis: 800, atk: 7, rate: 1.1, krit: 0.1, art: 'kette', kette: 3, artT: 'Springt auf 3 Ziele',
+    f: { n: 'sudo', t: 'Alle Türme 6 s mit doppeltem Angriff und doppelter Feuerrate.', cd: 30 },
+    info: 'Hat alle Rechte. Nutzt sie auch.',
+    bild: ['.A.A.A.A.', '.AAAAAAA.', '.TTTTTTT.', '.TGTTTGT.', '.TTTTTTT.', '.TTAAATT.', '.TTTTTTT.', '..T...T..', '.TT...TT.'] },
+};
+const HELD_MAX = 30;
+const heldKosten = (lv) => Math.round(30 * Math.pow(1.22, lv - 1));
+
+const TUERME = {
+  pfeil: { n: 'Schütze', k: 40, atk: 9, rate: 1.6, rw: 2.6, ziele: ['boden', 'luft'], farbe: 'eisblau',
+    info: 'Schnelle Einzelschüsse.', spez: 'Doppelschuss: trifft zwei Ziele.' },
+  kanone: { n: 'Kanone', k: 70, atk: 24, rate: 0.55, rw: 2.3, fl: 0.9, ziele: ['boden'], farbe: 'aprikose',
+    info: 'Flächenschaden, nur Bodenziele.', spez: 'Brand: der Boden brennt 2 s nach.' },
+  frost: { n: 'Frost', k: 50, atk: 3, rate: 1.1, rw: 2.2, ziele: ['boden', 'luft'], farbe: 'lavendel',
+    info: 'Verlangsamt um 50 %.', spez: 'Eisblock: 20 % Chance auf 1 s Stillstand.' },
+  flak: { n: 'Flak', k: 60, atk: 15, rate: 1.8, rw: 3.0, ziele: ['luft'], farbe: 'eisblau',
+    info: 'Holt Flieger vom Himmel, nur Luftziele.', spez: 'Splitter: Flächenschaden in der Luft.' },
+  blitz: { n: 'Blitz', k: 90, atk: 13, rate: 0.8, rw: 2.4, kette: 3, ziele: ['boden', 'luft'], farbe: 'lavendel',
+    info: 'Springt auf drei Ziele.', spez: 'Überspannung: springt auf fünf Ziele.' },
+  laser: { n: 'Laser', k: 110, atk: 30, rate: 1, rw: 3.4, ziele: ['boden', 'luft'], farbe: 'lavendel',
+    info: 'Dauerstrahl, Angriff pro Sekunde.', spez: 'Durchbohren: trifft alles auf der Linie.' },
+  mine: { n: 'Goldmine', k: 60, atk: 0, rate: 0, rw: 0, gold: 15, ziele: [], farbe: 'aprikose',
+    info: 'Bringt Gold nach jeder Welle.', spez: 'Zinsen: +5 % auf dein Gold je Welle.' },
+};
+const TURM_MAX = 5;
+
+/* Gegner. art: boden | luft | tunnel | spezial | boss | ei */
+const GEGNER = {
+  bug: { n: 'Krabbler', art: 'boden', hp: 20, atk: 5, v: 0.8, gold: 4, gr: 0.32, ab: 1,
+    faeh: 'Keine. Kommt in Massen.', info: 'Der gewöhnliche Bug. Steht in jedem Ticket.',
+    bild: ['.T...T.', '..TTT..', 'TTTTTTT', '.TGTGT.', 'TTTTTTT', '.TTTTT.', 'T.....T'] },
+  kaefer: { n: 'Panzerkäfer', art: 'boden', hp: 80, atk: 12, v: 0.45, gold: 10, gr: 0.42, ab: 4,
+    faeh: 'Viel HP, langsam.', info: 'Lässt sich nicht hetzen. Auch nicht reparieren.',
+    bild: ['..TTT..', '.TTTTT.', 'TTTATTT', 'TGTATGT', 'TTTATTT', '.TTTTT.', 'T.T.T.T'] },
+  motte: { n: 'Motte', art: 'luft', hp: 14, atk: 4, v: 1.2, gold: 4, gr: 0.32, ab: 2,
+    faeh: 'Fliegt: Kanone und Goldmine treffen sie nicht.', info: 'Der erste echte Bug der Geschichte war eine Motte. Sie ist stolz darauf.',
+    bild: ['T.....T', 'TT...TT', 'TTTGTTT', 'ETTTTTE', 'EETTTEE', '.E.T.E.', '...T...'] },
+  wurm: { n: 'Wurm', art: 'tunnel', hp: 26, atk: 6, v: 0.9, gold: 5, gr: 0.3, ab: 3,
+    faeh: 'Gräbt sich immer wieder ein und ist dann nicht angreifbar.', info: 'Kommt durch jede Hintertür.',
+    bild: ['..TTT..', '.TGTGT.', '.TTTTT.', '..TTT..', '.TTT...', 'TTT....', 'TT.....'] },
+  virus: { n: 'Virus', art: 'spezial', hp: 28, atk: 5, v: 0.7, gold: 5, gr: 0.34, ab: 6,
+    faeh: 'Teilt sich beim Besiegen in zwei Mini-Bugs.', info: 'Weiterleiten auf eigene Gefahr.',
+    bild: ['A..A..A', '.AAAAA.', '.AGAGA.', 'AAAAAAA', '.AAAAA.', '.A.A.A.', 'A.....A'] },
+  schild: { n: 'Schildwanze', art: 'spezial', hp: 34, atk: 7, v: 0.65, gold: 7, gr: 0.36, ab: 8,
+    faeh: 'Trägt einen Schild mit 50 % Extra-HP.', info: 'Hat eine Firewall. Eine kleine.',
+    bild: ['EEEEEEE', 'ETTTTTE', 'ETGTGTE', 'ETTTTTE', 'ETTTTTE', '.T...T.', 'T.....T'] },
+  mini: { n: 'Mini-Bug', art: 'boden', hp: 8, atk: 2, v: 1.2, gold: 1, gr: 0.22, ab: 6,
+    faeh: 'Schnell und klein.', info: 'Entsteht aus einem Virus. Fühlt sich unterschätzt.',
+    bild: ['.T...T.', '..TTT..', '.TTTTT.', '.TGTGT.', '.TTTTT.', '..TTT..', '.T...T.'] },
+  ente: { n: 'Gummiente', art: 'ei', hp: 1, atk: 0, v: 0.6, gold: 25, gr: 0.38, ab: 1,
+    faeh: 'Taucht selten auf, watschelt weg, wenn man sie lässt. Droppt immer etwas.',
+    info: 'Der beste Debugger der Welt. Hört zu, sagt nichts, quietscht manchmal.',
+    bild: ['..AAA..', '.AAGAT.', '.AAAATT', '..AAA..', 'AAAAAA.', 'AAAAAA.', '.AAAA..'] },
+  speicherleck: { n: 'Speicherleck', art: 'boss', hp: 320, atk: 20, v: 0.3, gold: 60, gr: 0.6, ab: 5, boss: true,
+    faeh: 'Verliert alle 3 s einen Mini-Bug.', info: 'Wird mit der Zeit nicht kleiner. Nur alles andere voller.',
+    bild: ['..AAAAA..', '.AAAAAAA.', 'AAGAAAGAA', 'AAAAAAAAA', 'AATTTTTAA', 'AAAAAAAAA', '.AAAAAAA.', '.A..A..A.', '.A.....A.'] },
+  schleife: { n: 'Endlosschleife', art: 'luft', hp: 240, atk: 15, v: 0.5, gold: 60, gr: 0.55, ab: 5, boss: true,
+    faeh: 'Fliegt in Schlangenlinien über das ganze Feld.', info: 'while (true) { nerven(); }',
+    bild: ['...TTT...', '..T...T..', '.T.GTG.T.', 'T...T...T', '.T.....T.', '..TTATT..', '...T.T...', '..T...T..', '...TTT...'] },
+  bluescreen: { n: 'Bluescreen', art: 'boss', hp: 620, atk: 35, v: 0.25, gold: 120, gr: 0.65, ab: 10, boss: true,
+    faeh: 'Friert alle 7 s sämtliche Türme für 1,5 s ein.', info: 'Ein Problem ist aufgetreten. Es ist dieser Boss.',
+    bild: ['EEEEEEEEE', 'ETTTTTTTE', 'ETGTTTGTE', 'ETTTTTTTE', 'ETTTTTTTE', 'ETTGGGTTE', 'EEEEEEEEE', '...TTT...', '.TTTTTTT.'] },
+  kernel: { n: 'Kernel Panic', art: 'boss', hp: 900, atk: 50, v: 0.22, gold: 200, gr: 0.7, ab: 99, boss: true,
+    faeh: 'Verliert Mini-Bugs und friert Türme ein. Nur im Härtetest.', info: 'Der Endgegner. Niemand weiß, wer ihn kompiliert hat.',
+    bild: ['A.AAAAA.A', '.AAAAAAA.', 'AAGAAAGAA', 'AAAAAAAAA', 'AATATATAA', 'AAAAAAAAA', '.AAAAAAA.', 'A.A...A.A', 'A.......A'] },
+};
+
+/* Ausrüstung */
+const SLOTS = {
+  tastatur: { n: 'Tastatur', stat: 'Helden-Angriff', basis: 8, einh: '%',
+    bild: ['.......', 'TTTTTTT', 'TGTGTGT', 'TTTTTTT', 'TGTTTGT', 'TTTTTTT', '.......'],
+    namen: ['Folientastatur', 'Mechanische Tastatur', 'RGB-Tastatur', 'Tastatur mit Kapitälchen'] },
+  maus: { n: 'Maus', stat: 'Helden-Feuerrate', basis: 6, einh: '%',
+    bild: ['...T...', '..TTT..', '.TTATT.', '.TTTTT.', '.TTTTT.', '.TTTTT.', '..TTT..'],
+    namen: ['Kugelmaus', 'Optische Maus', 'Gaming-Maus', 'Maus mit 42 Tasten'] },
+  kopfhoerer: { n: 'Kopfhörer', stat: 'Turm-Angriff', basis: 6, einh: '%',
+    bild: ['..TTT..', '.T...T.', 'T.....T', 'T.....T', 'TT...TT', 'TT...TT', '.......'],
+    namen: ['Ohrstöpsel', 'Headset', 'Studio-Kopfhörer', 'Noise-Cancelling Deluxe'] },
+  netzteil: { n: 'Netzteil', stat: 'Festung HP', basis: 20, einh: '',
+    bild: ['.TTTTT.', '.T...T.', '.T.A.T.', '.T.A.T.', '.TTTTT.', '...T...', '..TTT..'],
+    namen: ['Steckdosenleiste', 'Netzteil 300 W', 'Netzteil 850 W', 'USV mit Notstrom'] },
+};
+const RAR = [
+  { n: 'Gewöhnlich', m: 1, max: 10 },
+  { n: 'Selten', m: 1.8, max: 20 },
+  { n: 'Episch', m: 3, max: 30 },
+  { n: 'Legendär', m: 5, max: 40 },
+];
+
+/* Karten zwischen den Wellen */
+const KARTEN = [
+  { n: 'Schärfere Bits', t: '+20 % Angriff für alle Türme', f: (S) => S.mod.tatk *= 1.2 },
+  { n: 'Übertaktet', t: '+15 % Feuerrate für alle Türme', f: (S) => S.mod.trate *= 1.15 },
+  { n: 'Weitblick', t: '+0,4 Reichweite für alle Türme', f: (S) => S.mod.rw += 0.4 },
+  { n: 'Heldenmut', t: '+30 % Angriff für den Helden', f: (S) => S.mod.hatk *= 1.3 },
+  { n: 'Schnellfeuer', t: '+25 % Feuerrate für den Helden', f: (S) => S.mod.hrate *= 1.25 },
+  { n: 'Glückstreffer', t: '+10 % kritische Treffer für den Helden', f: (S) => S.mod.krit += 0.1 },
+  { n: 'Kurzer Draht', t: 'Spezialfähigkeit lädt 25 % schneller', f: (S) => S.mod.cd *= 0.75 },
+  { n: 'Reparatur', t: 'Festung +40 % HP', f: (S) => S.hp = Math.min(S.hpMax, S.hp + S.hpMax * 0.4) },
+  { n: 'Neues Netzteil', t: 'Festung max. +25 % und voll', f: (S) => { S.hpMax = Math.round(S.hpMax * 1.25); S.hp = S.hpMax; } },
+  { n: 'Spende', t: '+80 Gold sofort', f: (S) => S.gold += 80 },
+  { n: 'Kopfgeld', t: '+25 % Gold pro Bug', f: (S) => S.mod.gold *= 1.25 },
+  { n: 'Gratis-Ausbau', t: 'Zufälliger Turm eine Stufe höher', f: (S) => {
+    const l = [...S.tuerme.values()].filter((t) => t.lv < TURM_MAX);
+    if (l.length) l[Math.random() * l.length | 0].lv++; else S.gold += 60; } },
+];
+
+/* Tägliche Aufgaben (id = Statistik-Schlüssel) */
+const AUFGABEN = [
+  { id: 'kills', t: '{z} Bugs besiegen', z: [120, 220], b: 50 },
+  { id: 'siege', t: '{z} Level schaffen', z: [2, 3], b: 60 },
+  { id: 'gebaut', t: '{z} Türme bauen', z: [15, 30], b: 40 },
+  { id: 'faehig', t: 'Spezialfähigkeit {z}-mal einsetzen', z: [5, 10], b: 40 },
+  { id: 'bosse', t: '{z} Bosse besiegen', z: [2, 4], b: 60 },
+  { id: 'kills_luft', t: '{z} Flieger besiegen', z: [30, 60], b: 50 },
+  { id: 'ausgebaut', t: 'Türme {z}-mal ausbauen', z: [10, 20], b: 40 },
+  { id: 'wellen', t: '{z} Wellen überstehen', z: [15, 30], b: 50 },
+];
+
+/* Meilensteine: Stufen [Ziel, Belohnung]; item = Seltenheit */
+const MEILEN = [
+  { id: 'kills', n: 'Kammerjäger', t: 'Bugs besiegen', s: [[100, { bits: 50 }], [1000, { bits: 200 }], [5000, { item: 2 }], [20000, { item: 3 }]] },
+  { id: 'siege', n: 'Fortschritt', t: 'Level schaffen', s: [[5, { bits: 80 }], [15, { bits: 250 }], [30, { item: 2 }], [60, { item: 3 }]] },
+  { id: 'bosse', n: 'Bossjäger', t: 'Bosse besiegen', s: [[3, { bits: 60 }], [15, { bits: 250 }], [40, { item: 2 }], [100, { item: 3 }]] },
+  { id: 'sterne', n: 'Sternensammler', t: 'Sterne sammeln', s: [[15, { bits: 100 }], [45, { bits: 300 }], [90, { item: 3 }]] },
+  { id: 'gebaut', n: 'Baumeister', t: 'Türme bauen', s: [[25, { bits: 40 }], [150, { bits: 150 }], [600, { item: 1 }], [2000, { item: 2 }]] },
+  { id: 'kills_luft', n: 'Fliegenklatsche', t: 'Flieger besiegen', s: [[50, { bits: 40 }], [500, { bits: 200 }], [2000, { item: 2 }]] },
+  { id: 'enten', n: 'Entenflüsterer', t: 'Gummienten besiegen', s: [[1, { bits: 50 }], [5, { item: 1 }], [15, { item: 2 }], [40, { item: 3 }]] },
+  { id: 'itemauf', n: 'Schrauber', t: 'Ausrüstung verbessern', s: [[10, { bits: 60 }], [50, { bits: 250 }], [200, { item: 2 }]] },
+  { id: 'aufgaben', n: 'Pflichtbewusst', t: 'Tägliche Aufgaben erledigen', s: [[5, { bits: 60 }], [30, { bits: 250 }], [100, { item: 3 }]] },
+];
+
+/* Erfolge (einmalig) */
+const ERFOLGE = [
+  { id: 'erster', n: 'Hallo Welt', t: 'Das erste Level schaffen.', b: 20 },
+  { id: 'fehlerfrei', n: 'Fehlerfrei kompiliert', t: 'Ein Level ohne Schaden an der Festung schaffen.', b: 80 },
+  { id: 'sparfuchs', n: 'Sparfuchs', t: 'Ein Level mit höchstens drei Türmen schaffen.', b: 80 },
+  { id: 'handbetrieb', n: 'Handbetrieb', t: 'Ein Level ohne Spezialfähigkeit schaffen.', b: 50 },
+  { id: 'ente', n: 'Quietschfidel', t: 'Eine Gummiente besiegen.', b: 50 },
+  { id: 'stufe5', n: 'Voll ausgebaut', t: 'Einen Turm auf Stufe 5 bringen.', b: 40 },
+  { id: 'zeitraffer', n: 'Zeitraffer', t: 'Ein Level auf dreifacher Geschwindigkeit schaffen.', b: 40 },
+  { id: 'g42', n: 'Die Antwort', t: 'Eine Welle mit genau 42 Gold beenden.', b: 42 },
+  { id: 'voll', n: 'Gut gerüstet', t: 'Alle vier Ausrüstungsplätze belegen.', b: 60 },
+  { id: 'legendaer', n: 'Legendär', t: 'Ein legendäres Ausrüstungsteil finden.', b: 150 },
+  { id: 'alleh', n: 'Vollzählig', t: 'Alle Helden freischalten.', b: 300 },
+  { id: 'b11', n: '1011₂', t: 'Im Härtetest Welle 11 erreichen.', b: 110 },
+  { id: 'haerte', n: 'Härtetest bestanden', t: 'Einen Härtetest schaffen.', b: 200 },
+  { id: 'kapitel', n: 'Durchgespielt', t: 'Level 30 schaffen.', b: 500 },
+];
+
+/* Statistik: Schlüssel und Beschriftung */
+const STATS = [
+  ['kills', 'Bugs besiegt'], ['bosse', 'Bosse besiegt'], ['kills_luft', 'Flieger besiegt'], ['enten', 'Gummienten besiegt'],
+  ['siege', 'Level geschafft'], ['niederlagen', 'Level verloren'], ['wellen', 'Wellen überstanden'], ['hf', 'Härtetests geschafft'],
+  ['gebaut', 'Türme gebaut'], ['ausgebaut', 'Türme ausgebaut'], ['verkauft', 'Türme verkauft'], ['gold', 'Gold verdient'],
+  ['dmg_held', 'Schaden durch Helden'], ['dmg_turm', 'Schaden durch Türme'], ['krit', 'Kritische Treffer'], ['faehig', 'Fähigkeiten eingesetzt'],
+  ['bits_ein', 'Bits verdient'], ['bits_aus', 'Bits ausgegeben'], ['items', 'Ausrüstung gefunden'], ['itemauf', 'Ausrüstung verbessert'],
+  ['zerlegt', 'Ausrüstung zerlegt'], ['aufgaben', 'Tägliche Aufgaben erledigt'], ['zeit', 'Spielzeit'],
+];

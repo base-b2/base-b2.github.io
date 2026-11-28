@@ -1,0 +1,7 @@
+# Geheime Werte (z. B. Supabase-Datenbankpasswort, service_role-Schlüssel) nie ins Repository
+.env
+.env.*
+*.geheim.*
+
+# Lokale Einstellungen von Claude Code
+.claude/settings.local.json

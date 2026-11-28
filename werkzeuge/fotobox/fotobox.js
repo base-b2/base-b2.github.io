@@ -515,7 +515,8 @@
     const titel = (r.title || 'Ohne Titel').slice(0, 70);
     const von = r.creator || 'unbekannt';
     const lic = lizenz(r);
-    return { titel, von, lic, seite: r.foreign_landing_url || '', licUrl: r.license_url || '',
+    const nurWeb = (u) => (/^https?:\/\//i.test(u || '') ? u : '');   // Links aus der API nur als http(s), nie javascript:
+    return { titel, von, lic, seite: nurWeb(r.foreign_landing_url), licUrl: nurWeb(r.license_url),
       text: `Hintergrund: "${titel}" von ${von} | ${lic} | via Openverse` };
   }
   async function waehleOpenverse(r, btn) {

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BaseDays Tests</title>
+<link rel="stylesheet" href="/assets/css/tokens.css">
+<link rel="stylesheet" href="/assets/css/base.css">
+<style>
+  main { padding: 32px 0; }
+  #summe { font-family: var(--bb-font-mono); font-weight: 700; font-size: 22px; margin: 16px 0; }
+  ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; font-size: 15px; }
+  .ok { color: var(--bb-text); }
+  #summe.ok { color: var(--bb-erfolg); }
+  .fehler { color: var(--bb-fehler); }
+</style>
+</head>
+<body>
+<main class="huelle">
+<p class="etikett">BaseDays | Kernlogik</p>
+<h1>Tests</h1>
+<p id="summe">Läuft ...</p>
+<ul id="ergebnisse"></ul>
+</main>
+<script type="module" src="tests.js"></script>
+</body>
+</html>

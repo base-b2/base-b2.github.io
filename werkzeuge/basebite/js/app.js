@@ -532,7 +532,7 @@ async function suche(q) {
   const offline = off.nurOffline();
   $('#ansicht').innerHTML = `<div class="huelle">
 <h1 class="seiten-titel">${rezept ? 'Zutat hinzufügen' : 'Lebensmittel'}</h1>
-<p class="kontext">${rezept ? `Für Rezept: <b>${esc(rezept.name)}</b> | <a href="#/rezept/${encodeURIComponent(rezept.id)}">zurück</a>` : `Eintragen in: <b>${mahlzeitName(kontext.mahlzeit)}</b> | <span class="mono">${kurz(kontext.datum)}</span>`}</p>
+<p class="kontext">${rezept ? `Für Rezept: <b>${esc(rezept.name)}</b> | <a href="#/rezept/${encodeURIComponent(rezept.id)}">zurück</a>` : `Eintragen in: <b>${esc(mahlzeitName(kontext.mahlzeit))}</b> | <span class="mono">${kurz(kontext.datum)}</span>`}</p>
 <form id="such-form" class="such-form" role="search">
 <label class="unsichtbar" for="such-wort">Lebensmittel oder Barcode</label>
 <input class="eingabe" id="such-wort" type="search" enterkeyhint="search" autocomplete="off" placeholder="Name oder Barcode" value="${esc(sucheZustand.wort)}">
@@ -578,7 +578,7 @@ ${LISTEN.map(([k, n]) => `<button type="button" class="reiter-knopf" data-liste=
         return;
       }
       const schnell = !kontext.rezeptId;
-      box.innerHTML = `${r === 'haeufig' ? `<p class="klein">Passend zu ${mahlzeitName(kontext.mahlzeit)}, nach Häufigkeit.${schnell ? ` ${icon('plus', 14)} trägt die gleiche Menge wie beim letzten Mal ein.` : ''}</p>` : ''}
+      box.innerHTML = `${r === 'haeufig' ? `<p class="klein">Passend zu ${esc(mahlzeitName(kontext.mahlzeit))}, nach Häufigkeit.${schnell ? ` ${icon('plus', 14)} trägt die gleiche Menge wie beim letzten Mal ein.` : ''}</p>` : ''}
 <ul class="lm-liste">${gruppen.map((g) => gruppenZeile(g, { schnell, mitDatum: r === 'verlauf' })).join('')}</ul>`;
       $$('[data-gruppe]', box).forEach((b) => {
         b.onclick = () => {

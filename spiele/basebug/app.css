@@ -1,0 +1,132 @@
+/* BaseBug | Gestaltung nach Base B Corporate Design. Token kommen aus /assets/css/tokens.css (hier als Ersatz wiederholt). */
+@font-face{font-family:"Lexend";src:url(/assets/fonts/lexend.woff) format("woff");font-weight:100 900;font-display:swap}
+@font-face{font-family:"JetBrains Mono";src:url(/assets/fonts/jetbrains-mono.woff) format("woff");font-weight:100 800;font-display:swap}
+:root{--bb-bordeaux:#6A1B2B;--bb-tinte:#1C2E4A;--bb-grund:#FFFFFF;--bb-flaeche:#FFFFFF;--bb-text:#1C2E4A;--bb-nebentext:#5A6070;--bb-akzent:#6A1B2B;--bb-akzent-text:#FFFFFF;--bb-lavendel:#E7E2F3;--bb-aprikose:#F7E4D4;--bb-eisblau:#DDEBF2;--bb-erfolg:#2A9D5C;--bb-fehler:#C62D3A;--bb-fehler-grund:#FDECEC;--bb-linie:#D8DBE2;--bb-font-text:"Lexend","Segoe UI",Arial,sans-serif;--bb-font-mono:"JetBrains Mono",Consolas,monospace}
+:root[data-theme="dunkel"]{--bb-grund:#24272E;--bb-flaeche:#2E323A;--bb-text:#ECEAF0;--bb-nebentext:#A9AEBB;--bb-akzent:#E9A3AE;--bb-akzent-text:#24272E;--bb-lavendel:#3A3550;--bb-aprikose:#3B3631;--bb-eisblau:#2C3A44;--bb-erfolg:#5FCB8A;--bb-fehler:#FF8E8E;--bb-fehler-grund:#3B2A2E;--bb-linie:#3E434D}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bb-grund);color:var(--bb-text);font-family:var(--bb-font-text);-webkit-tap-highlight-color:transparent;overscroll-behavior:none;user-select:none}
+button{font-family:inherit;color:inherit;cursor:pointer}
+button:disabled{cursor:default}
+button:focus-visible{outline:2px solid var(--bb-text);outline-offset:2px}
+:root[data-theme="dunkel"] button:focus-visible{outline-color:var(--bb-akzent)}
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);max-width:520px;margin:0 auto}
+.screen[hidden]{display:none}
+.kopf{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--bb-linie);min-height:60px}
+.marke{display:flex;align-items:center;gap:8px;font-weight:700;font-size:18px;text-decoration:none;color:var(--bb-text)}
+.bm-q{fill:var(--bb-text)} .bm-c{fill:var(--bb-akzent)}
+.rechts{margin-left:auto;display:flex;gap:6px;align-items:center}
+.pille{font-family:var(--bb-font-mono);font-weight:700;font-size:15px;padding:4px 10px;border-radius:999px;background:var(--bb-eisblau);white-space:nowrap;display:inline-flex;gap:6px;align-items:center}
+.pille.gold{background:var(--bb-aprikose)} .pille.hp{background:var(--bb-lavendel)}
+.bitsym{display:inline-block;width:10px;height:10px;background:var(--bb-akzent)}
+.ikon{width:44px;height:44px;border:1px solid var(--bb-linie);background:var(--bb-flaeche);border-radius:8px;display:grid;place-items:center;flex:none}
+.ikon:disabled{opacity:.35}
+.tempo{font-family:var(--bb-font-mono);font-weight:700;font-size:15px}
+.inhalt{flex:1;overflow-y:auto;padding:16px}
+.etikett{font-family:var(--bb-font-mono);font-size:13px;letter-spacing:1px;text-transform:uppercase;color:var(--bb-nebentext)}
+h2{margin:4px 0 12px;font-size:28px;line-height:1.15}
+.leer{color:var(--bb-nebentext);font-size:14px;line-height:1.55}
+.buehnen-karte{border-radius:12px;padding:16px;text-align:center;border:1px solid var(--bb-linie)}
+.k1{background:var(--bb-eisblau)} .k2{background:var(--bb-lavendel)} .k3{background:var(--bb-aprikose)}
+.levelwahl{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0 8px}
+.levelnr{font-family:var(--bb-font-mono);font-weight:700;font-size:40px;line-height:1.1}
+.sterne{font-size:22px;letter-spacing:4px;min-height:28px}
+.sterne .an,.ende-sterne .an{color:var(--bb-akzent)} .sterne .aus,.ende-sterne .aus{color:var(--bb-linie)}
+.belohnung-zeile{font-size:14px;margin-top:8px}
+.knopf{width:100%;height:56px;border:0;border-radius:8px;background:var(--bb-akzent);color:var(--bb-akzent-text);font-weight:700;font-size:19px;margin-top:16px}
+.knopf:disabled{opacity:.5}
+.knopf2{width:100%;min-height:48px;border:1px solid var(--bb-text);border-radius:8px;background:var(--bb-flaeche);font-weight:600;font-size:16px;margin-top:8px}
+.knopf2:disabled{opacity:.45}
+.knopf2.gefahr{border-color:var(--bb-fehler);color:var(--bb-fehler)}
+.knopf-klein{min-width:84px;min-height:44px;border:0;border-radius:8px;background:var(--bb-akzent);color:var(--bb-akzent-text);font-weight:700;font-size:14px;display:grid;place-items:center;flex:none}
+.knopf-klein:disabled{background:var(--bb-linie);color:var(--bb-nebentext)}
+.tabs{display:flex;border-top:1px solid var(--bb-linie);background:var(--bb-flaeche)}
+.tabs button{position:relative;flex:1;min-height:64px;border:0;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:11px;font-weight:600;color:var(--bb-nebentext);padding:0 2px}
+.tabs button[aria-selected="true"]{color:var(--bb-text);box-shadow:inset 0 3px 0 var(--bb-akzent)}
+.tabs button[data-tab="spielen"] svg{width:28px;height:28px}
+.punkt{position:absolute;top:10px;right:calc(50% - 18px);width:10px;height:10px;background:var(--bb-akzent);border-radius:50%}
+.punkt[hidden]{display:none}
+.segment{display:flex;border:1px solid var(--bb-linie);border-radius:8px;overflow:hidden;margin-bottom:12px}
+.segment button{flex:1;min-height:44px;border:0;background:var(--bb-flaeche);font-weight:600;font-size:14px;padding:0 4px}
+.segment button+button{border-left:1px solid var(--bb-linie)}
+.segment button[aria-selected="true"]{background:var(--bb-text);color:var(--bb-grund)}
+.helden{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.held{border:1px solid var(--bb-linie);border-radius:12px;padding:8px;background:var(--bb-flaeche);display:flex;flex-direction:column;align-items:center;gap:2px;min-height:118px}
+.held[aria-pressed="true"]{border:2px solid var(--bb-akzent);background:var(--bb-aprikose)}
+.held b{font-size:15px} .held span{font-family:var(--bb-font-mono);font-size:11px;color:var(--bb-nebentext)}
+.held.gesperrt canvas{opacity:.35}
+.detail{margin-top:12px;border:1px solid var(--bb-linie);border-radius:12px;padding:16px}
+.detail p{margin:4px 0 8px;line-height:1.55;color:var(--bb-nebentext);font-size:15px}
+.werte{width:100%;border-collapse:collapse;font-size:14px;margin:8px 0}
+.werte th{text-align:left;font-weight:600;padding:6px 8px 6px 0;vertical-align:top;width:38%}
+.werte td{font-family:var(--bb-font-mono);padding:6px 0;line-height:1.4}
+.werte tr+tr{border-top:1px solid var(--bb-linie)}
+.werte.klein{font-size:12px} .werte.klein th,.werte.klein td{padding:3px 6px 3px 0}
+.plus{color:var(--bb-erfolg);font-weight:700}
+.liste{display:grid;gap:8px}
+.zeile{display:flex;gap:12px;align-items:center;border:1px solid var(--bb-linie);border-radius:12px;padding:12px;background:var(--bb-flaeche)}
+.zeile.k1{background:var(--bb-eisblau)} .zeile.k2{background:var(--bb-lavendel)}
+.zeile p{margin:4px 0;font-size:13px;color:var(--bb-nebentext);line-height:1.4}
+.zeile b{font-size:15px}
+.gesperrt-zeile{opacity:.6}
+.ok{font-size:22px;color:var(--bb-erfolg);font-weight:700;padding:0 12px}
+.orden{width:40px;height:40px;border:2px solid var(--bb-text);border-radius:3px;display:grid;place-items:center;font-weight:700;flex:none}
+.balken{height:8px;background:var(--bb-linie);border-radius:4px;overflow:hidden;margin:6px 0}
+.balken i{display:block;height:100%;background:var(--bb-akzent)}
+.stufen{display:flex;flex-wrap:wrap;gap:4px}
+.stufe{font-family:var(--bb-font-mono);font-size:11px;border:1px solid var(--bb-linie);border-radius:999px;padding:2px 8px;color:var(--bb-nebentext)}
+.stufe.erledigt{background:var(--bb-eisblau);color:var(--bb-text)}
+.ausr{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0}
+.ausr-spalte{display:grid;gap:8px}
+.slot,.item{position:relative;border:1px solid var(--bb-linie);border-radius:8px;background:var(--bb-flaeche);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px}
+.slot{width:84px;height:84px} .item{min-height:68px}
+.slot span,.item span{font-family:var(--bb-font-mono);font-size:11px}
+.r1{background:var(--bb-eisblau)} .r2{background:var(--bb-lavendel)} .r3{background:var(--bb-aprikose);border:2px solid var(--bb-akzent)}
+.inventar{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px}
+.an-mark{position:absolute;top:2px;right:4px;font-style:normal;font-weight:700;font-size:13px}
+.item-gross{width:96px;height:96px;margin:0 auto 8px;border-radius:12px;display:grid;place-items:center;border:1px solid var(--bb-linie)}
+.blur{filter:blur(5px);opacity:.6}
+.eintrag{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--bb-linie);border-radius:12px;padding:12px;margin-bottom:8px}
+.eintrag p{margin:4px 0;font-size:13px;color:var(--bb-nebentext);line-height:1.45}
+.statistik th{width:60%}
+.buehne{flex:1;position:relative;min-height:0;display:grid;place-items:center;padding:6px}
+canvas.feld{display:block;touch-action:none;border-radius:12px;border:1px solid var(--bb-linie)}
+.unten{display:flex;gap:8px;padding:8px;border-top:1px solid var(--bb-linie);align-items:stretch}
+.faehigkeit{position:relative;width:80px;min-height:60px;border:2px solid var(--bb-akzent);border-radius:8px;background:var(--bb-flaeche);overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;font-weight:700;padding:2px}
+.faehigkeit .cd{position:absolute;left:0;right:0;bottom:0;background:var(--bb-linie);opacity:.85}
+.faehigkeit span,.faehigkeit canvas{position:relative}
+.start{flex:1;border:0;border-radius:8px;background:var(--bb-akzent);color:var(--bb-akzent-text);font-weight:700;font-size:17px;min-height:60px}
+.start:disabled{opacity:.5}
+.blatt{position:absolute;left:8px;right:8px;bottom:8px;background:var(--bb-flaeche);border:1px solid var(--bb-linie);border-radius:12px;padding:12px}
+.blatt[hidden]{display:none}
+.blatt-kopf{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.blatt-kopf b{font-size:16px}
+.zu{width:44px;height:44px;border:0;background:none;font-size:22px}
+.bauwahl{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.bauwahl button{min-height:72px;border:1px solid var(--bb-linie);border-radius:8px;background:var(--bb-grund);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px}
+.bauwahl .n{font-size:11px;font-weight:600} .bauwahl .k{font-family:var(--bb-font-mono);font-size:12px;color:var(--bb-nebentext)}
+.bauwahl button:disabled{opacity:.4}
+.turminfo{font-size:14px;line-height:1.45;color:var(--bb-nebentext);margin:0 0 8px}
+.turminfo b{color:var(--bb-text)}
+.reihe{display:flex;gap:8px}
+.reihe button{flex:1;min-height:48px;border-radius:8px;border:1px solid var(--bb-text);background:var(--bb-flaeche);font-weight:600;font-size:15px}
+.reihe .prim{background:var(--bb-akzent);color:var(--bb-akzent-text);border-color:var(--bb-akzent)}
+.reihe button:disabled{opacity:.45}
+.ueberlagerung{position:fixed;inset:0;background:rgba(28,46,74,.55);display:grid;place-items:center;padding:16px;z-index:10}
+.ueberlagerung[hidden]{display:none}
+#ov-meldung{z-index:20}
+.karte{background:var(--bb-grund);border-radius:12px;padding:24px;max-width:420px;width:100%;border:1px solid var(--bb-linie);text-align:center;max-height:calc(100dvh - 32px);overflow-y:auto}
+.karte p{margin:0 0 12px;line-height:1.55;color:var(--bb-nebentext)}
+.karte .werte{text-align:left}
+.wahl{display:grid;gap:8px;text-align:left}
+.wahl button{border:1px solid var(--bb-linie);border-radius:12px;background:var(--bb-eisblau);padding:12px 16px;min-height:60px;text-align:left}
+.wahl button:nth-child(2){background:var(--bb-lavendel)} .wahl button:nth-child(3){background:var(--bb-aprikose)}
+.wahl b{display:block;font-size:16px} .wahl span{font-size:14px;color:var(--bb-nebentext)}
+.belohnung{font-family:var(--bb-font-mono);font-weight:700;font-size:28px;margin:8px 0 4px}
+.ende-sterne{font-size:40px;letter-spacing:8px}
+.schalter-liste{display:grid;gap:8px;margin-bottom:8px}
+.schalter-liste button{display:flex;justify-content:space-between;align-items:center;min-height:52px;border:1px solid var(--bb-linie);border-radius:8px;background:var(--bb-flaeche);padding:0 16px;font-size:16px;font-weight:600}
+.schalter-liste i{width:44px;height:26px;border-radius:13px;background:var(--bb-linie);position:relative}
+.schalter-liste i::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--bb-flaeche)}
+.schalter-liste [aria-checked="true"] i{background:var(--bb-akzent)}
+.schalter-liste [aria-checked="true"] i::after{left:21px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
