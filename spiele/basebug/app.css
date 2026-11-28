@@ -130,3 +130,44 @@ canvas.feld{display:block;touch-action:none;border-radius:12px;border:1px solid 
 .schalter-liste [aria-checked="true"] i{background:var(--bb-akzent)}
 .schalter-liste [aria-checked="true"] i::after{left:21px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* Erfahrung */
+.xp{display:flex;align-items:center;gap:8px;padding:6px 12px 0}
+.xp-balken{flex:1;height:8px;background:var(--bb-linie);border-radius:4px;overflow:hidden}
+.xp-balken i{display:block;height:100%;width:0;background:var(--bb-akzent);border-radius:4px;transition:width .25s}
+#xp-t{font-family:var(--bb-font-mono);font-size:12px;color:var(--bb-nebentext);white-space:nowrap}
+/* Fähigkeit */
+.unten{position:relative}
+.faehigkeit.bereit{background:var(--bb-aprikose)}
+.tipp{position:absolute;left:8px;bottom:calc(100% + 6px);max-width:300px;background:var(--bb-text);color:var(--bb-grund);border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.45;z-index:5;text-align:left}
+.tipp b{display:block;font-size:15px;margin-bottom:2px}
+.tipp span{opacity:.8;font-size:13px}
+.tipp[hidden]{display:none}
+.tipp::after{content:"";position:absolute;left:32px;top:100%;border:7px solid transparent;border-top-color:var(--bb-text)}
+/* Bauen */
+.bauwahl button.gewaehlt{border:2px solid var(--bb-akzent);background:var(--bb-aprikose)}
+.bau-info{margin:8px 0 0;min-height:42px}
+.bau-ok{height:48px;margin-top:8px;font-size:16px}
+.reihe button[aria-pressed="true"]{background:var(--bb-aprikose);border-color:var(--bb-akzent)}
+.blatt{border-radius:16px}
+canvas.feld{border-radius:16px}
+/* Aufstiegskarten */
+.karte-wahl{position:relative;display:block;width:100%;text-align:left;border:1px solid var(--bb-linie);border-radius:12px;padding:12px 16px;min-height:64px;background:var(--bb-flaeche)}
+.karte-wahl.s1{background:var(--bb-eisblau)} .karte-wahl.s2{background:var(--bb-lavendel)} .karte-wahl.s3{background:var(--bb-aprikose);border:2px solid var(--bb-akzent)}
+.karte-wahl b{display:block;font-size:16px;margin:2px 0}
+.karte-wahl span{display:block;font-size:14px;color:var(--bb-nebentext);line-height:1.45}
+.karte-wahl .seltenheit{font-family:var(--bb-font-mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--bb-text)}
+.karte-wahl.s3 .seltenheit{color:var(--bb-akzent);font-weight:700}
+.karte-wahl .alt{display:inline;text-decoration:line-through;opacity:.7}
+.karte-wahl .neu{display:inline;font-size:14px;color:var(--bb-erfolg)}
+.karte-wahl .stapel{font-family:var(--bb-font-mono);font-size:11px;margin-top:4px}
+.karte-turm{position:absolute;right:12px;top:12px;width:28px;height:28px}
+/* Abholbereit */
+.abholen-box{border:2px solid var(--bb-akzent);border-radius:12px;padding:12px;margin-bottom:16px;background:var(--bb-aprikose)}
+.abholen-box .zeile{background:var(--bb-flaeche)}
+.abhol-banner{display:flex;align-items:center;gap:12px;width:100%;border:2px solid var(--bb-akzent);border-radius:12px;padding:12px 16px;background:var(--bb-aprikose);margin-bottom:16px;text-align:left;font-size:15px;font-weight:600}
+.abhol-banner span{margin-left:auto;font-family:var(--bb-font-mono)}
+.flug{position:fixed;z-index:50;width:12px;height:12px;background:var(--bb-akzent);border-radius:3px;pointer-events:none}
+.flug.item{width:36px;height:36px;background:var(--bb-aprikose);border:2px solid var(--bb-akzent);border-radius:8px}
+.pille.puls{animation:puls .4s}
+@keyframes puls{50%{transform:scale(1.18)}}

@@ -125,23 +125,44 @@ const RAR = [
   { n: 'Legendär', m: 5, max: 40 },
 ];
 
-/* Karten zwischen den Wellen */
-const KARTEN = [
-  { n: 'Schärfere Bits', t: '+20 % Angriff für alle Türme', f: (S) => S.mod.tatk *= 1.2 },
-  { n: 'Übertaktet', t: '+15 % Feuerrate für alle Türme', f: (S) => S.mod.trate *= 1.15 },
-  { n: 'Weitblick', t: '+0,4 Reichweite für alle Türme', f: (S) => S.mod.rw += 0.4 },
-  { n: 'Heldenmut', t: '+30 % Angriff für den Helden', f: (S) => S.mod.hatk *= 1.3 },
-  { n: 'Schnellfeuer', t: '+25 % Feuerrate für den Helden', f: (S) => S.mod.hrate *= 1.25 },
-  { n: 'Glückstreffer', t: '+10 % kritische Treffer für den Helden', f: (S) => S.mod.krit += 0.1 },
-  { n: 'Kurzer Draht', t: 'Spezialfähigkeit lädt 25 % schneller', f: (S) => S.mod.cd *= 0.75 },
-  { n: 'Reparatur', t: 'Festung +40 % HP', f: (S) => S.hp = Math.min(S.hpMax, S.hp + S.hpMax * 0.4) },
-  { n: 'Neues Netzteil', t: 'Festung max. +25 % und voll', f: (S) => { S.hpMax = Math.round(S.hpMax * 1.25); S.hp = S.hpMax; } },
-  { n: 'Spende', t: '+80 Gold sofort', f: (S) => S.gold += 80 },
-  { n: 'Kopfgeld', t: '+25 % Gold pro Bug', f: (S) => S.mod.gold *= 1.25 },
-  { n: 'Gratis-Ausbau', t: 'Zufälliger Turm eine Stufe höher', f: (S) => {
-    const l = [...S.tuerme.values()].filter((t) => t.lv < TURM_MAX);
-    if (l.length) l[Math.random() * l.length | 0].lv++; else S.gold += 60; } },
+/* Erfahrung je besiegtem Gegner */
+const EP = { bug: 1, kaefer: 3, motte: 1, wurm: 2, virus: 2, schild: 2, mini: 0.5, ente: 6, speicherleck: 15, schleife: 15, bluescreen: 25, kernel: 40 };
+const epZiel = (stufe) => 6 + 4 * (stufe - 1);
+
+/* Verbesserungen beim Aufstieg im Level. v = Wert je Seltenheit, Werte stapeln sich. */
+const SELTEN = [
+  { n: 'Gewöhnlich', w: 60 }, { n: 'Selten', w: 28 }, { n: 'Episch', w: 10 }, { n: 'Legendär', w: 2 },
 ];
+const UPGRADES = [
+  { id: 'hatk', n: 'Heldenmut', z: 'Helden-Angriff', v: [10, 18, 30, 50], e: '%' },
+  { id: 'hrate', n: 'Schnellfeuer', z: 'Helden-Feuerrate', v: [8, 14, 24, 40], e: '%' },
+  { id: 'krit', n: 'Glückstreffer', z: 'Krit.-Chance des Helden', v: [3, 6, 10, 16], e: '%', max: 60 },
+  { id: 'kritx', n: 'Volltreffer', z: 'Krit.-Schaden (Basis 200 %)', v: [20, 40, 70, 120], e: '%' },
+  { id: 'multi', n: 'Zweiter Lauf', z: 'Extra-Geschosse des Helden', v: [0, 0, 1, 1], e: '', minR: 2, max: 3 },
+  { id: 'cd', n: 'Kurzer Draht', z: 'Abklingzeit der Spezialfähigkeit', v: [8, 14, 22, 35], e: '%', neg: true, max: 70 },
+  { id: 'tatk', n: 'Schärfere Bits', z: 'Angriff aller Türme', v: [8, 14, 24, 40], e: '%' },
+  { id: 'trate', n: 'Übertaktet', z: 'Feuerrate aller Türme', v: [6, 11, 18, 30], e: '%' },
+  { id: 'rw', n: 'Weitblick', z: 'Reichweite aller Türme', v: [0.15, 0.3, 0.5, 0.8], e: '' },
+  { id: 'rabatt', n: 'Großeinkauf', z: 'Rabatt auf Bauen und Ausbauen', v: [5, 8, 12, 18], e: '%', neg: true, max: 50 },
+  { id: 'gold', n: 'Kopfgeld', z: 'Gold pro Bug', v: [10, 18, 30, 50], e: '%' },
+  { id: 'xp', n: 'Lernkurve', z: 'Erfahrung pro Bug', v: [10, 18, 30, 50], e: '%' },
+  { id: 'hpmax', n: 'Neues Netzteil', z: 'Max. HP der Festung', v: [10, 18, 30, 50], e: '%' },
+  { id: 'regen', n: 'Selbstheilung', z: 'Festung heilt HP pro Sekunde', v: [0.5, 1, 1.8, 3], e: '' },
+  { id: 'dorn', n: 'Stromzaun', z: 'Schaden/s an Bugs an der Mauer', v: [3, 6, 10, 18], e: '' },
+  { id: 'heal', n: 'Reparatur', z: 'Festung sofort heilen (% der max. HP)', v: [20, 35, 55, 100], e: '%', einmal: true },
+  { id: 'spende', n: 'Spende', z: 'Gold sofort', v: [40, 80, 140, 250], e: '', einmal: true },
+];
+/* Karten für Turmarten, die im Level gebaut wurden ({t} = Turmname) */
+const TURM_ATK = { n: '{t}-Training', z: 'Angriff aller {t}-Türme', v: [15, 25, 40, 65], e: '%' };
+const TURM_EXTRA = {
+  pfeil: { n: 'Giftpfeile', z: 'Gift: Schaden/s für 3 s (% vom Angriff)', v: [0, 0, 40, 70], e: '%' },
+  kanone: { n: 'Splitterbombe', z: 'Explosionsradius', v: [0, 0, 0.3, 0.5], e: '' },
+  frost: { n: 'Kältewelle', z: 'Zusätzliche Verlangsamung', v: [0, 0, 10, 20], e: '%', max: 35 },
+  flak: { n: 'Radar', z: 'Reichweite der Flak', v: [0, 0, 0.6, 1], e: '' },
+  blitz: { n: 'Überladung', z: 'Zusätzliche Sprünge', v: [0, 0, 1, 2], e: '' },
+  laser: { n: 'Brennglas', z: 'Brand: Schaden/s für 3 s (% vom Angriff)', v: [0, 0, 25, 45], e: '%' },
+  mine: { n: 'Goldader', z: 'Gold je Welle pro Mine', v: [0, 0, 10, 20], e: '' },
+};
 
 /* Tägliche Aufgaben (id = Statistik-Schlüssel) */
 const AUFGABEN = [

@@ -23,13 +23,13 @@ const seg = (id, opts) => `<div class="segment" role="tablist">${opts.map(([k, n
 function menueZeigen() {
   tagPruefen(); erfolgePruefen();
   $('menue').hidden = false; $('spiel').hidden = true;
-  $('m-bits').textContent = zahl(SP.bits);
+  if (!bitsAnim) { $('m-bits').textContent = zahl(SP.bits); bitsAnz = SP.bits; }
   for (const b of document.querySelectorAll('.tabs button')) b.setAttribute('aria-selected', b.dataset.tab === tab);
   const n = offeneBelohnungen(); $('punkt-aufgaben').hidden = !n;
   const inh = $('inhalt'); inh.innerHTML = ({ spielen: tabSpielen, helden: tabHelden, ausruestung: tabAusruestung, aufgaben: tabAufgaben, archiv: tabArchiv })[tab]();
   malen(inh);
   for (const b of inh.querySelectorAll('[data-seg]')) b.onclick = () => { const [i, k] = b.dataset.seg.split(':'); unter[i] = k; ton('klick'); menueZeigen(); };
-  for (const b of inh.querySelectorAll('[data-akt]')) b.onclick = () => { ton('klick'); AKTION[b.dataset.akt](b.dataset.wert); };
+  for (const b of inh.querySelectorAll('[data-akt]')) b.onclick = () => { ton('klick'); AKTION[b.dataset.akt](b.dataset.wert, b); };
   speichern();
 }
 function erfolgePruefen() {
@@ -41,7 +41,8 @@ function erfolgePruefen() {
 function tabSpielen() {
   const ki = Math.min(2, Math.floor((gewLv - 1) / 10)), k = KAPITEL[ki], st = SP.sterne[gewLv] || 0, erst = !SP.sterne[gewLv];
   const garant = gewLv % 5 === 0 && !SP.garantie[gewLv];
-  let h = `<div class="etikett">KAPITEL ${ki + 1}</div><h2>${k.n}</h2>
+  const offen = offeneBelohnungen();
+  let h = (offen ? `<button class="abhol-banner" data-akt="zuaufgaben">${IK.geschenk}Belohnungen abholbereit<span>${offen}</span></button>` : '') + `<div class="etikett">KAPITEL ${ki + 1}</div><h2>${k.n}</h2>
   <div class="buehnen-karte ${k.k}">
    <canvas id="vorschau" width="160" height="160" style="width:120px;height:120px"></canvas>
    <div class="levelwahl">
@@ -125,7 +126,12 @@ function itemZeigen(id) {
 
 /* ---------- Aufgaben ---------- */
 function tabAufgaben() {
-  let s = `<div class="etikett">AUFGABEN</div><h2>Zu tun</h2>` + seg('aufgaben', [['taeglich', 'Täglich'], ['meilen', 'Meilensteine'], ['erfolge', 'Erfolge']]);
+  const ab = abholListe();
+  let s = `<div class="etikett">AUFGABEN</div><h2>Zu tun</h2>`;
+  if (ab.length) s += `<div class="abholen-box"><div class="etikett" style="color:var(--bb-text)">ABHOLBEREIT | ${ab.length}</div><div class="liste" style="margin-top:8px">` +
+    ab.map((a) => `<div class="zeile"><div style="flex:1"><b>${a.n}</b><p>${a.bel}</p></div><button class="knopf-klein" data-akt="abholen" data-wert="${a.key}">Abholen</button></div>`).join('') +
+    `</div>${ab.length > 1 ? '<button class="knopf" data-akt="alleab" style="margin-top:12px;height:48px;font-size:16px">Alle abholen</button>' : ''}</div>`;
+  s += seg('aufgaben', [['taeglich', 'Täglich'], ['meilen', 'Meilensteine'], ['erfolge', 'Erfolge']]);
   if (unter.aufgaben === 'taeglich') {
     s += '<div class="liste">';
     for (const [i, a] of SP.tag.aufgaben.entries()) { const fertig = a.fort >= a.ziel;
@@ -195,19 +201,66 @@ const AKTION = {
   item: (id) => itemZeigen(+id),
   slotleer: (sl) => { const best = SP.items.filter((i) => i.slot === sl).sort((a, b) => itemWert(b) - itemWert(a))[0];
     if (best) { SP.angelegt[sl] = best.id; menueZeigen(); } else melde('Kein Teil', 'Für ' + SLOTS[sl].n + ' hast du noch nichts gefunden.'); },
-  tagab: (i) => { const a = SP.tag.aufgaben[+i]; if (a.abgeholt || a.fort < a.ziel) return; a.abgeholt = true; bitsDazu(a.b); stat('aufgaben'); ton('muenze'); menueZeigen(); },
-  tagbonus: () => { if (SP.tag.bonus || !SP.tag.aufgaben.every((a) => a.abgeholt)) return; SP.tag.bonus = true; melde('Tagesbonus', belohne({ bits: 50, item: 1 })); ton('drop'); menueZeigen(); },
-  meil: (id) => { const m = MEILEN.find((x) => x.id === id); if (!meilAbholbar(m)) return; const bel = m.s[meilStufe(m)][1]; SP.meil[id] = meilStufe(m) + 1;
-    melde(m.n, belohne(bel)); ton('drop'); menueZeigen(); },
+  zuaufgaben: () => { tab = 'aufgaben'; menueZeigen(); },
+  abholen: (key, btn) => abholen(key, btn),
+  alleab: (_, btn) => { const r = btn.getBoundingClientRect(); let bits = 0, items = 0;
+    for (const a of abholListe()) { const e = abholen(a.key, null, true); bits += e.bits; items += e.items; }
+    flieg(r, bits, items); menueZeigen(); },
+  tagab: (i, btn) => abholen('tag:' + i, btn),
+  tagbonus: (_, btn) => abholen('bonus', btn),
+  meil: (id, btn) => abholen('meil:' + id, btn),
 };
 for (const b of document.querySelectorAll('.tabs button')) b.onclick = () => { tab = b.dataset.tab; zeigeHeld = null; ton('klick'); menueZeigen(); $('inhalt').scrollTop = 0; };
+
+/* ---------- Abholen mit Flug-Animation ---------- */
+function abholListe() {
+  tagPruefen(); const l = [];
+  SP.tag.aufgaben.forEach((a, i) => { if (a.fort >= a.ziel && !a.abgeholt) l.push({ key: 'tag:' + i, n: 'Tagesaufgabe: ' + a.t, bel: a.b + ' Bits' }); });
+  if (!SP.tag.bonus && SP.tag.aufgaben.every((a) => a.abgeholt)) l.push({ key: 'bonus', n: 'Tagesbonus: alle drei erledigt', bel: '50 Bits + Ausrüstung (Selten)' });
+  for (const m of MEILEN) if (meilAbholbar(m)) { const [z, bel] = m.s[meilStufe(m)]; l.push({ key: 'meil:' + m.id, n: m.n + ': ' + zahl(z) + ' ' + m.t, bel: belohnungText(bel) }); }
+  return l;
+}
+function abholen(key, btn, still) {
+  const r = btn ? btn.getBoundingClientRect() : null, vorher = SP.bits, itemsVor = SP.items.length; let text = '';
+  const [art, w] = key.split(':');
+  if (art === 'tag') { const a = SP.tag.aufgaben[+w]; if (a.abgeholt || a.fort < a.ziel) return { bits: 0, items: 0 }; a.abgeholt = true; bitsDazu(a.b); stat('aufgaben'); }
+  if (art === 'bonus') { if (SP.tag.bonus || !SP.tag.aufgaben.every((a) => a.abgeholt)) return { bits: 0, items: 0 }; SP.tag.bonus = true; text = belohne({ bits: 50, item: 1 }); }
+  if (art === 'meil') { const m = MEILEN.find((x) => x.id === w); if (!meilAbholbar(m)) return { bits: 0, items: 0 }; const bel = m.s[meilStufe(m)][1]; SP.meil[w] = meilStufe(m) + 1; text = belohne(bel); }
+  const e = { bits: SP.bits - vorher, items: SP.items.length - itemsVor };
+  if (!still) { ton(e.items ? 'drop' : 'muenze'); flieg(r, e.bits, e.items); menueZeigen(); if (e.items) melde('Neue Ausrüstung', text); }
+  return e;
+}
+let bitsAnz = SP.bits, bitsAnim = false;
+function bitsZaehlen() {
+  const start = bitsAnz, ziel = SP.bits, t0 = performance.now(); bitsAnim = true; const p = document.querySelector('#menue .pille');
+  p.classList.remove('puls'); void p.offsetWidth; p.classList.add('puls');
+  const schritt = (n) => { const k = Math.min(1, (n - t0) / 500); bitsAnz = Math.round(start + (ziel - start) * k); $('m-bits').textContent = zahl(bitsAnz);
+    if (k < 1) requestAnimationFrame(schritt); else bitsAnim = false; };
+  requestAnimationFrame(schritt);
+}
+function flieg(von, bits, items) {
+  if (!bits && !items) return;
+  if (reduziert || !von) { bitsAnim = false; bitsZaehlen(); return; }
+  bitsAnim = true; $('m-bits').textContent = zahl(bitsAnz);
+  const cx = von.left + von.width / 2, cy = von.top + von.height / 2;
+  const flug = (cls, zielEl, i, fertig) => { const z = zielEl.getBoundingClientRect(), d = document.createElement('div'); d.className = 'flug ' + cls;
+    const gr = cls ? 36 : 12; d.style.left = cx - gr / 2 + 'px'; d.style.top = cy - gr / 2 + 'px'; document.body.appendChild(d);
+    const dx = z.left + z.width / 2 - cx, dy = z.top + z.height / 2 - cy, sx = (Math.random() - 0.5) * 90, sy = -30 - Math.random() * 70;
+    d.animate([{ transform: 'translate(0,0) scale(.6)', opacity: 0 }, { transform: `translate(${sx}px,${sy}px) scale(1.2)`, opacity: 1, offset: 0.3 },
+      { transform: `translate(${dx}px,${dy}px) scale(.5)`, opacity: 0.8 }], { duration: 800, delay: i * 55, easing: 'cubic-bezier(.45,0,.55,1)', fill: 'forwards' })
+      .onfinish = () => { d.remove(); if (fertig) fertig(); }; };
+  const n = bits ? Math.min(12, Math.max(4, Math.round(bits / 12))) : 0;
+  for (let i = 0; i < n; i++) flug('', $('m-bits'), i, i === n - 1 ? () => bitsZaehlen() : null);
+  if (!n) bitsAnim = false;
+  for (let i = 0; i < Math.min(items, 3); i++) flug('item', document.querySelector('.tabs [data-tab="ausruestung"]'), n + i * 3);
+}
 
 /* ---------- Meldungen (Erfolge, Belohnungen) ---------- */
 function meldungZeigen() {
   if (!$('ov-meldung').hidden || !MELDUNGEN.length) return;
   const m = MELDUNGEN.shift(); $('meldung-t').textContent = m.titel; $('meldung-p').textContent = m.text; $('ov-meldung').hidden = false;
 }
-$('meldung-ok').onclick = () => { $('ov-meldung').hidden = true; if (S) S.pause = $('ov-pause').hidden ? false : S.pause; meldungZeigen(); if (!S) menueZeigen(); };
+$('meldung-ok').onclick = () => { $('ov-meldung').hidden = true; if (!S && SP.bits !== bitsAnz) flieg($('meldung-ok').getBoundingClientRect(), SP.bits - bitsAnz, 0); if (S) S.pause = $('ov-pause').hidden ? false : S.pause; meldungZeigen(); if (!S) menueZeigen(); };
 
 /* ---------- Einstellungen ---------- */
 function einstellungen() {
